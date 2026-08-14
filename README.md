@@ -109,9 +109,42 @@ php artisan test     # Menjalankan seluruh tes
 
 ## Tech Stack
 
-Laravel 13 · Inertia.js 2 · React 18 + TypeScript · Tailwind CSS 3 ·
-MySQL/MariaDB · spatie/laravel-permission · spatie/laravel-activitylog ·
-smalot/pdfparser · phpoffice/phpword · Tesseract OCR
+| Lapisan | Paket | Versi |
+|---|---|---|
+| Framework | `laravel/framework` | 13.x |
+| Jembatan frontend | `inertiajs/inertia-laravel` | 2.x |
+| Antarmuka | React + TypeScript | 18.x / 5.x |
+| Styling | `tailwindcss` | **3.x** |
+| Build | `vite` | 8.x |
+| Otorisasi | `spatie/laravel-permission` | 8.x |
+| Riwayat aktivitas | `spatie/laravel-activitylog` | 5.x |
+| Kontrak tipe | `spatie/laravel-data` + `spatie/laravel-typescript-transformer` | 4.x / 3.x |
+| Ekstraksi teks | `smalot/pdfparser`, `phpoffice/phpword` | 2.x / 1.x |
+| OCR | Tesseract via `thiagoalessio/tesseract_ocr` | 2.x |
+
+### Catatan Versi yang Mudah Keliru
+
+Beberapa paket mengubah API antar versi mayor. Contoh kode yang beredar di
+internet umumnya masih menulis bentuk lama, dan akan gagal di sini:
+
+| Hal | Bentuk lama (salah di proyek ini) | Bentuk yang benar |
+|---|---|---|
+| Trait activitylog | `Spatie\Activitylog\Traits\LogsActivity` (v4) | `Spatie\Activitylog\Models\Concerns\LogsActivity` (v5) |
+| Konfigurasi TypeScript transformer | `config/typescript-transformer.php` (v2) | Service provider `app/Providers/TypeScriptTransformerServiceProvider.php` (v3) |
+| Tailwind | `@tailwindcss/vite` + CSS-first (v4) | `postcss` + `tailwind.config.js` (v3) |
+| Timestamp tabel pivot | `->withTimestamps()` | `->withPivot('created_at')` — tabel pivot di sini tidak punya `updated_at` |
+
+### Kontrak Tipe Backend–Frontend
+
+Tipe TypeScript digenerate dari DTO dan enum PHP, tidak ditulis tangan:
+
+```bash
+php artisan typescript:transform
+```
+
+Hasilnya di `resources/js/types/generated.d.ts` — **jangan disunting manual**,
+isinya ditimpa setiap kali perintah di atas dijalankan. Jalankan setiap kali DTO
+atau enum berubah, lalu ikutkan hasilnya dalam commit.
 
 ---
 

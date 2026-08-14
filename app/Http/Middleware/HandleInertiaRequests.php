@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
+use App\Data\AuthUserData;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -29,10 +32,26 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
+
             'auth' => [
-                'user' => $request->user(),
+                // Relasi dimuat di sini sekali untuk seluruh aplikasi, bukan
+                // di tiap controller. Tanpa `loadMissing`, setiap halaman akan
+                // menembak dua query tambahan hanya untuk menampilkan nama
+                // jabatan di bilah atas.
+                'user' => $user === null
+                    ? null
+                    : AuthUserData::fromUser($user->loadMissing(['jabatan', 'unit'])),
+            ],
+
+            // Pesan sekali-tampil setelah sebuah aksi. Dibungkus closure supaya
+            // hanya dibaca saat props benar-benar dikirim.
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
             ],
         ];
     }

@@ -3,14 +3,14 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "dev": "vite",
         "build": "tsc && vite build",
-        "dev": "vite"
+        "typecheck": "tsc --noEmit"
     },
     "devDependencies": {
         "@headlessui/react": "^2.0.0",
         "@inertiajs/react": "^2.0.0",
         "@tailwindcss/forms": "^0.5.3",
-        "@tailwindcss/vite": "^4.0.0",
         "@types/node": "^24.13.3",
         "@types/react": "^18.0.28",
         "@types/react-dom": "^18.0.10",

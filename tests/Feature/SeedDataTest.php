@@ -8,7 +8,12 @@ use App\Models\Category;
 use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\CategorySeeder;
+use Database\Seeders\JabatanSeeder;
+use Database\Seeders\RoleSeeder;
+use Database\Seeders\SuperadminSeeder;
+use Database\Seeders\UnitSeeder;
+use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\Models\Role;
@@ -33,7 +38,20 @@ final class SeedDataTest extends TestCase
         config()->set('dms.superadmin.email', 'superadmin@bpma.internal');
         config()->set('dms.superadmin.password', 'kata-sandi-uji');
 
-        $this->seed(DatabaseSeeder::class);
+        // Hanya seeder data referensi dan akun yang dijalankan — bukan
+        // `DatabaseSeeder` lengkap. Seeder dokumen menyalin 220 berkas ke
+        // cakram dan memakan belasan detik; menjalankannya ulang di setiap
+        // metode akan membuat berkas tes ini sendirian melampaui anggaran
+        // waktu seluruh rangkaian. Sebarannya diuji terpisah di
+        // `DocumentSeedTest`.
+        $this->seed([
+            RoleSeeder::class,
+            JabatanSeeder::class,
+            UnitSeeder::class,
+            CategorySeeder::class,
+            SuperadminSeeder::class,
+            UserSeeder::class,
+        ]);
     }
 
     public function test_data_referensi_ter_seed_lengkap_dan_aktif(): void
@@ -127,7 +145,8 @@ final class SeedDataTest extends TestCase
 
     public function test_seeding_berulang_tidak_menggandakan_data(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed([RoleSeeder::class, JabatanSeeder::class, UnitSeeder::class,
+            CategorySeeder::class, SuperadminSeeder::class, UserSeeder::class]);
 
         $this->assertSame(46, User::count());
         $this->assertSame(20, Unit::count());

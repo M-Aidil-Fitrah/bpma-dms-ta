@@ -50,7 +50,35 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        $this->ensureAccountIsActive();
+
         RateLimiter::clear($this->throttleKey());
+    }
+
+    /**
+     * Menolak akun yang dinonaktifkan Superadmin (FR-27).
+     *
+     * Pemeriksaan dilakukan SETELAH kredensial terbukti benar, dan pesannya
+     * dibuat berbeda dari "kredensial salah" — pemilik akun yang dinonaktifkan
+     * perlu tahu bahwa masalahnya bukan pada kata sandinya, melainkan pada
+     * status akunnya, supaya tidak menghabiskan waktu mencoba menyetel ulang
+     * kata sandi yang sebenarnya sudah benar.
+     *
+     * @throws ValidationException
+     */
+    protected function ensureAccountIsActive(): void
+    {
+        if (Auth::user()?->is_active) {
+            return;
+        }
+
+        Auth::guard('web')->logout();
+        $this->session()->invalidate();
+        $this->session()->regenerateToken();
+
+        throw ValidationException::withMessages([
+            'email' => 'Akun ini dinonaktifkan. Hubungi administrator sistem.',
+        ]);
     }
 
     /**

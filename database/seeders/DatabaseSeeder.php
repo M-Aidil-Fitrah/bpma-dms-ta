@@ -25,6 +25,7 @@ final class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             SuperadminSeeder::class,
             UserSeeder::class,
+            DocumentSeeder::class,
         ]);
     }
 }

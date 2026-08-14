@@ -1,110 +1,104 @@
-import Checkbox from '@/Components/Checkbox';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { Alert } from '@/Components/ui/Alert';
+import { Button } from '@/Components/ui/Button';
+import { Field } from '@/Components/ui/Field';
+import { Input } from '@/Components/ui/Input';
+import { AuthLayout } from '@/Layouts/AuthLayout';
+import { Link, useForm } from '@inertiajs/react';
+import { LogIn, Lock, Mail } from 'lucide-react';
+import { type FormEvent } from 'react';
 
-export default function Login({
-    status,
-    canResetPassword,
-}: {
+interface LoginProps {
     status?: string;
     canResetPassword: boolean;
-}) {
+}
+
+export default function Login({ status, canResetPassword }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
-        remember: false as boolean,
+        remember: false,
     });
 
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-
-        post(route('login'), {
-            onFinish: () => reset('password'),
-        });
-    };
+    function handleSubmit(event: FormEvent) {
+        event.preventDefault();
+        post('/login', { onFinish: () => reset('password') });
+    }
 
     return (
-        <GuestLayout>
-            <Head title="Log in" />
-
+        <AuthLayout
+            title="Masuk ke DMS BPMA"
+            subtitle="Gunakan akun yang dibuatkan administrator sistem"
+        >
             {status && (
-                <div className="mb-4 text-sm font-medium text-green-600">
+                <Alert variant="success" className="mb-5">
                     {status}
-                </div>
+                </Alert>
             )}
 
-            <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="email" value="Email" />
-
-                    <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
-                        isFocused={true}
-                        onChange={(e) => setData('email', e.target.value)}
-                    />
-
-                    <InputError message={errors.email} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="current-password"
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div className="mt-4 block">
-                    <label className="flex items-center">
-                        <Checkbox
-                            name="remember"
-                            checked={data.remember}
-                            onChange={(e) =>
-                                setData(
-                                    'remember',
-                                    (e.target.checked || false) as false,
-                                )
-                            }
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <Field label="Surel" error={errors.email} required>
+                    {(props) => (
+                        <Input
+                            {...props}
+                            type="email"
+                            name="email"
+                            icon={Mail}
+                            value={data.email}
+                            autoComplete="username"
+                            autoFocus
+                            placeholder="nama@bpma.internal"
+                            invalid={Boolean(errors.email)}
+                            onChange={(e) => setData('email', e.target.value)}
                         />
-                        <span className="ms-2 text-sm text-gray-600">
-                            Remember me
-                        </span>
-                    </label>
-                </div>
+                    )}
+                </Field>
 
-                <div className="mt-4 flex items-center justify-end">
+                <Field label="Kata Sandi" error={errors.password} required>
+                    {(props) => (
+                        <Input
+                            {...props}
+                            type="password"
+                            name="password"
+                            icon={Lock}
+                            value={data.password}
+                            autoComplete="current-password"
+                            invalid={Boolean(errors.password)}
+                            onChange={(e) => setData('password', e.target.value)}
+                        />
+                    )}
+                </Field>
+
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <label className="flex min-h-touch cursor-pointer items-center gap-2 text-sm text-ink-muted sm:min-h-0">
+                        <input
+                            type="checkbox"
+                            checked={data.remember}
+                            onChange={(e) => setData('remember', e.target.checked)}
+                            className="size-4 rounded border-line text-brand-700 focus:ring-brand-700"
+                        />
+                        Ingat saya
+                    </label>
+
                     {canResetPassword && (
                         <Link
-                            href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                            href="/forgot-password"
+                            className="text-sm font-medium text-brand-700 hover:text-brand-800"
                         >
-                            Forgot your password?
+                            Lupa kata sandi?
                         </Link>
                     )}
-
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
-                    </PrimaryButton>
                 </div>
+
+                <Button
+                    type="submit"
+                    icon={LogIn}
+                    loading={processing}
+                    className="w-full"
+                    size="lg"
+                >
+                    Masuk
+                </Button>
             </form>
-        </GuestLayout>
+        </AuthLayout>
     );
 }

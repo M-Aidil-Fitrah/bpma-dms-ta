@@ -1,56 +1,53 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { Button } from '@/Components/ui/Button';
+import { Field } from '@/Components/ui/Field';
+import { Input } from '@/Components/ui/Input';
+import { AuthLayout } from '@/Layouts/AuthLayout';
+import { useForm } from '@inertiajs/react';
+import { Lock, ShieldCheck } from 'lucide-react';
+import { type FormEvent } from 'react';
 
 export default function ConfirmPassword() {
     const { data, setData, post, processing, errors, reset } = useForm({
         password: '',
     });
 
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-
-        post(route('password.confirm'), {
-            onFinish: () => reset('password'),
-        });
-    };
+    function handleSubmit(event: FormEvent) {
+        event.preventDefault();
+        post('/confirm-password', { onFinish: () => reset('password') });
+    }
 
     return (
-        <GuestLayout>
-            <Head title="Confirm Password" />
+        <AuthLayout
+            title="Konfirmasi Kata Sandi"
+            subtitle="Bagian ini membutuhkan pemastian ulang sebelum dilanjutkan"
+        >
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <Field label="Kata Sandi" error={errors.password} required>
+                    {(props) => (
+                        <Input
+                            {...props}
+                            type="password"
+                            name="password"
+                            icon={Lock}
+                            value={data.password}
+                            autoComplete="current-password"
+                            autoFocus
+                            invalid={Boolean(errors.password)}
+                            onChange={(e) => setData('password', e.target.value)}
+                        />
+                    )}
+                </Field>
 
-            <div className="mb-4 text-sm text-gray-600">
-                This is a secure area of the application. Please confirm your
-                password before continuing.
-            </div>
-
-            <form onSubmit={submit}>
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        isFocused={true}
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div className="mt-4 flex items-center justify-end">
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Confirm
-                    </PrimaryButton>
-                </div>
+                <Button
+                    type="submit"
+                    icon={ShieldCheck}
+                    loading={processing}
+                    className="w-full"
+                    size="lg"
+                >
+                    Konfirmasi
+                </Button>
             </form>
-        </GuestLayout>
+        </AuthLayout>
     );
 }

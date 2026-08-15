@@ -100,6 +100,23 @@ id: number,
 nama: string,
 jumlah: number,
 };
+export type UserEditData = {
+id: number,
+name: string,
+email: string,
+jabatan_id: number | null,
+unit_id: number | null,
+is_active: boolean,
+};
+export type UserListData = {
+id: number,
+name: string,
+email: string,
+jabatan: string | null,
+unit: string | null,
+is_active: boolean,
+inisial: string,
+};
 }
 namespace Enums {
 export type DocumentEditScope = 'owner_only' | 'match_visibility';

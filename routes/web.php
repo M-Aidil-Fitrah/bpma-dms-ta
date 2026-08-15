@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ProfileController;
@@ -70,6 +71,29 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('documents.file');
     Route::get('/documents/{document}/preview', [DocumentController::class, 'previewFile'])
         ->name('documents.preview');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Modul: Manajemen Pengguna — FEAT-13
+|--------------------------------------------------------------------------
+|
+| Tidak ada registrasi publik — ini satu-satunya jalan sebuah akun `pengguna`
+| bisa terbentuk. Middleware `superadmin` menjaga SELURUH grup, bukan hanya
+| menyembunyikan tautannya di antarmuka (FR-43).
+*/
+
+Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->group(function (): void {
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+    Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    // `delete` di sini berarti MENONAKTIFKAN, sama seperti dokumen (FR-27) —
+    // riwayat dan dokumen yang pernah diunggah akun ini tetap utuh.
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::patch('/users/{user}/restore', [UserController::class, 'restore'])->name('users.restore');
+    Route::patch('/users/{user}/password', [UserController::class, 'resetPassword'])->name('users.password');
 });
 
 /*

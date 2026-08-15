@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\JabatanFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -17,6 +19,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['nama', 'tingkat_akses', 'is_active'])]
 class Jabatan extends Model
 {
+    /** @use HasFactory<JabatanFactory> */
+    use HasFactory;
+
     /** Jenjang tertinggi — melewati seluruh mekanisme akses dokumen (FR-44). */
     public const TINGKAT_TERTINGGI = 1;
 

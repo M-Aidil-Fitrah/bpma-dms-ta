@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\UnitFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -18,6 +20,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['nama', 'parent_id', 'tipe', 'is_active'])]
 class Unit extends Model
 {
+    /** @use HasFactory<UnitFactory> */
+    use HasFactory;
+
     public const TIPE_SEKRETARIS = 'sekretaris';
 
     public const TIPE_DEPUTI = 'deputi';

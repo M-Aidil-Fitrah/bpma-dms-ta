@@ -38,13 +38,14 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
 
             'auth' => [
-                // Relasi dimuat di sini sekali untuk seluruh aplikasi, bukan
-                // di tiap controller. Tanpa `loadMissing`, setiap halaman akan
-                // menembak dua query tambahan hanya untuk menampilkan nama
-                // jabatan di bilah atas.
+                // Relasi dimuat di sini sekali untuk seluruh aplikasi, bukan di
+                // tiap controller. `roles` ikut dimuat karena setiap
+                // pemeriksaan hak akses dokumen memanggil `isSuperadmin()` —
+                // tanpanya Spatie menembakkan satu query tambahan di tiap
+                // permintaan.
                 'user' => $user === null
                     ? null
-                    : AuthUserData::fromUser($user->loadMissing(['jabatan', 'unit'])),
+                    : AuthUserData::fromUser($user->loadMissing(['jabatan', 'unit', 'roles'])),
             ],
 
             // Pesan sekali-tampil setelah sebuah aksi. Dibungkus closure supaya

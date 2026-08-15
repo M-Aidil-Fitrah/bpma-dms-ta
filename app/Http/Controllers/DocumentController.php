@@ -19,6 +19,7 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Services\DocumentAccessWriter;
 use App\Services\DocumentUploadService;
+use App\Services\PengaturanService;
 use App\Support\BatasUnggah;
 use App\Support\JenjangAkses;
 use App\Support\PenyajianBerkas;
@@ -41,12 +42,12 @@ use Throwable;
  */
 final class DocumentController extends Controller
 {
-    public function index(DocumentIndexRequest $request): Response
+    public function index(DocumentIndexRequest $request, PengaturanService $pengaturan): Response
     {
         $this->authorize('viewAny', Document::class);
 
         return Inertia::render('Documents/Index', [
-            'dokumen' => $this->daftar($request),
+            'dokumen' => $this->daftar($request, $pengaturan),
             'filter' => $request->filterAktif(),
 
             // Closure biasa, bukan `Inertia::optional()`. Keduanya sama-sama
@@ -356,7 +357,7 @@ final class DocumentController extends Controller
     /**
      * @return LengthAwarePaginator<int, DocumentListData>
      */
-    private function daftar(DocumentIndexRequest $request): LengthAwarePaginator
+    private function daftar(DocumentIndexRequest $request, PengaturanService $pengaturan): LengthAwarePaginator
     {
         $user = $request->user();
 
@@ -408,7 +409,7 @@ final class DocumentController extends Controller
             // antara dua permintaan — dokumen yang sama muncul dua kali, atau
             // hilang sama sekali.
             ->orderBy('documents.id', 'desc')
-            ->paginate(config('dms.dokumen.per_halaman'))
+            ->paginate($pengaturan->integer('dokumen.per_halaman') ?? (int) config('dms.dokumen.per_halaman'))
             ->withQueryString()
             ->through(fn (Document $document): DocumentListData => DocumentListData::fromModel($document, $user));
     }

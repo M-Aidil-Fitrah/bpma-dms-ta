@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\JabatanController;
+use App\Http\Controllers\Admin\PengaturanController;
+use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
@@ -94,6 +98,42 @@ Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::patch('/users/{user}/restore', [UserController::class, 'restore'])->name('users.restore');
     Route::patch('/users/{user}/password', [UserController::class, 'resetPassword'])->name('users.password');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Modul: Manajemen Organisasi & Pengaturan — FEAT-14
+    |--------------------------------------------------------------------------
+    |
+    | Ketiga resource memakai aksi `destroy` sebagai soft-disable. Rute
+    | restore terpisah supaya tindakan mengaktifkan kembali tetap eksplisit.
+    |
+    */
+    Route::get('/jabatans', [JabatanController::class, 'index'])->name('jabatans.index');
+    Route::get('/jabatans/create', [JabatanController::class, 'create'])->name('jabatans.create');
+    Route::post('/jabatans', [JabatanController::class, 'store'])->name('jabatans.store');
+    Route::get('/jabatans/{jabatan}/edit', [JabatanController::class, 'edit'])->name('jabatans.edit');
+    Route::patch('/jabatans/{jabatan}', [JabatanController::class, 'update'])->name('jabatans.update');
+    Route::delete('/jabatans/{jabatan}', [JabatanController::class, 'destroy'])->name('jabatans.destroy');
+    Route::patch('/jabatans/{jabatan}/restore', [JabatanController::class, 'restore'])->name('jabatans.restore');
+
+    Route::get('/units', [UnitController::class, 'index'])->name('units.index');
+    Route::get('/units/create', [UnitController::class, 'create'])->name('units.create');
+    Route::post('/units', [UnitController::class, 'store'])->name('units.store');
+    Route::get('/units/{unit}/edit', [UnitController::class, 'edit'])->name('units.edit');
+    Route::patch('/units/{unit}', [UnitController::class, 'update'])->name('units.update');
+    Route::delete('/units/{unit}', [UnitController::class, 'destroy'])->name('units.destroy');
+    Route::patch('/units/{unit}/restore', [UnitController::class, 'restore'])->name('units.restore');
+
+    Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
+    Route::patch('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    Route::patch('/categories/{category}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
+
+    Route::get('/settings', [PengaturanController::class, 'index'])->name('settings.index');
+    Route::patch('/settings', [PengaturanController::class, 'update'])->name('settings.update');
 });
 
 /*

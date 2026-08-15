@@ -100,37 +100,67 @@ lingkungan** — laptop pengembangan maupun VPS. Batas yang berbeda-beda per mes
 membuat pengujian tidak dapat dipercaya: berkas yang lolos di laptop bisa
 ditolak di server tanpa satu pun perubahan kode.
 
-Supaya angka itu benar-benar tercapai, **tiga lapis** harus disetel, dan dua di
-antaranya berada di luar kendali kode:
+Sebagian besar setelannya **sudah ikut di repositori** dan berlaku otomatis
+saat di-deploy. Yang benar-benar perlu disentuh manual hanya satu, dan itu pun
+cuma pada VPS ber-nginx.
 
-| Lapis | Setelan | Nilai |
+### Apa yang perlu Anda lakukan, per lingkungan
+
+| Lingkungan | Yang perlu disetel manual |
+|---|---|
+| **Laptop tim** (`php artisan serve`) | **Tidak ada** |
+| **cPanel / Plesk / CyberPanel / aaPanel** | **Tidak ada** |
+| **Shared hosting** (PHP-FPM) | **Tidak ada** |
+| **VPS: Apache** | **Tidak ada** |
+| **VPS: nginx + PHP-FPM** | Satu blok di konfigurasi nginx |
+
+### Kenapa sebagian besar tidak perlu disetel
+
+Tiga berkas menanganinya, masing-masing untuk lingkungan yang berbeda:
+
+| Berkas | Menangani | Berlaku pada |
 |---|---|---|
-| PHP | `upload_max_filesize` | `1100M` |
-| PHP | `post_max_size` | `1100M` |
-| PHP | `memory_limit` | `512M` |
-| PHP | `max_execution_time` | `0` (tanpa batas) |
-| Nginx (VPS) | `client_max_body_size` | `1100M` |
-| Apache (VPS) | `LimitRequestBody` | `1153433600` |
+| `app/Console/Commands/ServeCommand.php` | Menyalakan PHP dengan batas yang benar | `php artisan serve` di laptop |
+| `public/.user.ini` | `upload_max_filesize`, `post_max_size` | PHP-FPM & CGI — cPanel, Plesk, shared hosting, mayoritas VPS |
+| `public/.htaccess` | `LimitRequestBody` dan `php_value` | Apache, baik mod_php maupun FPM |
 
-Nilainya sengaja sedikit di atas 1 GB: satu permintaan unggah memuat berkas
-**beserta** seluruh medan formulir, token, dan pembungkus multipart.
+`public/.user.ini` itu yang menutup sebagian besar kasus: PHP membacanya langsung
+dari direktori akar dokumen, tanpa akses root dan tanpa membuka panel apa pun.
+Perubahannya tersimpan di cache selama lima menit, jadi efeknya bisa tertunda
+sebentar setelah deploy.
 
-`memory_limit` tidak perlu sebesar berkasnya — PHP mengalirkan unggahan ke
-berkas sementara di disk, bukan menampungnya di memori.
+### VPS ber-nginx — satu-satunya yang manual
 
-Untuk nginx, `client_max_body_size` saja tidak cukup pada unggahan sebesar ini.
-Tambahkan juga:
+`client_max_body_size` milik nginx tidak dapat diatur dari sisi PHP. Nginx
+menolak permintaan besar **sebelum** PHP dijalankan, jadi berkas apa pun di
+`public/` tidak akan terbaca.
+
+Tambahkan ke blok `server` atau `location`:
 
 ```nginx
-client_max_body_size 1100M;
-client_body_timeout  600s;   # unggahan besar butuh waktu
+client_max_body_size 1074M;
+
+# Unggahan 1 GB pada koneksi lambat butuh waktu. Tanpa tiga baris ini,
+# unggahan besar terputus di tengah dengan galat 504 yang terlihat acak —
+# karena bergantung kecepatan jaringan penggunanya, bukan pada berkasnya.
+client_body_timeout  600s;
 proxy_read_timeout   600s;
 fastcgi_read_timeout 600s;
 ```
 
-Tanpa penambahan tenggat waktu itu, unggahan besar pada koneksi lambat terputus
-di tengah jalan dengan galat 504 — kegagalan yang terlihat acak dan sangat sulit
-ditelusuri karena bergantung kecepatan jaringan penggunanya.
+Lalu `sudo nginx -t && sudo systemctl reload nginx`.
+
+### Kalau memakai panel dan tetap ingin memastikan
+
+Bila karena suatu hal `.user.ini` tidak terbaca, panel biasanya menyediakan
+jalur GUI:
+
+| Panel | Jalur |
+|---|---|
+| cPanel | Software → **MultiPHP INI Editor** → pilih domain → ubah `upload_max_filesize` dan `post_max_size` |
+| Plesk | Websites & Domains → **PHP Settings** |
+| CyberPanel | PHP → **Edit PHP Configs** → Advanced |
+| aaPanel | App Store → PHP → **Settings** → Configuration |
 
 ### Kalau lingkungan belum disetel
 

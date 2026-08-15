@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,23 @@ Route::get('/', static fn () => redirect()->route(
 
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Modul: Dokumen — FEAT-07, FEAT-08
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth'])->group(function (): void {
+    Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
+
+    // Unduh dan pratinjau memakai proteksi Policy yang sama persis; bedanya
+    // hanya header `Content-Disposition` (FR-09, FR-09b).
+    Route::get('/documents/{document}/file', [DocumentController::class, 'serveFile'])
+        ->name('documents.file');
+    Route::get('/documents/{document}/preview', [DocumentController::class, 'previewFile'])
+        ->name('documents.preview');
 });
 
 /*

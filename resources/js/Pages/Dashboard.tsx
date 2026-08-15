@@ -12,6 +12,7 @@ import {
     CircleCheck,
     CircleX,
     FileText,
+    FolderOpen,
     History,
     Plus,
 } from 'lucide-react';
@@ -96,13 +97,23 @@ function SambutanBanner({ user }: { user: App.Data.AuthUserData }) {
                 {user.unit && ` · ${user.unit}`}
             </p>
 
-            <Link
-                href="/documents"
-                className="mt-5 inline-flex min-h-touch items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-                <Plus className="size-4" aria-hidden />
-                Jelajahi Dokumen
-            </Link>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                <Link
+                    href="/documents/create"
+                    className="inline-flex min-h-touch items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                    <Plus className="size-4" aria-hidden />
+                    Unggah Dokumen
+                </Link>
+
+                <Link
+                    href="/documents"
+                    className="inline-flex min-h-touch items-center justify-center gap-2 rounded-lg border border-white/40 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                    <FolderOpen className="size-4" aria-hidden />
+                    Jelajahi Dokumen
+                </Link>
+            </div>
         </div>
     );
 }

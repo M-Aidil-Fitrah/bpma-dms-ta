@@ -140,21 +140,25 @@ angka itu di bawah yang seharusnya. Tanpa mekanisme ini, berkas kebesaran
 ditolak PHP **sebelum** Laravel sempat berjalan — dan pesan yang muncul menjadi
 "berkas wajib diisi", bukan "berkas terlalu besar".
 
-### Menyetel di laptop pengembangan
+### Di laptop pengembangan — tidak perlu disetel
 
-Cara paling bersih adalah menyunting `php.ini` (jalurnya terlihat lewat
-`php --ini`). Kalau tidak punya akses root, batasnya dapat dinaikkan hanya untuk
-proses server pengembangan:
+`php artisan serve` sudah otomatis menyalakan PHP dengan batas yang sesuai
+konfigurasi aplikasi. Tidak ada flag yang perlu diingat, dan `php.ini` sistem
+tidak perlu disentuh.
+
+Ini bukan kebetulan: perintah `serve` bawaan Laravel ditimpa di
+`app/Console/Commands/ServeCommand.php`, karena `upload_max_filesize` bersifat
+`PHP_INI_PERDIR` dan mustahil diubah dari dalam kode setelah PHP berjalan.
+Angkanya dibaca dari `config/dms.php`, sehingga tidak ada dua tempat yang dapat
+berselisih.
+
+`php artisan dev` ikut terbantu — ia menyalakan servernya lewat perintah yang
+sama.
+
+Memeriksa batas yang sedang berlaku di dalam server:
 
 ```bash
-php -d upload_max_filesize=1100M -d post_max_size=1100M -d memory_limit=512M \
-    artisan serve
-```
-
-Memeriksa batas yang sedang berlaku:
-
-```bash
-php artisan tinker --execute='echo App\Support\BatasUnggah::keterangan();'
+php -d upload_max_filesize=1048576K -r 'echo ini_get("upload_max_filesize");'
 ```
 
 ---

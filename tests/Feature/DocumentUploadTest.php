@@ -141,13 +141,17 @@ final class DocumentUploadTest extends TestCase
         $this->assertEmpty(Storage::disk('local')->allFiles('documents'));
     }
 
-    public function test_memilih_unit_induk_ikut_membuka_seluruh_divisinya(): void
+    public function test_unit_tersimpan_persis_seperti_yang_dikirim(): void
     {
+        // Cascade "pilih Deputi berarti seluruh divisinya ikut" (FR-39)
+        // diselesaikan di antarmuka: `UnitTreePicker` mencentang induk beserta
+        // anaknya, lalu mengirim daftar lengkapnya. Server menyimpan apa adanya
+        // dan tidak menambahkan apa pun sendiri.
         $divisiLain = Unit::factory()->dibawah($this->deputi)->create();
 
         $this->actingAs($this->pengunggah)->post('/documents', $this->formulir([
             'is_shared_to_all' => false,
-            'unit_ids' => [$this->deputi->id],
+            'unit_ids' => [$this->deputi->id, $this->divisi->id, $divisiLain->id],
         ]));
 
         $terlampir = Document::firstWhere('judul', 'Dokumen Uji Unggah')
@@ -156,6 +160,29 @@ final class DocumentUploadTest extends TestCase
         $this->assertCount(3, $terlampir);
         $this->assertTrue($terlampir->contains($this->divisi->id));
         $this->assertTrue($terlampir->contains($divisiLain->id));
+    }
+
+    public function test_divisi_yang_sengaja_dibuang_tidak_dipasang_kembali(): void
+    {
+        // Inti FR-39. Server sempat menurunkan pohon unit sendiri saat
+        // menyimpan, sehingga selama induknya masih tercentang, divisi yang
+        // baru saja dibuang pengguna dipasang lagi tanpa satu pun pesan —
+        // pengaturan manualnya diabaikan diam-diam.
+        $dibuang = Unit::factory()->dibawah($this->deputi)->create();
+
+        $this->actingAs($this->pengunggah)->post('/documents', $this->formulir([
+            'is_shared_to_all' => false,
+            'unit_ids' => [$this->deputi->id, $this->divisi->id],
+        ]));
+
+        $terlampir = Document::firstWhere('judul', 'Dokumen Uji Unggah')
+            ->targetUnits->pluck('id');
+
+        $this->assertFalse(
+            $terlampir->contains($dibuang->id),
+            'Divisi yang dibuang pengguna dipasang kembali oleh server.',
+        );
+        $this->assertCount(2, $terlampir);
     }
 
     public function test_tiga_mekanisme_dapat_aktif_bersamaan(): void

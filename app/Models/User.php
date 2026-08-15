@@ -27,6 +27,20 @@ class User extends Authenticatable
     public const ROLE_PENGGUNA = 'pengguna';
 
     /**
+     * Nilai bawaan di memori, menyalin `default` pada migrasi.
+     *
+     * Tanpa ini, akun yang baru dibuat tanpa menyebut `is_active` bernilai null
+     * sampai ia dibaca ulang dari basis data — sementara barisnya di basis data
+     * sudah bernilai true. Ketimpangan itu membuat pemeriksaan seperti
+     * `DocumentPolicy::create()` melihat akun aktif sebagai bukan-boolean.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

@@ -1,16 +1,16 @@
 import { AccessSummary } from '@/Components/domain/AccessSummary';
+import { DocumentHeaderActions } from '@/Components/domain/DocumentHeaderActions';
 import { DocumentPreview } from '@/Components/domain/DocumentPreview';
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
 import { ExtractionStatusBadge } from '@/Components/domain/ExtractionStatusBadge';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
 import { Avatar } from '@/Components/ui/Avatar';
-import { Button } from '@/Components/ui/Button';
 import { Card } from '@/Components/ui/Card';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
 import { formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, Download, History, Info, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, History, Info, ShieldCheck } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 interface ShowProps {
@@ -27,11 +27,14 @@ export default function Show({ dokumen }: ShowProps) {
             title={dokumen.judul}
             header={<Remah judul={dokumen.judul} />}
             actions={
-                <a href={`/documents/${dokumen.id}/file`} download>
-                    <Button icon={Download} size="sm">
-                        Unduh
-                    </Button>
-                </a>
+                <DocumentHeaderActions
+                    dokumenId={dokumen.id}
+                    judul={dokumen.judul}
+                    aktif={dokumen.aktif}
+                    bolehUbah={dokumen.boleh_ubah}
+                    bolehNonaktifkan={dokumen.boleh_nonaktifkan}
+                    bolehAktifkan={dokumen.boleh_aktifkan}
+                />
             }
         >
             <div className="grid gap-5 xl:grid-cols-5">

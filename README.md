@@ -93,6 +93,27 @@ terlihat seperti bug, padahal hanya prosesnya yang belum jalan.
 
 ---
 
+## Mengelola Akun Superadmin
+
+Superadmin adalah satu-satunya jalan masuk pertama ke aplikasi — tidak ada
+registrasi publik. Akunnya dibuat otomatis oleh `migrate --seed`, tapi tersedia
+pula perintah tersendiri:
+
+```bash
+php artisan dms:superadmin
+```
+
+Perintah ini membaca `SUPERADMIN_*` dari `.env`, aman dijalankan berulang kali,
+dan berguna untuk tiga keadaan:
+
+| Keadaan | Yang dilakukan |
+|---|---|
+| Mengganti kata sandi Superadmin | Ubah `SUPERADMIN_PASSWORD` di `.env`, jalankan perintahnya |
+| Memasang tanpa data dummy | Jalankan `php artisan migrate` lalu perintah ini — tanpa `--seed`, sehingga 220 dokumen contoh tidak ikut terbawa |
+| Terkunci di luar aplikasi | Perbaiki `.env`, jalankan perintahnya |
+
+---
+
 ## Perintah Pengembangan
 
 ```bash
@@ -158,7 +179,7 @@ atau enum berubah, lalu ikutkan hasilnya dalam commit.
 | `migrate` gagal saat membuat tabel `documents` | Database mengarah ke SQLite, bukan MySQL/MariaDB — index FULLTEXT tidak didukung |
 | Pencarian tidak menemukan kata pendek | Batasan bawaan InnoDB: kata di bawah 3 huruf tidak diindeks FULLTEXT |
 | Pratinjau PDF kosong setelah `npm run build` | Berkas worker pdf.js belum tersalin ke direktori publik |
-| Tidak bisa masuk sama sekali | Kredensial Superadmin di `.env` salah. Jalur darurat: `php artisan tinker` untuk menyetel ulang kata sandi |
+| Tidak bisa masuk sama sekali | Kredensial Superadmin di `.env` salah. Perbaiki `.env`, lalu jalankan `php artisan dms:superadmin` |
 
 ---
 

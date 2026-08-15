@@ -100,6 +100,35 @@ id: number,
 nama: string,
 jumlah: number,
 };
+export type PengaturanFormData = {
+unggah_batas_kb: number,
+unggah_batas_kb_bawaan: number,
+unggah_batas_efektif_kb: number | null,
+unggah_dibatasi_php: boolean,
+dokumen_per_halaman: number,
+dokumen_per_halaman_bawaan: number,
+dokumen_rentang_evaluasi_awal: number,
+dokumen_rentang_evaluasi_awal_bawaan: number,
+rentang_evaluasi_pilihan: number[],
+};
+export type ReferensiEditData = {
+id: number,
+nama: string,
+is_active: boolean,
+tingkat_akses: number | null,
+parent_id: number | null,
+tipe: string | null,
+deskripsi: string | null,
+};
+export type ReferensiListData = {
+id: number,
+nama: string,
+jenis: string,
+keterangan: string | null,
+is_active: boolean,
+kedalaman: number,
+dampak_nonaktif: string[],
+};
 export type UserEditData = {
 id: number,
 name: string,

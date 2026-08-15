@@ -6,6 +6,7 @@ import { ExtractionStatusBadge } from '@/Components/domain/ExtractionStatusBadge
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
 import { Avatar } from '@/Components/ui/Avatar';
 import { Card } from '@/Components/ui/Card';
+import { useExtractionStatusPolling } from '@/hooks/useExtractionStatusPolling';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
 import { formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
@@ -21,6 +22,8 @@ type Tab = 'detail' | 'akses' | 'riwayat';
 
 export default function Show({ dokumen }: ShowProps) {
     const [tab, setTab] = useState<Tab>('detail');
+
+    useExtractionStatusPolling(dokumen.extraction_status);
 
     return (
         <AppLayout

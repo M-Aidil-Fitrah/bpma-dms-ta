@@ -8,9 +8,11 @@ use App\Data\DocumentDetailData;
 use App\Data\DocumentEditData;
 use App\Data\DocumentListData;
 use App\Enums\DocumentStatus;
+use App\Enums\ExtractionStatus;
 use App\Http\Requests\DocumentIndexRequest;
 use App\Http\Requests\StoreDocumentRequest;
 use App\Http\Requests\UpdateDocumentRequest;
+use App\Jobs\ExtractDocumentTextJob;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\Unit;
@@ -152,6 +154,13 @@ final class DocumentController extends Controller
             $uploader->hapus($berkas['file_path']);
 
             throw $e;
+        }
+
+        // Dipicu SETELAH transaksi berhasil, bukan di dalamnya — job yang
+        // sempat berjalan sebelum commit akan membaca baris yang belum ada
+        // (Progres-dan-Lanjutan.md §7.2).
+        if ($document->extraction_status === ExtractionStatus::Pending) {
+            ExtractDocumentTextJob::dispatch($document);
         }
 
         return redirect()

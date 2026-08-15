@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Support\PenyajianBerkas;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -47,6 +48,10 @@ final class KeamananDokumenTest extends TestCase
             'unit_id' => $this->unit->id,
         ]);
         $this->pengunggah->assignRole(User::ROLE_PENGGUNA);
+
+        // Lihat komentar yang sama di DocumentUploadTest::setUp() — berkas
+        // di tes ini juga bukan PDF/DOCX sungguhan.
+        Queue::fake();
     }
 
     private function unggah(string $nama, string $isi = 'isi berkas'): Document

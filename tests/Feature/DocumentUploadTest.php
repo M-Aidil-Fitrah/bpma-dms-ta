@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Enums\DocumentEditScope;
 use App\Enums\ExtractionStatus;
+use App\Jobs\ExtractDocumentTextJob;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\Jabatan;
@@ -15,6 +16,7 @@ use App\Services\PengaturanService;
 use App\Support\JenjangAkses;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
@@ -56,6 +58,13 @@ final class DocumentUploadTest extends TestCase
             'unit_id' => $this->divisi->id,
         ]);
         $this->pengunggah->assignRole(User::ROLE_PENGGUNA);
+
+        // `QUEUE_CONNECTION=sync` di tes membuat job berjalan sinkron di
+        // dalam request. Berkas PDF di tes ini palsu (0 byte atau teks
+        // biasa), jadi kalau job benar-benar jalan ia akan ditandai
+        // `failed` dan mematahkan tes yang tidak sedang menguji ekstraksi
+        // sama sekali.
+        Queue::fake();
     }
 
     /**
@@ -326,6 +335,29 @@ final class DocumentUploadTest extends TestCase
             ExtractionStatus::NotApplicable,
             Document::firstWhere('judul', 'Dokumen Uji Unggah')->extraction_status,
         );
+    }
+
+    public function test_tipe_didukung_memicu_job_ekstraksi(): void
+    {
+        $this->actingAs($this->pengunggah)->post('/documents', $this->formulir());
+
+        $document = Document::firstWhere('judul', 'Dokumen Uji Unggah');
+
+        Queue::assertPushed(
+            ExtractDocumentTextJob::class,
+            fn (ExtractDocumentTextJob $job): bool => $job->document->is($document),
+        );
+    }
+
+    public function test_tipe_tak_didukung_tidak_memicu_job(): void
+    {
+        // Kriteria Penerimaan #14 — tidak ada job yang perlu dibuat sama
+        // sekali, bukan job yang dibuat lalu langsung selesai tanpa kerja.
+        $this->actingAs($this->pengunggah)->post('/documents', $this->formulir([
+            'file' => UploadedFile::fake()->create('rekaman.mp4', 50, 'video/mp4'),
+        ]));
+
+        Queue::assertNotPushed(ExtractDocumentTextJob::class);
     }
 
     public function test_heic_ditandai_tidak_berlaku_bukan_gagal(): void

@@ -7,8 +7,10 @@ namespace App\Models;
 use App\Enums\DocumentEditScope;
 use App\Enums\DocumentStatus;
 use App\Enums\ExtractionStatus;
+use Database\Factories\DocumentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -32,6 +34,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 ])]
 class Document extends Model
 {
+    /** @use HasFactory<DocumentFactory> */
+    use HasFactory;
+
     /**
      * Kolom yang aman dimuat pada halaman daftar dan hasil pencarian.
      *
@@ -119,7 +124,141 @@ class Document extends Model
             ->withPivot('granted_by', 'created_at');
     }
 
+    // -- Ringkasan akses ------------------------------------------------------
+
+    /**
+     * Label mekanisme akses yang sedang aktif, untuk ditampilkan ke pengguna.
+     *
+     * Dihitung dari kolom dan relasi yang sama dengan yang dibaca
+     * `scopeVisibleTo()`, sehingga label yang tampil tidak mungkin bertentangan
+     * dengan akses yang sebenarnya berlaku. Ini yang menggantikan kolom `akses`
+     * versi lama — teks bebas yang boleh diisi apa saja dan tidak pernah dibaca
+     * logika otorisasi, sehingga sebuah dokumen bisa berlabel "Rahasia" padahal
+     * dapat dibuka semua orang (`Catatan_Audit.md` isu #4).
+     *
+     * Memerlukan relasi `targetUnits` dan `sharedUsers` sudah dimuat. Pada
+     * halaman daftar, muat keduanya lewat `with()` — tanpa itu setiap baris
+     * menembakkan dua query tambahan.
+     *
+     * @return list<string>
+     */
+    public function accessSummary(): array
+    {
+        if ($this->is_shared_to_all) {
+            return ['Semua pengguna'];
+        }
+
+        $bagian = [];
+
+        if ($this->targetUnits->isNotEmpty()) {
+            $bagian[] = $this->targetUnits->count() === 1
+                ? 'Unit: '.$this->targetUnits->first()->nama
+                : $this->targetUnits->count().' unit kerja';
+        }
+
+        if ($this->min_tingkat_akses !== null) {
+            $bagian[] = "Jenjang jabatan tingkat {$this->min_tingkat_akses} ke atas";
+        }
+
+        if ($this->sharedUsers->isNotEmpty()) {
+            $bagian[] = $this->sharedUsers->count().' orang tertentu';
+        }
+
+        // Bukan kesalahan: dokumen semacam ini hanya terlihat pengunggahnya,
+        // Superadmin, dan jabatan tingkat 1. Dinyatakan apa adanya supaya
+        // pengunggah menyadarinya, bukan disamarkan.
+        return $bagian === [] ? ['Hanya pengunggah'] : $bagian;
+    }
+
+    /**
+     * Berapa banyak dari empat mekanisme akses yang sedang aktif.
+     */
+    public function jumlahMekanismeAktif(): int
+    {
+        return (int) $this->is_shared_to_all
+            + (int) ($this->min_tingkat_akses !== null)
+            + (int) $this->targetUnits->isNotEmpty()
+            + (int) $this->sharedUsers->isNotEmpty();
+    }
+
     // -- Scope ----------------------------------------------------------------
+
+    /**
+     * Menyaring dokumen menjadi hanya yang berhak dilihat seorang pengguna.
+     *
+     * SATU-SATUNYA sumber kebenaran hak melihat dokumen. Setiap tempat yang
+     * mengambil dokumen — daftar, pencarian, dasbor, unduhan, pratinjau — wajib
+     * melewatinya. Tidak boleh ada tempat lain yang menyusun aturannya sendiri,
+     * karena aturan yang tersebar akan menyimpang satu sama lain tanpa ada yang
+     * menyadarinya sampai data bocor.
+     *
+     * Penyaringan dikerjakan basis data lewat klausa `WHERE`, bukan dengan
+     * mengambil semua baris lalu menyaringnya di PHP. Selain mencegah data di
+     * luar hak pengguna masuk ke memori aplikasi, ini juga yang membuat
+     * pagination menghitung jumlah halaman dari data yang benar.
+     *
+     * Empat mekanisme akses dievaluasi sebagai rantai OR — dokumen terlihat
+     * bila SALAH SATU terpenuhi, berapa pun yang aktif bersamaan (`PRD.md`
+     * §2.4). Ditambah satu jaminan bawaan: pengunggah selalu dapat melihat
+     * dokumennya sendiri, di luar kombinasi yang ia atur.
+     *
+     * @param  Builder<Document>  $query
+     * @return Builder<Document>
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        // Superadmin dan jabatan tingkat 1 melihat seluruh dokumen tanpa
+        // terikat mekanisme apa pun (FR-44).
+        if ($user->bypassesDocumentAccess()) {
+            return $query;
+        }
+
+        $tingkatAkses = $user->jabatan?->tingkat_akses;
+
+        // Seluruh rantai OR dibungkus satu grup. Tanpa pembungkus ini,
+        // penyaring yang ditambahkan controller sesudahnya (kategori, status,
+        // kata kunci) akan tercampur ke dalam rantai OR dan meloloskan dokumen
+        // yang seharusnya tertutup.
+        return $query->where(function (Builder $group) use ($user, $tingkatAkses): void {
+            // Jaminan bawaan — bukan salah satu dari empat mekanisme.
+            $group->where('documents.uploaded_by', $user->id);
+
+            // Mekanisme 1: bagikan ke semua pengguna internal.
+            $group->orWhere('documents.is_shared_to_all', true);
+
+            // Mekanisme 2: jenjang jabatan. Angka tingkat yang lebih kecil
+            // berarti jenjang yang lebih tinggi, sehingga dokumen ber-ambang 2
+            // terlihat oleh tingkat 1 dan 2.
+            if ($tingkatAkses !== null) {
+                $group->orWhere(function (Builder $q) use ($tingkatAkses): void {
+                    $q->whereNotNull('documents.min_tingkat_akses')
+                        ->where('documents.min_tingkat_akses', '>=', $tingkatAkses);
+                });
+            }
+
+            // Mekanisme 3: unit kerja.
+            //
+            // Hanya kecocokan langsung. Cascade ke divisi bawahan sudah
+            // diselesaikan saat menyimpan oleh `DocumentUnitResolver`, sehingga
+            // isi `document_units` selalu mencerminkan persis siapa yang
+            // berhak. Menambahkan kondisi `units.parent_id` di sini akan
+            // menjalankan cascade untuk kedua kalinya dan membuat pengurangan
+            // unit secara manual oleh pengunggah diam-diam tidak berlaku —
+            // bertentangan dengan FR-39 (`Catatan_Audit.md` isu #15).
+            if ($user->unit_id !== null) {
+                $group->orWhereHas(
+                    'targetUnits',
+                    fn (Builder $q) => $q->where('units.id', $user->unit_id),
+                );
+            }
+
+            // Mekanisme 4: orang tertentu.
+            $group->orWhereHas(
+                'sharedUsers',
+                fn (Builder $q) => $q->where('users.id', $user->id),
+            );
+        });
+    }
 
     /**
      * @param  Builder<Document>  $query

@@ -40,6 +40,7 @@ final class DocumentListData extends Data
         public string $tipe_berkas,
         public int $ukuran_berkas,
         public ?string $pengunggah,
+        public ?string $jabatan_pengunggah,
         public string $inisial_pengunggah,
         public ?array $ringkasan_akses,
     ) {}
@@ -51,7 +52,11 @@ final class DocumentListData extends Data
      */
     public static function fromModel(Document $document): self
     {
-        return self::bentuk($document, $document->accessSummary());
+        return self::bentuk(
+            $document,
+            ringkasanAkses: $document->accessSummary(),
+            jabatanPengunggah: $document->uploader?->jabatan?->nama,
+        );
     }
 
     /**
@@ -66,14 +71,17 @@ final class DocumentListData extends Data
      */
     public static function ringkas(Document $document): self
     {
-        return self::bentuk($document, null);
+        return self::bentuk($document, ringkasanAkses: null, jabatanPengunggah: null);
     }
 
     /**
      * @param  list<string>|null  $ringkasanAkses
      */
-    private static function bentuk(Document $document, ?array $ringkasanAkses): self
-    {
+    private static function bentuk(
+        Document $document,
+        ?array $ringkasanAkses,
+        ?string $jabatanPengunggah,
+    ): self {
         return new self(
             id: $document->id,
             nomor: $document->nomor,
@@ -87,6 +95,7 @@ final class DocumentListData extends Data
             tipe_berkas: $document->file_mime_type,
             ukuran_berkas: $document->file_size,
             pengunggah: $document->uploader?->name,
+            jabatan_pengunggah: $jabatanPengunggah,
             inisial_pengunggah: Inisial::dari($document->uploader?->name),
             ringkasan_akses: $ringkasanAkses,
         );

@@ -17,6 +17,7 @@ use App\Services\DocumentUnitResolver;
 use App\Services\DocumentUploadService;
 use App\Support\BatasUnggah;
 use App\Support\JenjangAkses;
+use App\Support\PenyajianBerkas;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -221,6 +222,14 @@ final class DocumentController extends Controller
         return Storage::disk('local')->download(
             $document->file_path,
             $document->file_name_original,
+            [
+                ...PenyajianBerkas::headerKeamanan(),
+                // Bahkan pada unduhan, tipe berkas tidak diteruskan apa adanya.
+                // `Content-Disposition: attachment` memang sudah menyuruh
+                // peramban menyimpan, tapi tidak semua peramban lama patuh —
+                // dan tipe generik menutup sisa celahnya.
+                'Content-Type' => PenyajianBerkas::tipeAman($document->file_mime_type),
+            ],
         );
     }
 
@@ -230,6 +239,12 @@ final class DocumentController extends Controller
      * Proteksinya IDENTIK dengan unduhan — satu-satunya perbedaan adalah header
      * `Content-Disposition`. Rute pratinjau yang lebih longgar akan menjadi
      * pintu belakang menuju berkas yang sama.
+     *
+     * Namun tidak semua tipe boleh tampil inline. Berkas HTML dan SVG dapat
+     * memuat skrip, dan menampilkannya pada asal aplikasi berarti skrip itu
+     * berjalan di dalam sesi orang yang membukanya. Tipe di luar daftar-boleh
+     * karena itu tetap dilayani, tapi dipaksa menjadi unduhan — pengguna tidak
+     * kehilangan aksesnya ke berkas, hanya tidak dijalankan di tempat.
      */
     public function previewFile(Document $document): StreamedResponse
     {
@@ -237,9 +252,20 @@ final class DocumentController extends Controller
 
         abort_unless(Storage::disk('local')->exists($document->file_path), 404);
 
+        if (! PenyajianBerkas::bolehInline($document->file_mime_type)) {
+            return $this->serveFile($document);
+        }
+
         return Storage::disk('local')->response(
             $document->file_path,
             $document->file_name_original,
+            [
+                ...PenyajianBerkas::headerKeamanan(),
+                // Tipe diambil dari daftar-boleh, bukan dari kolom apa adanya,
+                // supaya nilai yang aneh di basis data tidak ikut diteruskan
+                // mentah-mentah ke peramban.
+                'Content-Type' => PenyajianBerkas::tipeAman($document->file_mime_type),
+            ],
         );
     }
 

@@ -1,3 +1,5 @@
+import type { UnitPilihan } from '@/Components/domain/UnitTreePicker';
+import { UnitTreeSelect } from '@/Components/domain/UnitTreeSelect';
 import { Button } from '@/Components/ui/Button';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
@@ -14,9 +16,11 @@ export interface FilterChip {
 export interface FilterDefinition {
     kunci: string;
     label: string;
-    tipe: 'select' | 'date';
+    tipe: 'select' | 'date' | 'tree';
     options?: readonly SelectOption[];
     placeholder?: string;
+    /** Wajib diisi saat `tipe: 'tree'`. */
+    treeUnits?: readonly UnitPilihan[];
 }
 
 export interface FilterBarProps {
@@ -74,24 +78,44 @@ export function FilterBar({
                 <div className="grid gap-3 rounded-card border border-line bg-surface-sunken p-4 sm:grid-cols-2 xl:grid-cols-4">
                     {definisi.map((filter) => (
                         <Field key={filter.kunci} label={filter.label}>
-                            {(props) =>
-                                filter.tipe === 'select' ? (
-                                    <Select
-                                        {...props}
-                                        options={filter.options ?? []}
-                                        placeholder={filter.placeholder ?? 'Semua'}
-                                        value={nilai[filter.kunci] ?? ''}
-                                        onChange={(e) => onChange(filter.kunci, e.target.value)}
-                                    />
-                                ) : (
+                            {(props) => {
+                                if (filter.tipe === 'select') {
+                                    return (
+                                        <Select
+                                            {...props}
+                                            options={filter.options ?? []}
+                                            placeholder={filter.placeholder ?? 'Semua'}
+                                            value={nilai[filter.kunci] ?? ''}
+                                            onChange={(e) => onChange(filter.kunci, e.target.value)}
+                                        />
+                                    );
+                                }
+
+                                if (filter.tipe === 'tree') {
+                                    const nilaiUnit = nilai[filter.kunci]
+                                        ? Number(nilai[filter.kunci])
+                                        : null;
+
+                                    return (
+                                        <UnitTreeSelect
+                                            units={filter.treeUnits ?? []}
+                                            nilai={nilaiUnit}
+                                            onChange={(id) =>
+                                                onChange(filter.kunci, id === null ? '' : String(id))
+                                            }
+                                        />
+                                    );
+                                }
+
+                                return (
                                     <Input
                                         {...props}
                                         type="date"
                                         value={nilai[filter.kunci] ?? ''}
                                         onChange={(e) => onChange(filter.kunci, e.target.value)}
                                     />
-                                )
-                            }
+                                );
+                            }}
                         </Field>
                     ))}
                 </div>

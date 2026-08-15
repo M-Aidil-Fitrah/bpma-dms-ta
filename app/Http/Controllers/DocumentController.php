@@ -426,15 +426,6 @@ final class DocumentController extends Controller
         return [
             ...$this->opsiFilter(),
 
-            // Bentuk pohon dibutuhkan pemilih unit; bentuk datar pada
-            // `opsiFilter()` dipakai dropdown penyaring. Keduanya disediakan
-            // karena keduanya benar-benar dipakai.
-            'unit_pohon' => Unit::query()
-                ->active()
-                ->orderBy('parent_id')
-                ->orderBy('nama')
-                ->get(['id', 'nama', 'parent_id']),
-
             // Bukan sekadar daftar angka: tiap tingkat dikirim beserta nama
             // jabatan dan jumlah pemegangnya, supaya formulir dapat menyebutkan
             // siapa saja yang tercakup alih-alih menuntut pengunggah menebak
@@ -468,6 +459,9 @@ final class DocumentController extends Controller
                 ->orderBy('nama')
                 ->get(['id', 'nama']),
 
+            // Dipakai mencari label chip filter yang sedang aktif — nama
+            // induk disertakan supaya "Divisi Keuangan Internal" dapat
+            // dibedakan dari divisi bernama mirip di deputi lain.
             'unit' => Unit::query()
                 ->active()
                 ->with('parent:id,nama')
@@ -475,12 +469,19 @@ final class DocumentController extends Controller
                 ->get(['id', 'nama', 'parent_id'])
                 ->map(fn (Unit $unit): array => [
                     'id' => $unit->id,
-                    // Nama induk disertakan supaya "Divisi Keuangan Internal"
-                    // dapat dibedakan dari divisi bernama mirip di deputi lain.
                     'nama' => $unit->parent === null
                         ? $unit->nama
                         : "{$unit->parent->nama} — {$unit->nama}",
                 ]),
+
+            // Bentuk pohon untuk `UnitTreeSelect` — nama TIDAK digabung
+            // dengan induknya di sini, komponennya sendiri yang menyusun
+            // hierarkinya lewat `parent_id`.
+            'unit_pohon' => Unit::query()
+                ->active()
+                ->orderBy('parent_id')
+                ->orderBy('nama')
+                ->get(['id', 'nama', 'parent_id']),
         ];
     }
 }

@@ -1,7 +1,7 @@
 import { Avatar } from '@/Components/ui/Avatar';
-import { Badge } from '@/Components/ui/Badge';
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
-import { formatTanggal, labelTipeBerkas } from '@/lib/format';
+import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
+import { formatTanggal } from '@/lib/format';
 import { Link } from '@inertiajs/react';
 import { memo } from 'react';
 
@@ -30,7 +30,7 @@ export const DocumentRow = memo(function DocumentRow({ document }: DocumentRowPr
             </div>
 
             <div className="hidden shrink-0 items-center gap-2 sm:flex">
-                <Badge size="sm">{labelTipeBerkas(document.tipe_berkas)}</Badge>
+                <FileTypeBadge mime={document.tipe_berkas} />
                 <span className="w-20 text-right font-mono text-xs text-ink-muted">
                     {formatTanggal(document.tanggal)}
                 </span>

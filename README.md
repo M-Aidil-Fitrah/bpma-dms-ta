@@ -93,6 +93,72 @@ terlihat seperti bug, padahal hanya prosesnya yang belum jalan.
 
 ---
 
+## Batas Ukuran Unggahan
+
+Aplikasi menetapkan batas **1 GB**, dan angka itu **berlaku sama di semua
+lingkungan** — laptop pengembangan maupun VPS. Batas yang berbeda-beda per mesin
+membuat pengujian tidak dapat dipercaya: berkas yang lolos di laptop bisa
+ditolak di server tanpa satu pun perubahan kode.
+
+Supaya angka itu benar-benar tercapai, **tiga lapis** harus disetel, dan dua di
+antaranya berada di luar kendali kode:
+
+| Lapis | Setelan | Nilai |
+|---|---|---|
+| PHP | `upload_max_filesize` | `1100M` |
+| PHP | `post_max_size` | `1100M` |
+| PHP | `memory_limit` | `512M` |
+| PHP | `max_execution_time` | `0` (tanpa batas) |
+| Nginx (VPS) | `client_max_body_size` | `1100M` |
+| Apache (VPS) | `LimitRequestBody` | `1153433600` |
+
+Nilainya sengaja sedikit di atas 1 GB: satu permintaan unggah memuat berkas
+**beserta** seluruh medan formulir, token, dan pembungkus multipart.
+
+`memory_limit` tidak perlu sebesar berkasnya — PHP mengalirkan unggahan ke
+berkas sementara di disk, bukan menampungnya di memori.
+
+Untuk nginx, `client_max_body_size` saja tidak cukup pada unggahan sebesar ini.
+Tambahkan juga:
+
+```nginx
+client_max_body_size 1100M;
+client_body_timeout  600s;   # unggahan besar butuh waktu
+proxy_read_timeout   600s;
+fastcgi_read_timeout 600s;
+```
+
+Tanpa penambahan tenggat waktu itu, unggahan besar pada koneksi lambat terputus
+di tengah jalan dengan galat 504 — kegagalan yang terlihat acak dan sangat sulit
+ditelusuri karena bergantung kecepatan jaringan penggunanya.
+
+### Kalau lingkungan belum disetel
+
+Aplikasi tidak diam dan tidak gagal secara misterius. Formulir unggah membaca
+batas yang sedang benar-benar berlaku, menampilkannya, dan memperingatkan bahwa
+angka itu di bawah yang seharusnya. Tanpa mekanisme ini, berkas kebesaran
+ditolak PHP **sebelum** Laravel sempat berjalan — dan pesan yang muncul menjadi
+"berkas wajib diisi", bukan "berkas terlalu besar".
+
+### Menyetel di laptop pengembangan
+
+Cara paling bersih adalah menyunting `php.ini` (jalurnya terlihat lewat
+`php --ini`). Kalau tidak punya akses root, batasnya dapat dinaikkan hanya untuk
+proses server pengembangan:
+
+```bash
+php -d upload_max_filesize=1100M -d post_max_size=1100M -d memory_limit=512M \
+    artisan serve
+```
+
+Memeriksa batas yang sedang berlaku:
+
+```bash
+php artisan tinker --execute='echo App\Support\BatasUnggah::keterangan();'
+```
+
+---
+
 ## Mengelola Akun Superadmin
 
 Superadmin adalah satu-satunya jalan masuk pertama ke aplikasi — tidak ada

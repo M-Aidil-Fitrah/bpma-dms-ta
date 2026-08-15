@@ -90,7 +90,7 @@ export function labelTipeBerkas(mime: string): string {
     if (mime.startsWith('video/')) return 'Video';
     if (mime.startsWith('audio/')) return 'Audio';
     if (mime === 'text/plain') return 'Teks';
-    if (mime.includes('zip') || mime.includes('compressed')) return 'Arsip';
+    if (mime.includes('zip') || mime.includes('compressed')) return 'ZIP';
 
     return 'Berkas';
 }

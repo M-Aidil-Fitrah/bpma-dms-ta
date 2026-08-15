@@ -34,6 +34,7 @@ extraction_status: App.Enums.ExtractionStatus,
 tipe_berkas: string,
 ukuran_berkas: number,
 pengunggah: string | null,
+jabatan_pengunggah: string | null,
 inisial_pengunggah: string,
 ringkasan_akses: string[] | null,
 };

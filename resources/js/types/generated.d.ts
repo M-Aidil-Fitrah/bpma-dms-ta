@@ -93,6 +93,7 @@ pengunggah: string | null,
 jabatan_pengunggah: string | null,
 inisial_pengunggah: string,
 ringkasan_akses: string[] | null,
+alasan_terlihat: string | null,
 };
 export type KategoriRingkasData = {
 id: number,

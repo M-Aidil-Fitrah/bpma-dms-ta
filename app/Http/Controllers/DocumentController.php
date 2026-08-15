@@ -413,7 +413,7 @@ final class DocumentController extends Controller
             ->orderBy('documents.id', 'desc')
             ->paginate(config('dms.dokumen.per_halaman'))
             ->withQueryString()
-            ->through(DocumentListData::fromModel(...));
+            ->through(fn (Document $document): DocumentListData => DocumentListData::fromModel($document, $user));
     }
 
     /**

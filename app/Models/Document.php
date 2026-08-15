@@ -181,6 +181,64 @@ class Document extends Model
             + (int) $this->sharedUsers->isNotEmpty();
     }
 
+    /**
+     * Mekanisme mana yang membuat dokumen ini terlihat bagi SATU pengguna
+     * tertentu (FEAT-12) — beda dari `accessSummary()`, yang mendaftar
+     * SELURUH mekanisme yang aktif secara global tanpa peduli siapa yang
+     * melihat. Ini menjawab "kenapa saya bisa membuka dokumen ini".
+     *
+     * Urutan pengecekan mengikuti persis rantai OR di `scopeVisibleTo()`:
+     * pelewatan (bypass) dan jaminan bawaan pengunggah dicek lebih dulu
+     * karena keduanya berlaku di LUAR keempat mekanisme, baru diikuti
+     * keempat mekanisme itu sendiri dalam urutan yang sama. Hanya SATU
+     * alasan yang dikembalikan meski bisa saja lebih dari satu yang cocok —
+     * cukup untuk menjawab pertanyaannya, bukan daftar lengkap seperti
+     * `accessSummary()`.
+     *
+     * Memerlukan relasi `targetUnits` dan `sharedUsers` sudah dimuat, sama
+     * seperti `accessSummary()`.
+     */
+    public function alasanTerlihat(User $user): string
+    {
+        if ($user->isSuperadmin()) {
+            return 'Superadmin';
+        }
+
+        if ($user->isPimpinanTertinggi()) {
+            return 'Jabatan tingkat 1';
+        }
+
+        if ($this->uploaded_by === $user->id) {
+            return 'Anda pengunggahnya';
+        }
+
+        if ($this->is_shared_to_all) {
+            return 'Dibagikan ke semua pengguna';
+        }
+
+        $tingkatAkses = $user->jabatan?->tingkat_akses;
+
+        if (
+            $tingkatAkses !== null
+            && $this->min_tingkat_akses !== null
+            && $tingkatAkses <= $this->min_tingkat_akses
+        ) {
+            return 'Jenjang jabatan Anda';
+        }
+
+        if ($user->unit_id !== null && $this->targetUnits->contains('id', $user->unit_id)) {
+            return 'Unit kerja Anda';
+        }
+
+        if ($this->sharedUsers->contains('id', $user->id)) {
+            return 'Dibagikan langsung ke Anda';
+        }
+
+        // Semestinya tidak pernah tercapai: baris ini hanya pernah dimuat
+        // lewat `visibleTo()`, yang menjamin salah satu di atas pasti benar.
+        return 'Tidak diketahui';
+    }
+
     // -- Scope ----------------------------------------------------------------
 
     /**

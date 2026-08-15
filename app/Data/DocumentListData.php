@@ -7,6 +7,7 @@ namespace App\Data;
 use App\Enums\DocumentStatus;
 use App\Enums\ExtractionStatus;
 use App\Models\Document;
+use App\Models\User;
 use App\Support\Inisial;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -43,18 +44,22 @@ final class DocumentListData extends Data
         public ?string $jabatan_pengunggah,
         public string $inisial_pengunggah,
         public ?array $ringkasan_akses,
+        /** Alasan dokumen ini terlihat bagi pengguna yang sedang membuka daftar (FEAT-12). Null bila sengaja tidak dihitung. */
+        public ?string $alasan_terlihat,
     ) {}
 
     /**
-     * Bentuk lengkap, termasuk ringkasan mekanisme akses.
+     * Bentuk lengkap, termasuk ringkasan mekanisme akses dan alasan
+     * dokumen ini terlihat bagi `$user`.
      *
      * Memerlukan relasi `targetUnits` dan `sharedUsers` sudah dimuat.
      */
-    public static function fromModel(Document $document): self
+    public static function fromModel(Document $document, User $user): self
     {
         return self::bentuk(
             $document,
             ringkasanAkses: $document->accessSummary(),
+            alasanTerlihat: $document->alasanTerlihat($user),
             jabatanPengunggah: $document->uploader?->jabatan?->nama,
         );
     }
@@ -71,7 +76,7 @@ final class DocumentListData extends Data
      */
     public static function ringkas(Document $document): self
     {
-        return self::bentuk($document, ringkasanAkses: null, jabatanPengunggah: null);
+        return self::bentuk($document, ringkasanAkses: null, alasanTerlihat: null, jabatanPengunggah: null);
     }
 
     /**
@@ -80,6 +85,7 @@ final class DocumentListData extends Data
     private static function bentuk(
         Document $document,
         ?array $ringkasanAkses,
+        ?string $alasanTerlihat,
         ?string $jabatanPengunggah,
     ): self {
         return new self(
@@ -98,6 +104,7 @@ final class DocumentListData extends Data
             jabatan_pengunggah: $jabatanPengunggah,
             inisial_pengunggah: Inisial::dari($document->uploader?->name),
             ringkasan_akses: $ringkasanAkses,
+            alasan_terlihat: $alasanTerlihat,
         );
     }
 }

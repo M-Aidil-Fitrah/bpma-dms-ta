@@ -61,6 +61,23 @@ final class CategorySeeder extends Seeder
             'kode' => 'SRT',
             'deskripsi' => 'Nota dinas, surat undangan, dan surat keterangan.',
         ],
+
+        /*
+         * Penampung dokumen yang tidak masuk kategori mana pun di atas.
+         *
+         * Tanpa pilihan ini, pengunggah yang dokumennya tidak pas di kategori
+         * yang ada terpaksa memilih kategori yang keliru — dan penyaringan per
+         * kategori jadi tidak dapat dipercaya karena isinya tercampur. Lebih
+         * baik ketidakcocokan itu dinyatakan terang-terangan.
+         *
+         * Kalau isinya menumpuk, itu justru pertanda berguna: berarti ada jenis
+         * dokumen yang layak diberi kategori sendiri, dan Superadmin dapat
+         * menambahkannya lewat antarmuka tanpa melibatkan developer (FR-14).
+         */
+        'Lainnya' => [
+            'kode' => 'LNY',
+            'deskripsi' => 'Dokumen yang belum termasuk kategori mana pun di atas.',
+        ],
     ];
 
     public function run(): void

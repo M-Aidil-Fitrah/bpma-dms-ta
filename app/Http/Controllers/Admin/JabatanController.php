@@ -6,13 +6,18 @@ namespace App\Http\Controllers\Admin;
 
 use App\Data\ReferensiEditData;
 use App\Data\ReferensiListData;
+use App\Enums\ActivityLogName;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreJabatanRequest;
 use App\Http\Requests\Admin\UpdateJabatanRequest;
 use App\Models\Jabatan;
+use App\Services\ActivityLogService;
+use App\Services\AuditAttributeChanges;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,9 +37,19 @@ final class JabatanController extends Controller
         return Inertia::render('Positions/Create');
     }
 
-    public function store(StoreJabatanRequest $request): RedirectResponse
+    public function store(StoreJabatanRequest $request, ActivityLogService $aktivitas): RedirectResponse
     {
-        Jabatan::create($request->kolomJabatan());
+        DB::transaction(function () use ($request, $aktivitas): void {
+            $jabatan = Jabatan::create($request->kolomJabatan());
+
+            $aktivitas->record(
+                ActivityLogName::Jabatan,
+                AuditEvent::Created,
+                'Jabatan ditambahkan.',
+                $jabatan,
+                $request->user(),
+            );
+        });
 
         return redirect()->route('admin.jabatans.index')->with('success', 'Jabatan baru berhasil ditambahkan.');
     }
@@ -46,24 +61,54 @@ final class JabatanController extends Controller
         ]);
     }
 
-    public function update(UpdateJabatanRequest $request, Jabatan $jabatan): RedirectResponse
-    {
-        $jabatan->update($request->kolomJabatan());
+    public function update(
+        UpdateJabatanRequest $request,
+        Jabatan $jabatan,
+        AuditAttributeChanges $perubahan,
+        ActivityLogService $aktivitas,
+    ): RedirectResponse {
+        $jabatan->fill($request->kolomJabatan());
+        $perubahanAtribut = $perubahan->fromDirty($jabatan, [
+            'nama' => 'Nama jabatan',
+            'tingkat_akses' => 'Tingkat akses',
+        ]);
+
+        DB::transaction(function () use ($jabatan, $perubahanAtribut, $request, $aktivitas): void {
+            $jabatan->save();
+
+            if ($perubahanAtribut['before'] !== []) {
+                $aktivitas->record(
+                    ActivityLogName::Jabatan,
+                    AuditEvent::Updated,
+                    'Jabatan diperbarui.',
+                    $jabatan,
+                    $request->user(),
+                    before: $perubahanAtribut['before'],
+                    after: $perubahanAtribut['after'],
+                );
+            }
+        });
 
         return redirect()->route('admin.jabatans.index')->with('success', 'Perubahan jabatan berhasil disimpan.');
     }
 
     /** "Hapus" organisasi selalu berarti nonaktifkan, tidak pernah hard-delete. */
-    public function destroy(Jabatan $jabatan): RedirectResponse
+    public function destroy(Request $request, Jabatan $jabatan, ActivityLogService $aktivitas): RedirectResponse
     {
-        $jabatan->update(['is_active' => false]);
+        DB::transaction(function () use ($jabatan, $request, $aktivitas): void {
+            $jabatan->update(['is_active' => false]);
+            $aktivitas->record(ActivityLogName::Jabatan, AuditEvent::Deactivated, 'Jabatan dinonaktifkan.', $jabatan, $request->user());
+        });
 
         return redirect()->route('admin.jabatans.index')->with('success', "Jabatan \"{$jabatan->nama}\" dinonaktifkan.");
     }
 
-    public function restore(Jabatan $jabatan): RedirectResponse
+    public function restore(Request $request, Jabatan $jabatan, ActivityLogService $aktivitas): RedirectResponse
     {
-        $jabatan->update(['is_active' => true]);
+        DB::transaction(function () use ($jabatan, $request, $aktivitas): void {
+            $jabatan->update(['is_active' => true]);
+            $aktivitas->record(ActivityLogName::Jabatan, AuditEvent::Restored, 'Jabatan diaktifkan kembali.', $jabatan, $request->user());
+        });
 
         return redirect()->route('admin.jabatans.index')->with('success', "Jabatan \"{$jabatan->nama}\" diaktifkan kembali.");
     }

@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Data\UserEditData;
 use App\Data\UserListData;
+use App\Enums\ActivityLogName;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ResetUserPasswordRequest;
 use App\Http\Requests\Admin\StoreUserRequest;
@@ -13,6 +15,8 @@ use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\ActivityLogService;
+use App\Services\AuditAttributeChanges;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,15 +50,17 @@ final class UserController extends Controller
      * formulir ini, supaya tidak ada jalan tak sengaja membuat Superadmin
      * kedua.
      */
-    public function store(StoreUserRequest $request): RedirectResponse
+    public function store(StoreUserRequest $request, ActivityLogService $aktivitas): RedirectResponse
     {
-        DB::transaction(function () use ($request): void {
+        DB::transaction(function () use ($request, $aktivitas): void {
             $user = User::create([
                 ...$request->kolomPengguna(),
                 'password' => Hash::make($request->string('password')->toString()),
             ]);
 
             $user->assignRole(User::ROLE_PENGGUNA);
+
+            $aktivitas->record(ActivityLogName::Pengguna, AuditEvent::Created, 'Pengguna ditambahkan.', $user, $request->user());
         });
 
         return redirect()
@@ -74,9 +80,56 @@ final class UserController extends Controller
      * Menyunting profil akun (FR-26). Kata sandi TIDAK disentuh di sini —
      * lihat `resetPassword()`.
      */
-    public function update(UpdateUserRequest $request, User $user): RedirectResponse
-    {
-        $user->update($request->kolomPengguna());
+    public function update(
+        UpdateUserRequest $request,
+        User $user,
+        AuditAttributeChanges $perubahan,
+        ActivityLogService $aktivitas,
+    ): RedirectResponse {
+        $user->fill($request->kolomPengguna());
+
+        $jabatan = Jabatan::query()
+            ->whereKey(array_filter([
+                (int) ($user->getRawOriginal('jabatan_id') ?? 0),
+                (int) ($user->getDirty()['jabatan_id'] ?? 0),
+            ]))
+            ->pluck('nama', 'id')
+            ->all();
+        $unit = Unit::query()
+            ->whereKey(array_filter([
+                (int) ($user->getRawOriginal('unit_id') ?? 0),
+                (int) ($user->getDirty()['unit_id'] ?? 0),
+            ]))
+            ->pluck('nama', 'id')
+            ->all();
+        $perubahanAtribut = $perubahan->fromDirty($user, [
+            'name' => 'Nama',
+            'email' => 'Surel',
+            'jabatan_id' => [
+                'label' => 'Jabatan',
+                'nilai' => static fn (mixed $id): string => $jabatan[(int) $id] ?? '—',
+            ],
+            'unit_id' => [
+                'label' => 'Unit kerja',
+                'nilai' => static fn (mixed $id): string => $unit[(int) $id] ?? '—',
+            ],
+        ]);
+
+        DB::transaction(function () use ($user, $perubahanAtribut, $request, $aktivitas): void {
+            $user->save();
+
+            if ($perubahanAtribut['before'] !== []) {
+                $aktivitas->record(
+                    ActivityLogName::Pengguna,
+                    AuditEvent::Updated,
+                    'Pengguna diperbarui.',
+                    $user,
+                    $request->user(),
+                    before: $perubahanAtribut['before'],
+                    after: $perubahanAtribut['after'],
+                );
+            }
+        });
 
         return redirect()
             ->route('admin.users.index')
@@ -91,7 +144,7 @@ final class UserController extends Controller
      * ini, satu klik keliru mengunci seluruh sistem karena tidak ada jalan
      * lain membuat akun Superadmin selain lewat `.env` dan server sungguhan.
      */
-    public function destroy(Request $request, User $user): RedirectResponse
+    public function destroy(Request $request, User $user, ActivityLogService $aktivitas): RedirectResponse
     {
         if ($user->id === $request->user()->id) {
             return back()->withErrors([
@@ -99,25 +152,35 @@ final class UserController extends Controller
             ]);
         }
 
-        $user->update(['is_active' => false]);
+        DB::transaction(function () use ($user, $request, $aktivitas): void {
+            $user->update(['is_active' => false]);
+            $aktivitas->record(ActivityLogName::Pengguna, AuditEvent::Deactivated, 'Pengguna dinonaktifkan.', $user, $request->user());
+        });
 
         return redirect()
             ->route('admin.users.index')
             ->with('success', "Akun \"{$user->name}\" dinonaktifkan.");
     }
 
-    public function restore(User $user): RedirectResponse
+    public function restore(Request $request, User $user, ActivityLogService $aktivitas): RedirectResponse
     {
-        $user->update(['is_active' => true]);
+        DB::transaction(function () use ($user, $request, $aktivitas): void {
+            $user->update(['is_active' => true]);
+            $aktivitas->record(ActivityLogName::Pengguna, AuditEvent::Restored, 'Pengguna diaktifkan kembali.', $user, $request->user());
+        });
 
         return redirect()
             ->route('admin.users.index')
             ->with('success', "Akun \"{$user->name}\" diaktifkan kembali.");
     }
 
-    public function resetPassword(ResetUserPasswordRequest $request, User $user): RedirectResponse
+    public function resetPassword(ResetUserPasswordRequest $request, User $user, ActivityLogService $aktivitas): RedirectResponse
     {
-        $user->update(['password' => Hash::make($request->string('password')->toString())]);
+        DB::transaction(function () use ($request, $user, $aktivitas): void {
+            $user->update(['password' => Hash::make($request->string('password')->toString())]);
+            // Nilai kata sandi maupun hash-nya tidak boleh menjadi properti log.
+            $aktivitas->record(ActivityLogName::Pengguna, AuditEvent::PasswordReset, 'Kata sandi pengguna diatur ulang.', $user, $request->user());
+        });
 
         return redirect()
             ->route('admin.users.index')

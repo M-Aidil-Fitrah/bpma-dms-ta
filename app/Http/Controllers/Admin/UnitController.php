@@ -6,14 +6,19 @@ namespace App\Http\Controllers\Admin;
 
 use App\Data\ReferensiEditData;
 use App\Data\ReferensiListData;
+use App\Enums\ActivityLogName;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUnitRequest;
 use App\Http\Requests\Admin\UpdateUnitRequest;
 use App\Models\Unit;
+use App\Services\ActivityLogService;
+use App\Services\AuditAttributeChanges;
 use App\Services\UnitHierarchy;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,9 +40,12 @@ final class UnitController extends Controller
         return Inertia::render('Units/Create', ['induk' => $this->opsiInduk()]);
     }
 
-    public function store(StoreUnitRequest $request): RedirectResponse
+    public function store(StoreUnitRequest $request, ActivityLogService $aktivitas): RedirectResponse
     {
-        Unit::create($request->kolomUnit());
+        DB::transaction(function () use ($request, $aktivitas): void {
+            $unit = Unit::create($request->kolomUnit());
+            $aktivitas->record(ActivityLogName::Unit, AuditEvent::Created, 'Unit kerja ditambahkan.', $unit, $request->user());
+        });
 
         return redirect()->route('admin.units.index')->with('success', 'Unit kerja baru berhasil ditambahkan.');
     }
@@ -50,23 +58,65 @@ final class UnitController extends Controller
         ]);
     }
 
-    public function update(UpdateUnitRequest $request, Unit $unit): RedirectResponse
-    {
-        $unit->update($request->kolomUnit());
+    public function update(
+        UpdateUnitRequest $request,
+        Unit $unit,
+        AuditAttributeChanges $perubahan,
+        ActivityLogService $aktivitas,
+    ): RedirectResponse {
+        $unit->fill($request->kolomUnit());
+
+        $induk = Unit::query()
+            ->whereKey(array_filter([
+                (int) ($unit->getRawOriginal('parent_id') ?? 0),
+                (int) ($unit->getDirty()['parent_id'] ?? 0),
+            ]))
+            ->pluck('nama', 'id')
+            ->all();
+        $perubahanAtribut = $perubahan->fromDirty($unit, [
+            'nama' => 'Nama unit',
+            'parent_id' => [
+                'label' => 'Unit induk',
+                'nilai' => static fn (mixed $id): string => $induk[(int) $id] ?? 'Tidak ada',
+            ],
+            'tipe' => 'Tipe unit',
+        ]);
+
+        DB::transaction(function () use ($unit, $perubahanAtribut, $request, $aktivitas): void {
+            $unit->save();
+
+            if ($perubahanAtribut['before'] !== []) {
+                $aktivitas->record(
+                    ActivityLogName::Unit,
+                    AuditEvent::Updated,
+                    'Unit kerja diperbarui.',
+                    $unit,
+                    $request->user(),
+                    before: $perubahanAtribut['before'],
+                    after: $perubahanAtribut['after'],
+                );
+            }
+        });
 
         return redirect()->route('admin.units.index')->with('success', 'Perubahan unit kerja berhasil disimpan.');
     }
 
-    public function destroy(Unit $unit): RedirectResponse
+    public function destroy(Request $request, Unit $unit, ActivityLogService $aktivitas): RedirectResponse
     {
-        $unit->update(['is_active' => false]);
+        DB::transaction(function () use ($unit, $request, $aktivitas): void {
+            $unit->update(['is_active' => false]);
+            $aktivitas->record(ActivityLogName::Unit, AuditEvent::Deactivated, 'Unit kerja dinonaktifkan.', $unit, $request->user());
+        });
 
         return redirect()->route('admin.units.index')->with('success', "Unit \"{$unit->nama}\" dinonaktifkan.");
     }
 
-    public function restore(Unit $unit): RedirectResponse
+    public function restore(Request $request, Unit $unit, ActivityLogService $aktivitas): RedirectResponse
     {
-        $unit->update(['is_active' => true]);
+        DB::transaction(function () use ($unit, $request, $aktivitas): void {
+            $unit->update(['is_active' => true]);
+            $aktivitas->record(ActivityLogName::Unit, AuditEvent::Restored, 'Unit kerja diaktifkan kembali.', $unit, $request->user());
+        });
 
         return redirect()->route('admin.units.index')->with('success', "Unit \"{$unit->nama}\" diaktifkan kembali.");
     }

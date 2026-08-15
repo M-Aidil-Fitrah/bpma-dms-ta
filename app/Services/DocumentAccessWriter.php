@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Data\DocumentAccessChanges;
 use App\Models\Document;
+use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -38,21 +40,33 @@ final class DocumentAccessWriter
         array $unitIds,
         array $penerimaIds,
         User $oleh,
-    ): void {
-        $this->selaraskan(
+    ): DocumentAccessChanges {
+        $unitSekarang = $document->targetUnits()->pluck('units.id')->map(intval(...))->all();
+        $unitDiminta = $this->resolver->untukDisimpan($unitIds);
+        $penggunaSekarang = $document->sharedUsers()->pluck('users.id')->map(intval(...))->all();
+        $penggunaDiminta = $this->saringPenggunaAktif($penerimaIds);
+
+        [$unitDitambahkan, $unitDicabut] = $this->selaraskan(
             $document->targetUnits(),
-            $document->targetUnits()->pluck('units.id')->map(intval(...))->all(),
-            $this->resolver->untukDisimpan($unitIds),
+            $unitSekarang,
+            $unitDiminta,
             'added_by',
             $oleh,
         );
 
-        $this->selaraskan(
+        [$penggunaDitambahkan, $penggunaDicabut] = $this->selaraskan(
             $document->sharedUsers(),
-            $document->sharedUsers()->pluck('users.id')->map(intval(...))->all(),
-            $this->saringPenggunaAktif($penerimaIds),
+            $penggunaSekarang,
+            $penggunaDiminta,
             'granted_by',
             $oleh,
+        );
+
+        return new DocumentAccessChanges(
+            unitDitambahkan: $this->targetUnits($unitDitambahkan),
+            unitDicabut: $this->targetUnits($unitDicabut),
+            penggunaDitambahkan: $this->targetPengguna($penggunaDitambahkan),
+            penggunaDicabut: $this->targetPengguna($penggunaDicabut),
         );
     }
 
@@ -67,7 +81,7 @@ final class DocumentAccessWriter
         array $diminta,
         string $kolomJejak,
         User $oleh,
-    ): void {
+    ): array {
         $dicabut = array_values(array_diff($sekarang, $diminta));
         $ditambah = array_values(array_diff($diminta, $sekarang));
 
@@ -78,6 +92,8 @@ final class DocumentAccessWriter
         if ($ditambah !== []) {
             $relasi->attach(array_fill_keys($ditambah, [$kolomJejak => $oleh->id]));
         }
+
+        return [$ditambah, $dicabut];
     }
 
     /**
@@ -97,6 +113,28 @@ final class DocumentAccessWriter
             ->whereKey(array_unique($penerimaIds))
             ->pluck('id')
             ->map(intval(...))
+            ->all();
+    }
+
+    /** @param list<int> $ids @return list<array{id: int, nama: string}> */
+    private function targetUnits(array $ids): array
+    {
+        return Unit::query()
+            ->whereKey($ids)
+            ->orderBy('nama')
+            ->get(['id', 'nama'])
+            ->map(fn (Unit $unit): array => ['id' => $unit->id, 'nama' => $unit->nama])
+            ->all();
+    }
+
+    /** @param list<int> $ids @return list<array{id: int, nama: string}> */
+    private function targetPengguna(array $ids): array
+    {
+        return User::query()
+            ->whereKey($ids)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (User $user): array => ['id' => $user->id, 'nama' => $user->name])
             ->all();
     }
 }

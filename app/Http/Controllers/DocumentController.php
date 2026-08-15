@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Data\DocumentAccessChanges;
 use App\Data\DocumentDetailData;
 use App\Data\DocumentEditData;
 use App\Data\DocumentListData;
+use App\Enums\ActivityLogName;
+use App\Enums\AuditEvent;
 use App\Enums\DocumentStatus;
 use App\Enums\ExtractionStatus;
 use App\Http\Requests\DocumentIndexRequest;
@@ -17,7 +20,9 @@ use App\Models\Category;
 use App\Models\Document;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use App\Services\DocumentAccessWriter;
+use App\Services\DocumentMetadataChanges;
 use App\Services\DocumentUploadService;
 use App\Services\PengaturanService;
 use App\Support\BatasUnggah;
@@ -125,13 +130,14 @@ final class DocumentController extends Controller
         StoreDocumentRequest $request,
         DocumentUploadService $uploader,
         DocumentAccessWriter $akses,
+        ActivityLogService $aktivitas,
     ): RedirectResponse {
         $this->authorize('create', Document::class);
 
         $berkas = $uploader->store($request->file('file'));
 
         try {
-            $document = DB::transaction(function () use ($request, $berkas, $akses): Document {
+            $document = DB::transaction(function () use ($request, $berkas, $akses, $aktivitas): Document {
                 $document = Document::create([
                     ...$request->kolomDokumen(),
                     ...$berkas,
@@ -140,11 +146,22 @@ final class DocumentController extends Controller
                     'is_active' => true,
                 ]);
 
-                $akses->sinkron(
+                $perubahanAkses = $akses->sinkron(
                     $document,
                     $request->unitIds(),
                     $request->penerimaIds(),
                     $request->user(),
+                );
+
+                $aktivitas->record(
+                    ActivityLogName::Dokumen,
+                    AuditEvent::DocumentUploaded,
+                    'Dokumen diunggah.',
+                    $document,
+                    $request->user(),
+                    [
+                        'mekanisme_akses' => $this->mekanismeAkses($document, $perubahanAkses),
+                    ],
                 );
 
                 return $document;
@@ -204,18 +221,36 @@ final class DocumentController extends Controller
         UpdateDocumentRequest $request,
         Document $document,
         DocumentAccessWriter $akses,
+        DocumentMetadataChanges $metadata,
+        ActivityLogService $aktivitas,
     ): RedirectResponse {
         $this->authorize('update', $document);
 
-        DB::transaction(function () use ($request, $document, $akses): void {
-            $document->update($request->kolomDokumen());
+        DB::transaction(function () use ($request, $document, $akses, $metadata, $aktivitas): void {
+            $document->fill($request->kolomDokumen());
+            $perubahanMetadata = $metadata->fromDirty($document);
+            $document->save();
 
-            $akses->sinkron(
+            $perubahanAkses = $akses->sinkron(
                 $document,
                 $request->unitIds(),
                 $request->penerimaIds(),
                 $request->user(),
             );
+
+            if ($perubahanMetadata['before'] !== []) {
+                $aktivitas->record(
+                    ActivityLogName::Dokumen,
+                    AuditEvent::DocumentUpdated,
+                    'Informasi dokumen diperbarui.',
+                    $document,
+                    $request->user(),
+                    before: $perubahanMetadata['before'],
+                    after: $perubahanMetadata['after'],
+                );
+            }
+
+            $this->catatPerubahanAkses($aktivitas, $document, $request->user(), $perubahanAkses);
         });
 
         return redirect()
@@ -232,11 +267,21 @@ final class DocumentController extends Controller
      * pertanyaan-pertanyaan itu, dan pertanyaan itu justru muncul setelah ada
      * masalah.
      */
-    public function destroy(Document $document): RedirectResponse
+    public function destroy(Request $request, Document $document, ActivityLogService $aktivitas): RedirectResponse
     {
         $this->authorize('delete', $document);
 
-        $document->update(['is_active' => false]);
+        DB::transaction(function () use ($document, $request, $aktivitas): void {
+            $document->update(['is_active' => false]);
+
+            $aktivitas->record(
+                ActivityLogName::Dokumen,
+                AuditEvent::DocumentDeactivated,
+                'Dokumen dinonaktifkan.',
+                $document,
+                $request->user(),
+            );
+        });
 
         return redirect()
             ->route('documents.index')
@@ -248,11 +293,21 @@ final class DocumentController extends Controller
      *
      * Hanya Superadmin — lihat alasannya di `DocumentPolicy::restore()`.
      */
-    public function restore(Document $document): RedirectResponse
+    public function restore(Request $request, Document $document, ActivityLogService $aktivitas): RedirectResponse
     {
         $this->authorize('restore', $document);
 
-        $document->update(['is_active' => true]);
+        DB::transaction(function () use ($document, $request, $aktivitas): void {
+            $document->update(['is_active' => true]);
+
+            $aktivitas->record(
+                ActivityLogName::Dokumen,
+                AuditEvent::DocumentRestored,
+                'Dokumen diaktifkan kembali.',
+                $document,
+                $request->user(),
+            );
+        });
 
         return redirect()
             ->route('documents.show', $document)
@@ -298,11 +353,20 @@ final class DocumentController extends Controller
      * tanpa aturan ini, seluruh sistem mekanisme akses dapat dilewati hanya
      * dengan menebak alamat berkasnya (`PRD.md` §8.2).
      */
-    public function serveFile(Document $document): StreamedResponse
+    public function serveFile(Request $request, Document $document, ActivityLogService $aktivitas): StreamedResponse
     {
         $this->authorize('view', $document);
 
         abort_unless(Storage::disk('local')->exists($document->file_path), 404);
+
+        $aktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentDownloaded,
+            'Berkas dokumen diunduh.',
+            $document,
+            $request->user(),
+            ['nama_berkas' => $document->file_name_original],
+        );
 
         return Storage::disk('local')->download(
             $document->file_path,
@@ -526,5 +590,72 @@ final class DocumentController extends Controller
                 ->orderBy('nama')
                 ->get(['id', 'nama', 'parent_id']),
         ];
+    }
+
+    /**
+     * @return array{dibagikan_ke_semua: bool, jenjang_jabatan: string, unit: list<array{id: int, nama: string}>, orang_tertentu: list<array{id: int, nama: string}>}
+     */
+    private function mekanismeAkses(Document $document, DocumentAccessChanges $perubahan): array
+    {
+        return [
+            'dibagikan_ke_semua' => $document->is_shared_to_all,
+            'jenjang_jabatan' => $document->min_tingkat_akses === null
+                ? 'Tidak diatur'
+                : "Tingkat {$document->min_tingkat_akses} ke atas",
+            'unit' => $perubahan->unitDitambahkan,
+            'orang_tertentu' => $perubahan->penggunaDitambahkan,
+        ];
+    }
+
+    /** Mencatat setiap target yang betul-betul berubah, bukan seluruh daftar. */
+    private function catatPerubahanAkses(
+        ActivityLogService $aktivitas,
+        Document $document,
+        User $pelaku,
+        DocumentAccessChanges $perubahan,
+    ): void {
+        foreach ($perubahan->unitDitambahkan as $unit) {
+            $aktivitas->record(
+                ActivityLogName::DocumentUnit,
+                AuditEvent::AccessGranted,
+                "Akses unit \"{$unit['nama']}\" ditambahkan.",
+                $document,
+                $pelaku,
+                ['target' => $unit],
+            );
+        }
+
+        foreach ($perubahan->unitDicabut as $unit) {
+            $aktivitas->record(
+                ActivityLogName::DocumentUnit,
+                AuditEvent::AccessRevoked,
+                "Akses unit \"{$unit['nama']}\" dicabut.",
+                $document,
+                $pelaku,
+                ['target' => $unit],
+            );
+        }
+
+        foreach ($perubahan->penggunaDitambahkan as $pengguna) {
+            $aktivitas->record(
+                ActivityLogName::DocumentShare,
+                AuditEvent::AccessGranted,
+                "Akses untuk \"{$pengguna['nama']}\" ditambahkan.",
+                $document,
+                $pelaku,
+                ['target' => $pengguna],
+            );
+        }
+
+        foreach ($perubahan->penggunaDicabut as $pengguna) {
+            $aktivitas->record(
+                ActivityLogName::DocumentShare,
+                AuditEvent::AccessRevoked,
+                "Akses untuk \"{$pengguna['nama']}\" dicabut.",
+                $document,
+                $pelaku,
+                ['target' => $pengguna],
+            );
+        }
     }
 }

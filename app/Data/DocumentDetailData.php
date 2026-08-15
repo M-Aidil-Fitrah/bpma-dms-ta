@@ -1,0 +1,111 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Data;
+
+use App\Enums\DocumentEditScope;
+use App\Enums\DocumentStatus;
+use App\Enums\ExtractionStatus;
+use App\Models\Document;
+use App\Support\Inisial;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
+/**
+ * Dokumen tunggal beserta seluruh metadatanya (FR-07).
+ *
+ * Terpisah dari `DocumentListData` bukan karena kebetulan, melainkan karena
+ * keduanya punya batasan yang berbeda. DTO daftar sengaja tidak boleh memuat
+ * `extracted_text`; DTO ini justru wajib memuatnya, karena panel teks pada
+ * pratinjau dokumen non-visual dibangun dari sana. Menyatukan keduanya berarti
+ * kehilangan penjagaan yang membuat halaman daftar tetap ringan.
+ */
+#[TypeScript]
+final class DocumentDetailData extends Data
+{
+    /**
+     * @param  list<string>  $ringkasan_akses
+     * @param  list<string>  $unit_tujuan
+     * @param  list<string>  $orang_tertentu
+     */
+    public function __construct(
+        public int $id,
+        public string $nomor,
+        public string $judul,
+        public ?string $deskripsi,
+        public ?string $kategori,
+        public ?string $unit_asal,
+        public string $tanggal,
+        public ?string $masa_berlaku,
+        public DocumentStatus $status,
+
+        // -- Berkas -----------------------------------------------------------
+        public string $nama_berkas,
+        public string $tipe_berkas,
+        public int $ukuran_berkas,
+        public ExtractionStatus $extraction_status,
+        /** Isi teks hasil ekstraksi; dasar pratinjau untuk berkas non-visual. */
+        public ?string $isi_teks,
+
+        // -- Pengunggah -------------------------------------------------------
+        public ?string $pengunggah,
+        public ?string $jabatan_pengunggah,
+        public ?string $unit_pengunggah,
+        public string $inisial_pengunggah,
+        public string $diunggah_pada,
+        public string $diperbarui_pada,
+
+        // -- Mekanisme akses --------------------------------------------------
+        public array $ringkasan_akses,
+        public bool $dibagikan_ke_semua,
+        public ?int $min_tingkat_akses,
+        public array $unit_tujuan,
+        public array $orang_tertentu,
+        public DocumentEditScope $edit_scope,
+        public string $label_edit_scope,
+
+        // -- Wewenang pengguna yang sedang membuka ----------------------------
+        public bool $boleh_ubah,
+        public bool $boleh_nonaktifkan,
+    ) {}
+
+    public static function fromModel(Document $document, bool $bolehUbah): self
+    {
+        return new self(
+            id: $document->id,
+            nomor: $document->nomor,
+            judul: $document->judul,
+            deskripsi: $document->deskripsi,
+            kategori: $document->category?->nama,
+            unit_asal: $document->originUnit?->nama,
+            tanggal: $document->tanggal->toDateString(),
+            masa_berlaku: $document->masa_berlaku?->toDateString(),
+            status: $document->status,
+
+            nama_berkas: $document->file_name_original,
+            tipe_berkas: $document->file_mime_type,
+            ukuran_berkas: $document->file_size,
+            extraction_status: $document->extraction_status,
+            isi_teks: $document->extracted_text,
+
+            pengunggah: $document->uploader?->name,
+            jabatan_pengunggah: $document->uploader?->jabatan?->nama,
+            unit_pengunggah: $document->uploader?->unit?->nama,
+            inisial_pengunggah: Inisial::dari($document->uploader?->name),
+            diunggah_pada: $document->created_at->toIso8601String(),
+            diperbarui_pada: $document->updated_at->toIso8601String(),
+
+            ringkasan_akses: $document->accessSummary(),
+            dibagikan_ke_semua: $document->is_shared_to_all,
+            min_tingkat_akses: $document->min_tingkat_akses,
+            unit_tujuan: $document->targetUnits->pluck('nama')->all(),
+            orang_tertentu: $document->sharedUsers->pluck('name')->all(),
+            edit_scope: $document->edit_scope,
+            label_edit_scope: $document->edit_scope->label(),
+
+            boleh_ubah: $bolehUbah,
+            boleh_nonaktifkan: $bolehUbah,
+        );
+    }
+}

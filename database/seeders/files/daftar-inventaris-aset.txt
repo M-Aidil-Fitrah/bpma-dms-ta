@@ -1,0 +1,23 @@
+DAFTAR INVENTARIS ASET
+Divisi Pengelolaan Aset dan Rantai Suplai
+Badan Pengelola Migas Aceh
+Per 31 Desember 2026
+
+KODE       NAMA ASET                          JUMLAH  KONDISI
+AST-0101   Perangkat komputer kerja           42      Baik
+AST-0102   Perangkat komputer jinjing         18      Baik
+AST-0103   Pencetak dokumen                   9       Baik
+AST-0104   Pemindai dokumen                   6       Baik
+AST-0201   Kendaraan operasional roda empat   7       Baik
+AST-0202   Kendaraan operasional roda dua     4       Perlu servis
+AST-0301   Perangkat radio komunikasi         12      Baik
+AST-0302   Perangkat ukur tekanan lapangan    8       Kalibrasi
+AST-0401   Meja kerja                         55      Baik
+AST-0402   Kursi kerja                        60      Baik
+AST-0403   Lemari arsip                       23      Baik
+
+Catatan:
+- Aset berkondisi "Perlu servis" dijadwalkan pada triwulan berikutnya.
+- Perangkat ukur lapangan wajib dikalibrasi ulang setiap dua belas bulan.
+
+Dokumen contoh - data dummy untuk prototype DMS BPMA.

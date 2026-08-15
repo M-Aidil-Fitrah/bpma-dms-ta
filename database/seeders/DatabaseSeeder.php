@@ -1,25 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class DatabaseSeeder extends Seeder
+/**
+ * Urutannya mengikuti ketergantungan foreign key: data referensi lebih dulu,
+ * baru akun, baru dokumen.
+ *
+ * Setiap seeder baru ditambahkan sebagai satu baris di sini, tanpa menyusun
+ * ulang baris yang sudah ada — supaya penambahan oleh anggota tim berbeda tidak
+ * saling bertabrakan saat merge.
+ */
+final class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            RoleSeeder::class,
+            JabatanSeeder::class,
+            UnitSeeder::class,
+            CategorySeeder::class,
+            SuperadminSeeder::class,
+            UserSeeder::class,
+            DocumentSeeder::class,
         ]);
     }
 }

@@ -26,4 +26,11 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
+# Dokumen & referensi desain lokal (konteks kerja, bukan kode sumber)
 scripts/
+
+# Keluaran sementara Playwright MCP
+.playwright-mcp/
+
+# Manifest internal generator tipe — bukan berkas hasil yang dipakai frontend
+/resources/js/types/typescript-transformer-manifest.json

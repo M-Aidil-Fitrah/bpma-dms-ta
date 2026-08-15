@@ -1,56 +1,67 @@
-import InputError from '@/Components/InputError';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { Alert } from '@/Components/ui/Alert';
+import { Button } from '@/Components/ui/Button';
+import { Field } from '@/Components/ui/Field';
+import { Input } from '@/Components/ui/Input';
+import { AuthLayout } from '@/Layouts/AuthLayout';
+import { Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, Mail, Send } from 'lucide-react';
+import { type FormEvent } from 'react';
 
 export default function ForgotPassword({ status }: { status?: string }) {
-    const { data, setData, post, processing, errors } = useForm({
-        email: '',
-    });
+    const { data, setData, post, processing, errors } = useForm({ email: '' });
 
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-
-        post(route('password.email'));
-    };
+    function handleSubmit(event: FormEvent) {
+        event.preventDefault();
+        post('/forgot-password');
+    }
 
     return (
-        <GuestLayout>
-            <Head title="Forgot Password" />
-
-            <div className="mb-4 text-sm text-gray-600">
-                Forgot your password? No problem. Just let us know your email
-                address and we will email you a password reset link that will
-                allow you to choose a new one.
-            </div>
-
+        <AuthLayout
+            title="Lupa Kata Sandi"
+            subtitle="Kami akan mengirim tautan penyetelan ulang ke surel Anda"
+        >
             {status && (
-                <div className="mb-4 text-sm font-medium text-green-600">
+                <Alert variant="success" className="mb-5">
                     {status}
-                </div>
+                </Alert>
             )}
 
-            <form onSubmit={submit}>
-                <TextInput
-                    id="email"
-                    type="email"
-                    name="email"
-                    value={data.email}
-                    className="mt-1 block w-full"
-                    isFocused={true}
-                    onChange={(e) => setData('email', e.target.value)}
-                />
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <Field label="Surel" error={errors.email} required>
+                    {(props) => (
+                        <Input
+                            {...props}
+                            type="email"
+                            name="email"
+                            icon={Mail}
+                            value={data.email}
+                            autoComplete="username"
+                            autoFocus
+                            placeholder="nama@bpma.internal"
+                            invalid={Boolean(errors.email)}
+                            onChange={(e) => setData('email', e.target.value)}
+                        />
+                    )}
+                </Field>
 
-                <InputError message={errors.email} className="mt-2" />
-
-                <div className="mt-4 flex items-center justify-end">
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Email Password Reset Link
-                    </PrimaryButton>
-                </div>
+                <Button
+                    type="submit"
+                    icon={Send}
+                    loading={processing}
+                    className="w-full"
+                    size="lg"
+                >
+                    Kirim Tautan
+                </Button>
             </form>
-        </GuestLayout>
+
+            <Link
+                href="/login"
+                className="mt-5 flex items-center justify-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink"
+            >
+                <ArrowLeft className="size-4" aria-hidden />
+                Kembali ke halaman masuk
+            </Link>
+        </AuthLayout>
     );
 }

@@ -1,0 +1,122 @@
+import { Button } from '@/Components/ui/Button';
+import { Field } from '@/Components/ui/Field';
+import { Input } from '@/Components/ui/Input';
+import { Select, type SelectOption } from '@/Components/ui/Select';
+import { cn } from '@/lib/cn';
+import { Filter, X } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+
+export interface FilterChip {
+    kunci: string;
+    label: string;
+}
+
+export interface FilterDefinition {
+    kunci: string;
+    label: string;
+    tipe: 'select' | 'date';
+    options?: readonly SelectOption[];
+    placeholder?: string;
+}
+
+export interface FilterBarProps {
+    definisi: readonly FilterDefinition[];
+    nilai: Record<string, string>;
+    onChange: (kunci: string, nilai: string) => void;
+    onReset: () => void;
+    chips: readonly FilterChip[];
+    onHapusChip: (kunci: string) => void;
+    /** Slot kiri, biasanya kolom pencarian. */
+    children?: ReactNode;
+}
+
+/**
+ * Bilah penyaring dengan panel yang dapat dilipat.
+ *
+ * Panelnya tersembunyi secara bawaan supaya halaman tidak dibuka oleh deretan
+ * kolom yang jarang dipakai. Penyaring yang sedang aktif tetap terlihat sebagai
+ * chip — tanpa itu, pengguna bisa bingung mengapa daftarnya kosong padahal
+ * penyaring yang lupa dimatikan masih berlaku.
+ */
+export function FilterBar({
+    definisi,
+    nilai,
+    onChange,
+    onReset,
+    chips,
+    onHapusChip,
+    children,
+}: FilterBarProps) {
+    const [terbuka, setTerbuka] = useState(false);
+
+    return (
+        <div className="space-y-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                {children}
+
+                <Button
+                    variant="secondary"
+                    icon={Filter}
+                    onClick={() => setTerbuka((v) => !v)}
+                    aria-expanded={terbuka}
+                    className={cn('shrink-0', chips.length > 0 && 'border-brand-700 text-brand-700')}
+                >
+                    Filter
+                    {chips.length > 0 && (
+                        <span className="ml-1 inline-flex size-5 items-center justify-center rounded-full bg-brand-700 text-xs text-white">
+                            {chips.length}
+                        </span>
+                    )}
+                </Button>
+            </div>
+
+            {terbuka && (
+                <div className="grid gap-3 rounded-card border border-line bg-surface-sunken p-4 sm:grid-cols-2 xl:grid-cols-4">
+                    {definisi.map((filter) => (
+                        <Field key={filter.kunci} label={filter.label}>
+                            {(props) =>
+                                filter.tipe === 'select' ? (
+                                    <Select
+                                        {...props}
+                                        options={filter.options ?? []}
+                                        placeholder={filter.placeholder ?? 'Semua'}
+                                        value={nilai[filter.kunci] ?? ''}
+                                        onChange={(e) => onChange(filter.kunci, e.target.value)}
+                                    />
+                                ) : (
+                                    <Input
+                                        {...props}
+                                        type="date"
+                                        value={nilai[filter.kunci] ?? ''}
+                                        onChange={(e) => onChange(filter.kunci, e.target.value)}
+                                    />
+                                )
+                            }
+                        </Field>
+                    ))}
+                </div>
+            )}
+
+            {chips.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                    {chips.map((chip) => (
+                        <button
+                            key={chip.kunci}
+                            type="button"
+                            onClick={() => onHapusChip(chip.kunci)}
+                            className="inline-flex min-h-touch items-center gap-1.5 rounded-full border border-line bg-white px-3 text-sm text-ink-muted transition-colors hover:border-danger/30 hover:bg-danger-soft hover:text-danger sm:min-h-8"
+                        >
+                            {chip.label}
+                            <X className="size-3.5" aria-hidden />
+                            <span className="sr-only">Hapus filter {chip.label}</span>
+                        </button>
+                    ))}
+
+                    <Button variant="ghost" size="sm" onClick={onReset}>
+                        Bersihkan semua
+                    </Button>
+                </div>
+            )}
+        </div>
+    );
+}

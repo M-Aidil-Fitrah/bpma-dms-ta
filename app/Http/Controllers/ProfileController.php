@@ -6,7 +6,6 @@ use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -40,24 +39,13 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit');
     }
 
-    /**
-     * Delete the user's account.
+    /*
+     * Aksi `destroy` bawaan Breeze sengaja dihapus.
+     *
+     * Pengguna tidak dapat menghapus akunnya sendiri: penonaktifan akun adalah
+     * wewenang Superadmin (FR-27), dan akun tidak pernah dihapus permanen
+     * supaya riwayat aktivitas serta dokumen yang pernah diunggahnya tetap
+     * utuh. Foreign key `documents.uploaded_by` memakai RESTRICT, sehingga
+     * penghapusan akun juga akan ditolak di tingkat basis data.
      */
-    public function destroy(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'password' => ['required', 'current_password'],
-        ]);
-
-        $user = $request->user();
-
-        Auth::logout();
-
-        $user->delete();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return Redirect::to('/');
-    }
 }

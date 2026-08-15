@@ -91,6 +91,16 @@ normal — tapi status ekstraksi dokumen akan macet selamanya di "Memproses", da
 dokumen yang masa berlakunya lewat tidak pernah berpindah status. Keduanya
 terlihat seperti bug, padahal hanya prosesnya yang belum jalan.
 
+### Menjaga `queue:work` tetap hidup di VPS
+
+Proses nomor 3 tidak boleh berhenti begitu sesi terminal ditutup, dan
+Laravel sendiri tidak menyalakannya ulang kalau prosesnya mati. Pakai
+**Supervisor** atau **systemd** supaya proses itu otomatis dijalankan lagi.
+
+Kalau workernya sempat mati, tidak ada data yang rusak — dokumen yang
+terlanjur diunggah selama itu hanya menunggu di tabel `jobs` dengan status
+tetap "Memproses" sampai workernya hidup kembali dan memprosesnya.
+
 ---
 
 ## Batas Ukuran Unggahan

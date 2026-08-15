@@ -58,9 +58,21 @@ return [
         'per_halaman' => 20,
 
         /*
-         * Ukuran maksimum berkas unggahan dalam kilobyte (20 MB).
+         * Batas ukuran unggahan, dalam kilobyte. Berlaku SAMA di mana pun —
+         * laptop pengembangan maupun VPS.
+         *
+         * Angka tunggal ini disengaja. Batas yang berbeda-beda per mesin
+         * membuat pengujian manual tidak dapat dipercaya: berkas yang lolos di
+         * laptop bisa ditolak di server tanpa ada perubahan kode apa pun, dan
+         * penguji tidak punya cara mengetahui batas mana yang sedang berlaku.
+         *
+         * Lingkungan WAJIB disetel agar sanggup memenuhinya — lihat README
+         * bagian "Batas Ukuran Unggahan". Bila lingkungannya lebih ketat,
+         * aplikasi tidak diam: `App\Support\BatasUnggah` mendeteksinya, dan
+         * formulir unggah menampilkan peringatan beserta batas yang sebenarnya
+         * berlaku.
          */
-        'ukuran_maksimum_kb' => 20480,
+        'ukuran_maksimum_kb' => 1048576, // 1 GB
 
         /*
          * Ekstensi yang ditolak saat unggah — `PRD.md` §8.2.

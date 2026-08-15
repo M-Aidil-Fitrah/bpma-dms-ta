@@ -31,6 +31,23 @@ final class DocumentPolicy
         return true;
     }
 
+    /**
+     * Setiap pengguna aktif boleh mengunggah dokumen (FR-06).
+     *
+     * Tidak ada pembatasan berdasarkan jabatan atau unit: siapa pun yang punya
+     * akun berhak menerbitkan dokumen dari unitnya. Yang dibatasi adalah siapa
+     * yang dapat MELIHATNYA — dan itu ditentukan mekanisme akses yang dipilih
+     * pengunggah, bukan oleh siapa yang boleh mengunggah.
+     *
+     * Method ini wajib ada meski isinya sederhana. Policy tanpa method yang
+     * dipanggil `authorize()` berarti penolakan — seluruh pengguna, termasuk
+     * Superadmin, akan menerima 403 tanpa penjelasan.
+     */
+    public function create(User $user): bool
+    {
+        return $user->is_active;
+    }
+
     public function view(User $user, Document $document): bool
     {
         return Document::query()

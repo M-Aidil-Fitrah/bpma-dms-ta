@@ -6,16 +6,26 @@ namespace App\Http\Controllers;
 
 use App\Data\DocumentDetailData;
 use App\Data\DocumentListData;
+use App\Enums\DocumentStatus;
 use App\Http\Requests\DocumentIndexRequest;
+use App\Http\Requests\StoreDocumentRequest;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\Unit;
+use App\Models\User;
+use App\Services\DocumentUnitResolver;
+use App\Services\DocumentUploadService;
+use App\Support\BatasUnggah;
+use App\Support\JenjangAkses;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 /**
  * Daftar dokumen — halaman inti aplikasi (FR-16 s.d. FR-22).
@@ -41,6 +51,127 @@ final class DocumentController extends Controller
             // dan `filter`.
             'opsi' => fn (): array => $this->opsiFilter(),
         ]);
+    }
+
+    /**
+     * Mencari pengguna untuk mekanisme akses "orang tertentu" (FR-41).
+     *
+     * Nama unit ikut dikembalikan karena nama orang saja tidak cukup untuk
+     * membedakan: pada organisasi sebesar ini, nama yang mirip di unit berbeda
+     * adalah hal biasa, dan salah pilih berarti dokumen terbuka bagi orang yang
+     * keliru.
+     *
+     * @return array<int, array{id: int, nama: string, jabatan: string|null, unit: string|null}>
+     */
+    public function cariPengguna(Request $request): array
+    {
+        $this->authorize('create', Document::class);
+
+        $kata = trim((string) $request->string('cari'));
+
+        if (mb_strlen($kata) < 2) {
+            // Tanpa ambang ini, kolom pencarian yang baru diketik satu huruf
+            // akan menarik hampir seluruh tabel pengguna.
+            return [];
+        }
+
+        return User::query()
+            ->active()
+            ->whereNot('id', $request->user()->id)
+            ->where('name', 'like', "%{$kata}%")
+            ->with(['jabatan:id,nama', 'unit:id,nama'])
+            ->orderBy('name')
+            ->limit(20)
+            ->get(['id', 'name', 'jabatan_id', 'unit_id'])
+            ->map(fn (User $u): array => [
+                'id' => $u->id,
+                'nama' => $u->name,
+                'jabatan' => $u->jabatan?->nama,
+                'unit' => $u->unit?->nama,
+            ])
+            ->all();
+    }
+
+    /**
+     * Formulir unggah dokumen baru (FR-06).
+     */
+    public function create(): Response
+    {
+        $this->authorize('create', Document::class);
+
+        return Inertia::render('Documents/Create', [
+            'opsi' => $this->opsiFormulir(),
+        ]);
+    }
+
+    /**
+     * Menyimpan dokumen baru beserta seluruh mekanisme aksesnya.
+     *
+     * Berkas ditulis ke disk LEBIH DULU, baru barisnya disimpan. Urutan itu
+     * tidak dapat dibalik — ukuran dan tipe MIME sesungguhnya baru diketahui
+     * setelah berkasnya ada. Konsekuensinya, kegagalan di tengah jalan
+     * menyisakan berkas yang tidak dirujuk baris mana pun. Karena itu bagian
+     * basis data dibungkus transaksi, dan berkasnya dihapus bila transaksi itu
+     * gagal.
+     */
+    public function store(
+        StoreDocumentRequest $request,
+        DocumentUploadService $uploader,
+        DocumentUnitResolver $resolver,
+    ): RedirectResponse {
+        $this->authorize('create', Document::class);
+
+        $berkas = $uploader->store($request->file('file'));
+
+        try {
+            $document = DB::transaction(function () use ($request, $berkas, $resolver): Document {
+                $document = Document::create([
+                    ...$request->safe()->only([
+                        'nomor', 'judul', 'deskripsi', 'category_id',
+                        'origin_unit_id', 'tanggal', 'masa_berlaku',
+                        'is_shared_to_all', 'min_tingkat_akses', 'edit_scope',
+                    ]),
+                    ...$berkas,
+                    'status' => DocumentStatus::Berlaku,
+                    'uploaded_by' => $request->user()->id,
+                    'is_active' => true,
+                ]);
+
+                // Cascade diselesaikan di sini, saat menyimpan: memilih unit
+                // tingkat atas berarti seluruh divisi di bawahnya ikut, dan
+                // hasilnya disimpan sebagai baris tersendiri (FR-39).
+                $unitIds = $resolver->resolveIds(
+                    array_map(intval(...), $request->input('unit_ids', [])),
+                );
+
+                if ($unitIds !== []) {
+                    $document->targetUnits()->attach(
+                        array_fill_keys($unitIds, ['added_by' => $request->user()->id]),
+                    );
+                }
+
+                $penerima = array_map(intval(...), $request->input('shared_user_ids', []));
+
+                if ($penerima !== []) {
+                    $document->sharedUsers()->attach(
+                        array_fill_keys($penerima, ['granted_by' => $request->user()->id]),
+                    );
+                }
+
+                return $document;
+            });
+        } catch (Throwable $e) {
+            // Tanpa pembersihan ini, setiap kegagalan meninggalkan berkas yang
+            // tidak dirujuk baris mana pun — tidak terlihat siapa pun sampai
+            // cakram penuh.
+            $uploader->hapus($berkas['file_path']);
+
+            throw $e;
+        }
+
+        return redirect()
+            ->route('documents.show', $document)
+            ->with('success', 'Dokumen berhasil diunggah.');
     }
 
     /**
@@ -174,6 +305,41 @@ final class DocumentController extends Controller
             ->paginate(config('dms.dokumen.per_halaman'))
             ->withQueryString()
             ->through(DocumentListData::fromModel(...));
+    }
+
+    /**
+     * Pilihan yang mengisi formulir unggah.
+     *
+     * @return array<string, mixed>
+     */
+    private function opsiFormulir(): array
+    {
+        return [
+            ...$this->opsiFilter(),
+
+            // Bentuk pohon dibutuhkan pemilih unit; bentuk datar pada
+            // `opsiFilter()` dipakai dropdown penyaring. Keduanya disediakan
+            // karena keduanya benar-benar dipakai.
+            'unit_pohon' => Unit::query()
+                ->active()
+                ->orderBy('parent_id')
+                ->orderBy('nama')
+                ->get(['id', 'nama', 'parent_id']),
+
+            // Bukan sekadar daftar angka: tiap tingkat dikirim beserta nama
+            // jabatan dan jumlah pemegangnya, supaya formulir dapat menyebutkan
+            // siapa saja yang tercakup alih-alih menuntut pengunggah menebak
+            // arti "tingkat 2".
+            'jenjang_jabatan' => JenjangAkses::daftar(),
+
+            // Batas dikirim ke antarmuka supaya berkas kebesaran dapat ditolak
+            // sebelum satu byte pun terkirim — jauh lebih baik daripada
+            // menunggu unggahan panjang selesai hanya untuk ditolak.
+            'batas_unggah_kb' => BatasUnggah::kilobyte(),
+            'batas_unggah_label' => BatasUnggah::keterangan(),
+            'batas_dijanjikan_label' => BatasUnggah::keteranganBatasAplikasi(),
+            'lingkungan_kurang' => BatasUnggah::dibatasiPhp(),
+        ];
     }
 
     /**

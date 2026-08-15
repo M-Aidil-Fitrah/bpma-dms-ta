@@ -44,6 +44,13 @@ Route::middleware(['auth'])->group(function (): void {
 
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
+
+    // Rute pembuatan didaftarkan SEBELUM `/documents/{document}`. Tanpa urutan
+    // ini, "create" akan ditangkap sebagai id dokumen dan berakhir 404.
+    Route::get('/documents/create', [DocumentController::class, 'create'])->name('documents.create');
+    Route::get('/documents/cari-pengguna', [DocumentController::class, 'cariPengguna'])
+        ->name('documents.cari-pengguna');
+    Route::post('/documents', [DocumentController::class, 'store'])->name('documents.store');
     Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
 
     // Unduh dan pratinjau memakai proteksi Policy yang sama persis; bedanya

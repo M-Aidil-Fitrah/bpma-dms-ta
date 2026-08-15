@@ -23,6 +23,7 @@ use App\Support\BatasUnggah;
 use App\Support\JenjangAkses;
 use App\Support\PenyajianBerkas;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -379,11 +380,7 @@ final class DocumentController extends Controller
             ])
             ->when(
                 $request->string('cari')->toString(),
-                fn ($query, string $kata) => $query->where(
-                    fn ($q) => $q
-                        ->where('documents.judul', 'like', "%{$kata}%")
-                        ->orWhere('documents.nomor', 'like', "%{$kata}%"),
-                ),
+                fn ($query, string $kata) => $query->where(fn ($q) => $this->terapkanPencarian($q, $kata)),
             )
             ->when(
                 $request->integer('kategori'),
@@ -414,6 +411,51 @@ final class DocumentController extends Controller
             ->paginate(config('dms.dokumen.per_halaman'))
             ->withQueryString()
             ->through(fn (Document $document): DocumentListData => DocumentListData::fromModel($document, $user));
+    }
+
+    /**
+     * Pencarian isi dokumen lewat index FULLTEXT (FR-34).
+     *
+     * `nomor` sengaja ikut di DALAM index FULLTEXT yang sama dengan
+     * judul/deskripsi/isi (migration `add_nomor_to_documents_fulltext_index`),
+     * bukan dicocokkan terpisah lewat `LIKE` yang di-`OR`-kan. Percobaan
+     * awal menggabungkan `MATCH...AGAINST` dengan `OR nomor LIKE` terbukti
+     * lewat `EXPLAIN` membuat MariaDB berhenti memakai index FULLTEXT sama
+     * sekali (`type` jatuh ke `ALL`, pemindaian tabel penuh) — kombinasi
+     * MATCH dengan OR ke kolom lain mematikan optimasinya.
+     *
+     * Mode `boolean` dipakai, bukan mode alami bawaan: mode alami
+     * menyingkirkan kata yang muncul di lebih dari separuh baris tabel
+     * (ambang relevansi bawaan MySQL) begitu tabelnya punya cukup baris —
+     * perilaku yang bisa membuat kata kunci yang jelas-jelas cocok tiba-tiba
+     * tidak ditemukan, tanpa galat apa pun.
+     *
+     * @param  Builder<Document>  $query
+     */
+    private function terapkanPencarian(Builder $query, string $kata): void
+    {
+        $kata = trim($kata);
+
+        // InnoDB (`innodb_ft_min_token_size`, bawaan 3) tidak mengindeks kata
+        // di bawah 3 huruf sama sekali — mencarinya lewat FULLTEXT tidak akan
+        // pernah menemukan apa pun walau kata itu ada berkali-kali di dalam
+        // teks. Jaring pengaman `LIKE` untuk kasus ini sengaja dibatasi ke
+        // judul dan nomor, tidak menyentuh `extracted_text`: memindai teks
+        // sepanjang isi dokumen dengan `LIKE` untuk tiap baris meniadakan
+        // keuntungan performa yang justru menjadi alasan FEAT-12 ada.
+        if (mb_strlen($kata) < 3) {
+            $query
+                ->where('documents.judul', 'like', "%{$kata}%")
+                ->orWhere('documents.nomor', 'like', "%{$kata}%");
+
+            return;
+        }
+
+        $query->whereFullText(
+            ['documents.nomor', 'documents.judul', 'documents.deskripsi', 'documents.extracted_text'],
+            $kata,
+            ['mode' => 'boolean'],
+        );
     }
 
     /**

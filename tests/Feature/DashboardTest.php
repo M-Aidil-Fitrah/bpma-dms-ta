@@ -217,16 +217,17 @@ final class DashboardTest extends TestCase
 
     public function test_dasbor_tetap_dalam_anggaran_query_yang_wajar(): void
     {
-        // Ambang ini menahan pertumbuhan diam-diam. Dasbor sekarang memakai 13
-        // query: 3 untuk autentikasi, 1 rekap statistik gabungan, 1 komposisi
-        // kategori, dan 8 untuk dua daftar ringkas beserta relasinya.
+        // Ambang ini menahan pertumbuhan diam-diam. Dasbor sekarang memakai 15
+        // query: 3 untuk autentikasi, 1 setelan, 1 rekap statistik gabungan,
+        // 1 komposisi kategori, 8 untuk dua daftar ringkas beserta relasinya,
+        // dan 1 riwayat aktivitas terbaru.
         $this->actingAs($this->anggota);
         $this->isiDokumen(20);
 
         $jumlah = $this->hitungQueryDasbor();
 
         $this->assertLessThanOrEqual(
-            14,
+            15,
             $jumlah,
             "Dasbor menembakkan {$jumlah} query. Periksa eager loading yang terlewat.",
         );

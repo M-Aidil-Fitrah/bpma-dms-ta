@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Data\DocumentDetailData;
 use App\Data\DocumentListData;
 use App\Http\Requests\DocumentIndexRequest;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\Unit;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -38,6 +40,36 @@ final class DocumentController extends Controller
             // dilewati pada muat ulang parsial yang hanya meminta `dokumen`
             // dan `filter`.
             'opsi' => fn (): array => $this->opsiFilter(),
+        ]);
+    }
+
+    /**
+     * Halaman detail satu dokumen (FR-07).
+     *
+     * Berbeda dari daftar, di sini `extracted_text` justru dimuat — panel teks
+     * pratinjau untuk berkas non-visual dibangun dari kolom itu. Batasan yang
+     * berlaku di halaman daftar tidak berlaku di sini karena yang diambil hanya
+     * satu baris, bukan dua puluh.
+     */
+    public function show(Request $request, Document $document): Response
+    {
+        $this->authorize('view', $document);
+
+        $document->load([
+            'category:id,nama',
+            'originUnit:id,nama',
+            'uploader:id,name,jabatan_id,unit_id',
+            'uploader.jabatan:id,nama',
+            'uploader.unit:id,nama',
+            'targetUnits:id,nama',
+            'sharedUsers:id,name',
+        ]);
+
+        return Inertia::render('Documents/Show', [
+            'dokumen' => DocumentDetailData::fromModel(
+                $document,
+                bolehUbah: $request->user()->can('update', $document),
+            ),
         ]);
     }
 

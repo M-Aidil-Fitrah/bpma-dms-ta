@@ -44,6 +44,7 @@ Route::middleware(['auth'])->group(function (): void {
 
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
+    Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
 
     // Unduh dan pratinjau memakai proteksi Policy yang sama persis; bedanya
     // hanya header `Content-Disposition` (FR-09, FR-09b).

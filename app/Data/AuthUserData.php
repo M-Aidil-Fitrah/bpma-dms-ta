@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Data;
 
 use App\Models\User;
+use App\Support\Inisial;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -45,19 +46,7 @@ final class AuthUserData extends Data
             tingkat_akses: $user->jabatan?->tingkat_akses,
             unit: $user->unit?->nama,
             is_superadmin: $user->isSuperadmin(),
-            initials: self::initialsFrom($user->name),
+            initials: Inisial::dari($user->name),
         );
-    }
-
-    private static function initialsFrom(string $name): string
-    {
-        $parts = preg_split('/\s+/', trim($name)) ?: [];
-
-        $initials = collect($parts)
-            ->take(2)
-            ->map(static fn (string $part): string => mb_strtoupper(mb_substr($part, 0, 1)))
-            ->implode('');
-
-        return $initials !== '' ? $initials : '?';
     }
 }

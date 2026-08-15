@@ -55,11 +55,6 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
             <aside className="fixed inset-y-0 left-0 z-30 hidden w-sidebar flex-col border-r border-line bg-surface lg:flex">
                 <SidebarBrand />
                 <SidebarNav />
-                {user && (
-                    <div className="border-t border-line p-2">
-                        <UserMenu user={user} variant="full" />
-                    </div>
-                )}
             </aside>
 
             {/* -- Laci geser: ponsel --------------------------------------- */}
@@ -83,12 +78,6 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
                         </div>
 
                         <SidebarNav onNavigate={() => setDrawerOpen(false)} />
-
-                        {user && (
-                            <div className="border-t border-line p-2">
-                                <UserMenu user={user} variant="full" />
-                            </div>
-                        )}
                     </DialogPanel>
                 </div>
             </Dialog>
@@ -117,10 +106,10 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
                             <div className="flex shrink-0 items-center gap-2">{actions}</div>
                         )}
 
-                        {/* Selalu tampil, termasuk di lebar tablet. Di bawah
-                            1024px bilah sisi tersembunyi, sehingga tanpa ini
-                            tidak ada jalan menuju profil dan keluar selain
-                            membuka laci lebih dulu. */}
+                        {/* Satu-satunya tempat menu pengguna berada. Sempat
+                            ada pula di kaki bilah sisi, tapi itu berarti dua
+                            jalan menuju hal yang sama pada satu layar —
+                            pengguna jadi ragu apakah keduanya berbeda. */}
                         {user && (
                             <div className="shrink-0">
                                 <UserMenu user={user} />

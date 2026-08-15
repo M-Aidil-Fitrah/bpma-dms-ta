@@ -1,4 +1,3 @@
-import { Alert } from '@/Components/ui/Alert';
 import { IconButton } from '@/Components/ui/IconButton';
 import { Logo } from '@/Components/ui/Logo';
 import { UserMenu } from '@/Layouts/Partials/UserMenu';
@@ -32,9 +31,8 @@ export interface AppLayoutProps {
  * platform (`Tentang_Project.md` §5c).
  */
 export function AppLayout({ title, header, actions, children }: AppLayoutProps) {
-    const { auth, flash } = usePage().props as unknown as {
+    const { auth } = usePage().props as unknown as {
         auth: { user: App.Data.AuthUserData | null };
-        flash: { success?: string | null; error?: string | null };
     };
 
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -118,16 +116,10 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
                     </div>
                 </header>
 
-                <main className="px-4 py-5 sm:px-6 sm:py-6">
-                    {(flash?.success || flash?.error) && (
-                        <div className="mb-5 space-y-3">
-                            {flash.success && <Alert variant="success">{flash.success}</Alert>}
-                            {flash.error && <Alert variant="danger">{flash.error}</Alert>}
-                        </div>
-                    )}
-
-                    {children}
-                </main>
+                {/* Pesan kilat ditangani `FlashToast` di `app.tsx`, bukan
+                    dirender di sini. Menampilkannya di dua tempat sekaligus
+                    membuat satu aksi seolah menghasilkan dua pemberitahuan. */}
+                <main className="px-4 py-5 sm:px-6 sm:py-6">{children}</main>
             </div>
         </div>
     );

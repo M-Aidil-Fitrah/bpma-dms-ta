@@ -21,6 +21,7 @@ final class DashboardData extends Data
      * @param  list<KategoriRingkasData>  $per_kategori
      * @param  list<DocumentListData>  $terbaru
      * @param  list<DocumentListData>  $mendekati_evaluasi
+     * @param  list<ActivityLogData>  $aktivitas_terbaru
      * @param  list<int>  $rentang_pilihan
      */
     public function __construct(
@@ -31,6 +32,7 @@ final class DashboardData extends Data
         public array $per_kategori,
         public array $terbaru,
         public array $mendekati_evaluasi,
+        public array $aktivitas_terbaru,
         /** Rentang hari yang sedang dipilih untuk kartu masa evaluasi. */
         public int $rentang_evaluasi,
         public array $rentang_pilihan,

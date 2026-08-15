@@ -20,6 +20,7 @@ use App\Models\Category;
 use App\Models\Document;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\ActivityLogQuery;
 use App\Services\ActivityLogService;
 use App\Services\DocumentAccessWriter;
 use App\Services\DocumentMetadataChanges;
@@ -322,7 +323,7 @@ final class DocumentController extends Controller
      * berlaku di halaman daftar tidak berlaku di sini karena yang diambil hanya
      * satu baris, bukan dua puluh.
      */
-    public function show(Request $request, Document $document): Response
+    public function show(Request $request, Document $document, ActivityLogQuery $aktivitas): Response
     {
         $this->authorize('view', $document);
 
@@ -342,6 +343,7 @@ final class DocumentController extends Controller
                 bolehUbah: $request->user()->can('update', $document),
                 bolehAktifkan: $request->user()->can('restore', $document),
             ),
+            'riwayat' => $aktivitas->recentForDocument($document),
         ]);
     }
 

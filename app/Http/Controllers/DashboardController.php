@@ -10,6 +10,7 @@ use App\Data\KategoriRingkasData;
 use App\Enums\DocumentStatus;
 use App\Models\Document;
 use App\Models\User;
+use App\Services\ActivityLogQuery;
 use App\Services\PengaturanService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ final class DashboardController extends Controller
 
     private const JUMLAH_EVALUASI = 5;
 
-    public function __invoke(Request $request, PengaturanService $pengaturan): Response
+    public function __invoke(Request $request, PengaturanService $pengaturan, ActivityLogQuery $aktivitas): Response
     {
         $user = $request->user();
         $rentang = $this->rentangEvaluasi($request, $pengaturan);
@@ -45,6 +46,7 @@ final class DashboardController extends Controller
                 per_kategori: $this->perKategori($user),
                 terbaru: $this->terbaru($user),
                 mendekati_evaluasi: $this->mendekatiEvaluasi($user, $rentang),
+                aktivitas_terbaru: $aktivitas->latestFor($user),
                 rentang_evaluasi: $rentang,
                 rentang_pilihan: config('dms.dokumen.rentang_evaluasi_pilihan'),
             ),

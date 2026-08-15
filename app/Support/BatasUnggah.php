@@ -84,13 +84,16 @@ final class BatasUnggah
     }
 
     /**
-     * Keterangan siap tampil, mis. "20 MB" atau "tanpa batas".
+     * Keterangan siap tampil, mis. "20 MB", "1 GB", atau "tanpa batas".
+     *
+     * Nilainya tetap berasal dari perhitungan berlapis di atas — yang diatur di
+     * sini hanya satuannya. "1024 MB" secara teknis benar tapi janggal dibaca,
+     * dan pengguna yang melihatnya akan bertanya-tanya apakah itu memang batas
+     * yang dimaksud.
      */
     public static function keterangan(): string
     {
-        $mb = self::megabyte();
-
-        return $mb === null ? 'tanpa batas' : "{$mb} MB";
+        return self::label(self::kilobyte());
     }
 
     /**
@@ -128,9 +131,31 @@ final class BatasUnggah
      */
     public static function keteranganBatasAplikasi(): string
     {
-        $kb = self::batasAplikasiKilobyte();
+        return self::label(self::batasAplikasiKilobyte());
+    }
 
-        return $kb === null ? 'tanpa batas' : round($kb / 1024, 1).' MB';
+    /**
+     * Kilobyte menjadi keterangan yang wajar dibaca.
+     *
+     * Satu tempat saja, dipakai baik oleh batas efektif maupun batas aplikasi —
+     * kalau keduanya memformat sendiri-sendiri, cepat atau lambat keduanya
+     * menampilkan satuan yang berbeda untuk angka yang sama.
+     */
+    private static function label(?int $kb): string
+    {
+        if ($kb === null) {
+            return 'tanpa batas';
+        }
+
+        if ($kb >= 1024 * 1024) {
+            return rtrim(rtrim(number_format($kb / 1024 / 1024, 1, ',', ''), '0'), ',').' GB';
+        }
+
+        if ($kb >= 1024) {
+            return rtrim(rtrim(number_format($kb / 1024, 1, ',', ''), '0'), ',').' MB';
+        }
+
+        return "{$kb} KB";
     }
 
     /**

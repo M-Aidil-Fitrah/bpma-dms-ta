@@ -91,6 +91,21 @@ normal — tapi status ekstraksi dokumen akan macet selamanya di "Memproses", da
 dokumen yang masa berlakunya lewat tidak pernah berpindah status. Keduanya
 terlihat seperti bug, padahal hanya prosesnya yang belum jalan.
 
+### Status dokumen kedaluwarsa
+
+Scheduler menjalankan `documents:update-expired-status` setiap hari pukul
+**00.05**. Command ini hanya memindahkan dokumen berstatus **Berlaku** yang
+masa berlakunya sebelum hari ini ke **Kadaluarsa**, lalu mencatat setiap
+perubahan sebagai aktivitas otomatis oleh Sistem. Untuk demonstrasi atau
+pengecekan manual, jalankan:
+
+```bash
+php artisan documents:update-expired-status
+```
+
+Command ini aman dijalankan berulang; dokumen yang sudah Kadaluarsa tidak
+akan diubah atau dicatat lagi.
+
 ### Menjaga `queue:work` tetap hidup di VPS
 
 Proses nomor 3 tidak boleh berhenti begitu sesi terminal ditutup, dan

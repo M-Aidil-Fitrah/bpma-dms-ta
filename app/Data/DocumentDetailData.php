@@ -65,13 +65,19 @@ final class DocumentDetailData extends Data
         public DocumentEditScope $edit_scope,
         public string $label_edit_scope,
 
-        // -- Wewenang pengguna yang sedang membuka ----------------------------
+        // -- Keadaan & wewenang pengguna yang sedang membuka ------------------
+        /** Dokumen nonaktif hanya terlihat Superadmin (FR-10). */
+        public bool $aktif,
         public bool $boleh_ubah,
         public bool $boleh_nonaktifkan,
+        public bool $boleh_aktifkan,
     ) {}
 
-    public static function fromModel(Document $document, bool $bolehUbah): self
-    {
+    public static function fromModel(
+        Document $document,
+        bool $bolehUbah,
+        bool $bolehAktifkan = false,
+    ): self {
         return new self(
             id: $document->id,
             nomor: $document->nomor,
@@ -104,8 +110,10 @@ final class DocumentDetailData extends Data
             edit_scope: $document->edit_scope,
             label_edit_scope: $document->edit_scope->label(),
 
+            aktif: $document->is_active,
             boleh_ubah: $bolehUbah,
             boleh_nonaktifkan: $bolehUbah,
+            boleh_aktifkan: $bolehAktifkan,
         );
     }
 }

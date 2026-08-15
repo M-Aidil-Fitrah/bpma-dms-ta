@@ -53,6 +53,17 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('/documents', [DocumentController::class, 'store'])->name('documents.store');
     Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
 
+    // Ubah, nonaktifkan, dan aktifkan kembali — FEAT-10.
+    Route::get('/documents/{document}/edit', [DocumentController::class, 'edit'])
+        ->name('documents.edit');
+    Route::patch('/documents/{document}', [DocumentController::class, 'update'])
+        ->name('documents.update');
+    // `delete` di sini berarti MENONAKTIFKAN, bukan menghapus baris (FR-10).
+    Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])
+        ->name('documents.destroy');
+    Route::patch('/documents/{document}/restore', [DocumentController::class, 'restore'])
+        ->name('documents.restore');
+
     // Unduh dan pratinjau memakai proteksi Policy yang sama persis; bedanya
     // hanya header `Content-Disposition` (FR-09, FR-09b).
     Route::get('/documents/{document}/file', [DocumentController::class, 'serveFile'])

@@ -5,15 +5,17 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\DocumentDetailData;
+use App\Data\DocumentEditData;
 use App\Data\DocumentListData;
 use App\Enums\DocumentStatus;
 use App\Http\Requests\DocumentIndexRequest;
 use App\Http\Requests\StoreDocumentRequest;
+use App\Http\Requests\UpdateDocumentRequest;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\Unit;
 use App\Models\User;
-use App\Services\DocumentUnitResolver;
+use App\Services\DocumentAccessWriter;
 use App\Services\DocumentUploadService;
 use App\Support\BatasUnggah;
 use App\Support\JenjangAkses;
@@ -118,46 +120,28 @@ final class DocumentController extends Controller
     public function store(
         StoreDocumentRequest $request,
         DocumentUploadService $uploader,
-        DocumentUnitResolver $resolver,
+        DocumentAccessWriter $akses,
     ): RedirectResponse {
         $this->authorize('create', Document::class);
 
         $berkas = $uploader->store($request->file('file'));
 
         try {
-            $document = DB::transaction(function () use ($request, $berkas, $resolver): Document {
+            $document = DB::transaction(function () use ($request, $berkas, $akses): Document {
                 $document = Document::create([
-                    ...$request->safe()->only([
-                        'nomor', 'judul', 'deskripsi', 'category_id',
-                        'origin_unit_id', 'tanggal', 'masa_berlaku',
-                        'is_shared_to_all', 'min_tingkat_akses', 'edit_scope',
-                    ]),
+                    ...$request->kolomDokumen(),
                     ...$berkas,
                     'status' => DocumentStatus::Berlaku,
                     'uploaded_by' => $request->user()->id,
                     'is_active' => true,
                 ]);
 
-                // Cascade diselesaikan di sini, saat menyimpan: memilih unit
-                // tingkat atas berarti seluruh divisi di bawahnya ikut, dan
-                // hasilnya disimpan sebagai baris tersendiri (FR-39).
-                $unitIds = $resolver->resolveIds(
-                    array_map(intval(...), $request->input('unit_ids', [])),
+                $akses->sinkron(
+                    $document,
+                    $request->unitIds(),
+                    $request->penerimaIds(),
+                    $request->user(),
                 );
-
-                if ($unitIds !== []) {
-                    $document->targetUnits()->attach(
-                        array_fill_keys($unitIds, ['added_by' => $request->user()->id]),
-                    );
-                }
-
-                $penerima = array_map(intval(...), $request->input('shared_user_ids', []));
-
-                if ($penerima !== []) {
-                    $document->sharedUsers()->attach(
-                        array_fill_keys($penerima, ['granted_by' => $request->user()->id]),
-                    );
-                }
 
                 return $document;
             });
@@ -173,6 +157,95 @@ final class DocumentController extends Controller
         return redirect()
             ->route('documents.show', $document)
             ->with('success', 'Dokumen berhasil diunggah.');
+    }
+
+    /**
+     * Formulir ubah dokumen (FR-08, FR-42).
+     *
+     * Nilai akses yang sedang berlaku ikut dikirim supaya formulir terbuka
+     * dengan keadaan sekarang, bukan kosong. Formulir yang kosong akan membuat
+     * penyunting yang hanya ingin memperbaiki satu huruf pada judul tanpa sadar
+     * mencabut seluruh daftar aksesnya.
+     */
+    public function edit(Document $document): Response
+    {
+        $this->authorize('update', $document);
+
+        $document->load([
+            'targetUnits:id,nama',
+            'sharedUsers:id,name,jabatan_id,unit_id',
+            'sharedUsers.jabatan:id,nama',
+            'sharedUsers.unit:id,nama',
+        ]);
+
+        return Inertia::render('Documents/Edit', [
+            'dokumen' => DocumentEditData::fromModel($document),
+            'opsi' => $this->opsiFormulir(),
+        ]);
+    }
+
+    /**
+     * Menyimpan perubahan metadata dan daftar akses (FR-08, FR-42).
+     *
+     * Berkasnya tidak ikut disentuh sama sekali — lihat `UpdateDocumentRequest`.
+     */
+    public function update(
+        UpdateDocumentRequest $request,
+        Document $document,
+        DocumentAccessWriter $akses,
+    ): RedirectResponse {
+        $this->authorize('update', $document);
+
+        DB::transaction(function () use ($request, $document, $akses): void {
+            $document->update($request->kolomDokumen());
+
+            $akses->sinkron(
+                $document,
+                $request->unitIds(),
+                $request->penerimaIds(),
+                $request->user(),
+            );
+        });
+
+        return redirect()
+            ->route('documents.show', $document)
+            ->with('success', 'Perubahan dokumen berhasil disimpan.');
+    }
+
+    /**
+     * Menonaktifkan dokumen (FR-10).
+     *
+     * Barisnya sengaja TIDAK dihapus. Dokumen yang pernah dibagikan menjadi
+     * bagian dari riwayat organisasi: siapa mengunggah, siapa pernah membuka,
+     * kapan aksesnya berubah. Menghapus barisnya berarti menghapus jawaban atas
+     * pertanyaan-pertanyaan itu, dan pertanyaan itu justru muncul setelah ada
+     * masalah.
+     */
+    public function destroy(Document $document): RedirectResponse
+    {
+        $this->authorize('delete', $document);
+
+        $document->update(['is_active' => false]);
+
+        return redirect()
+            ->route('documents.index')
+            ->with('success', "Dokumen \"{$document->judul}\" dinonaktifkan dan tidak lagi tampil di daftar.");
+    }
+
+    /**
+     * Mengaktifkan kembali dokumen yang dinonaktifkan (FR-10).
+     *
+     * Hanya Superadmin — lihat alasannya di `DocumentPolicy::restore()`.
+     */
+    public function restore(Document $document): RedirectResponse
+    {
+        $this->authorize('restore', $document);
+
+        $document->update(['is_active' => true]);
+
+        return redirect()
+            ->route('documents.show', $document)
+            ->with('success', 'Dokumen diaktifkan kembali.');
     }
 
     /**
@@ -201,6 +274,7 @@ final class DocumentController extends Controller
             'dokumen' => DocumentDetailData::fromModel(
                 $document,
                 bolehUbah: $request->user()->can('update', $document),
+                bolehAktifkan: $request->user()->can('restore', $document),
             ),
         ]);
     }

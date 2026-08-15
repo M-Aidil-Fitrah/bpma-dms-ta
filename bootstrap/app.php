@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureUserIsSuperadmin;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -15,7 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // `EnsureUserIsActive` diletakkan di grup web, bukan di masing-masing
+        // rute. Menempelkannya per rute berarti setiap rute baru harus ingat
+        // memasangnya — dan yang terlupa menjadi celah yang tidak terlihat.
         $middleware->web(append: [
+            EnsureUserIsActive::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);

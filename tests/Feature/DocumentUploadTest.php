@@ -332,9 +332,17 @@ final class DocumentUploadTest extends TestCase
         ]);
         $nonaktif->assignRole(User::ROLE_PENGGUNA);
 
+        // Dihentikan lebih awal daripada sekadar 403: middleware memutus
+        // sesinya, jadi permintaannya bahkan tidak mencapai Policy. Yang
+        // dijamin di sini adalah akibatnya — tidak ada dokumen yang tersimpan
+        // dan tidak ada berkas yang tertulis.
         $this->actingAs($nonaktif)
             ->post('/documents', $this->formulir())
-            ->assertForbidden();
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
+        $this->assertSame(0, Document::count());
+        $this->assertEmpty(Storage::disk('local')->allFiles('documents'));
     }
 
     // -- Kegagalan di tengah jalan --------------------------------------------

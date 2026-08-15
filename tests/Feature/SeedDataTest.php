@@ -58,7 +58,7 @@ final class SeedDataTest extends TestCase
     {
         $this->assertSame(6, Jabatan::count());
         $this->assertSame(20, Unit::count());
-        $this->assertSame(10, Category::count());
+        $this->assertSame(11, Category::count());
 
         $this->assertSame(0, Jabatan::where('is_active', false)->count());
         $this->assertSame(0, Unit::where('is_active', false)->count());

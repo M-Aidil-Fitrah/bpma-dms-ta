@@ -1,5 +1,6 @@
 import { KategoriChart } from '@/Components/data/KategoriChart';
 import { StatCard } from '@/Components/data/StatCard';
+import { ActivityEmpty, ActivityItem } from '@/Components/domain/ActivityItem';
 import { DocumentRow } from '@/Components/domain/DocumentRow';
 import { Card, CardBody, CardHeader, CardTitle } from '@/Components/ui/Card';
 import { EmptyState } from '@/Components/ui/EmptyState';
@@ -13,7 +14,6 @@ import {
     CircleX,
     FileText,
     FolderOpen,
-    History,
     Plus,
 } from 'lucide-react';
 
@@ -72,7 +72,7 @@ export default function Dashboard({ data }: DashboardProps) {
 
                 <div className="grid gap-5 xl:grid-cols-2">
                     <KartuTerbaru data={data} />
-                    <KartuAktivitas />
+                    <KartuAktivitas data={data} />
                 </div>
             </div>
         </AppLayout>
@@ -262,7 +262,7 @@ function KartuTerbaru({ data }: { data: App.Data.DashboardData }) {
  * Ditampilkan apa adanya, bukan diisi contoh — angka atau nama palsu di dasbor
  * mudah terbawa sampai demo dan disangka data sungguhan.
  */
-function KartuAktivitas() {
+function KartuAktivitas({ data }: { data: App.Data.DashboardData }) {
     return (
         <Card>
             <CardHeader>
@@ -270,11 +270,9 @@ function KartuAktivitas() {
             </CardHeader>
 
             <CardBody className="p-2 sm:p-2">
-                <EmptyState
-                    icon={History}
-                    title="Riwayat aktivitas belum aktif"
-                    description="Pencatatan unggah, perubahan, dan unduhan akan tampil di sini setelah modul riwayat aktivitas selesai dikerjakan."
-                />
+                {data.aktivitas_terbaru.length > 0 ? (
+                    <div className="divide-y divide-line">{data.aktivitas_terbaru.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div>
+                ) : <ActivityEmpty />}
             </CardBody>
         </Card>
     );

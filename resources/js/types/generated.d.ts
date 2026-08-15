@@ -1,5 +1,18 @@
 declare namespace App {
 namespace Data {
+export type ActivityLogData = {
+id: number,
+log_name: string,
+event: string,
+deskripsi: string,
+pelaku: string,
+inisial_pelaku: string,
+subjek: string,
+document_id: number | null,
+terjadi_pada: string,
+perubahan: Record<string, any>,
+properti: Record<string, any>,
+};
 export type AuthUserData = {
 id: number,
 name: string,
@@ -18,6 +31,7 @@ jumlah_mendekati_evaluasi: number,
 per_kategori: App.Data.KategoriRingkasData[],
 terbaru: App.Data.DocumentListData[],
 mendekati_evaluasi: App.Data.DocumentListData[],
+aktivitas_terbaru: App.Data.ActivityLogData[],
 rentang_evaluasi: number,
 rentang_pilihan: number[],
 };
@@ -148,6 +162,8 @@ inisial: string,
 };
 }
 namespace Enums {
+export type ActivityLogName = 'dokumen' | 'pengguna' | 'unit' | 'jabatan' | 'kategori' | 'document_share' | 'document_unit';
+export type AuditEvent = 'document_uploaded' | 'document_updated' | 'document_downloaded' | 'document_deactivated' | 'document_restored' | 'document_status_changed' | 'access_granted' | 'access_revoked' | 'created' | 'updated' | 'deactivated' | 'restored' | 'password_reset';
 export type DocumentEditScope = 'owner_only' | 'match_visibility';
 export type DocumentStatus = 'berlaku' | 'kadaluarsa';
 export type ExtractionStatus = 'not_applicable' | 'pending' | 'completed' | 'failed';

@@ -1,4 +1,5 @@
 import { AccessSummary } from '@/Components/domain/AccessSummary';
+import { ActivityEmpty, ActivityItem } from '@/Components/domain/ActivityItem';
 import { DocumentHeaderActions } from '@/Components/domain/DocumentHeaderActions';
 import { DocumentPreview } from '@/Components/domain/DocumentPreview';
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
@@ -16,11 +17,12 @@ import { useState, type ReactNode } from 'react';
 
 interface ShowProps {
     dokumen: App.Data.DocumentDetailData;
+    riwayat: App.Data.ActivityLogData[];
 }
 
 type Tab = 'detail' | 'akses' | 'riwayat';
 
-export default function Show({ dokumen }: ShowProps) {
+export default function Show({ dokumen, riwayat }: ShowProps) {
     const [tab, setTab] = useState<Tab>('detail');
 
     useExtractionStatusPolling(dokumen.extraction_status);
@@ -65,7 +67,7 @@ export default function Show({ dokumen }: ShowProps) {
                     <div className="flex-1 overflow-auto p-5">
                         {tab === 'detail' && <PanelDetail dokumen={dokumen} />}
                         {tab === 'akses' && <PanelAkses dokumen={dokumen} />}
-                        {tab === 'riwayat' && <PanelRiwayat />}
+                        {tab === 'riwayat' && <PanelRiwayat riwayat={riwayat} />}
                     </div>
                 </Card>
             </div>
@@ -309,18 +311,13 @@ function MekanismeAkses({
     );
 }
 
-function PanelRiwayat() {
+function PanelRiwayat({ riwayat }: { riwayat: App.Data.ActivityLogData[] }) {
+    if (riwayat.length > 0) {
+        return <div className="-mx-5 -my-5 divide-y divide-line"><div className="px-2 py-2">{riwayat.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div></div>;
+    }
+
     return (
-        <div className="flex flex-col items-center py-10 text-center">
-            <span className="mb-3 inline-flex size-11 items-center justify-center rounded-full bg-surface-sunken text-ink-subtle">
-                <History className="size-5" aria-hidden />
-            </span>
-            <p className="text-sm font-medium text-ink">Riwayat belum aktif</p>
-            <p className="mt-1 max-w-xs text-sm text-ink-muted">
-                Pencatatan perubahan, unduhan, dan pengaturan akses akan tampil di sini
-                setelah modul riwayat aktivitas selesai dikerjakan.
-            </p>
-        </div>
+        <ActivityEmpty />
     );
 }
 

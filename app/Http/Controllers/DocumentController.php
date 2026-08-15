@@ -397,14 +397,14 @@ final class DocumentController extends Controller
      * karena itu tetap dilayani, tapi dipaksa menjadi unduhan — pengguna tidak
      * kehilangan aksesnya ke berkas, hanya tidak dijalankan di tempat.
      */
-    public function previewFile(Document $document): StreamedResponse
+    public function previewFile(Request $request, Document $document, ActivityLogService $aktivitas): StreamedResponse
     {
         $this->authorize('view', $document);
 
         abort_unless(Storage::disk('local')->exists($document->file_path), 404);
 
         if (! PenyajianBerkas::bolehInline($document->file_mime_type)) {
-            return $this->serveFile($document);
+            return $this->serveFile($request, $document, $aktivitas);
         }
 
         return Storage::disk('local')->response(

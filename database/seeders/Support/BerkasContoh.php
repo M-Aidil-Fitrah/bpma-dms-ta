@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Database\Seeders\Support;
 
 use App\Enums\ExtractionStatus;
+use App\Services\DocumentTextExtractor;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use PhpOffice\PhpWord\IOFactory;
 use RuntimeException;
-use Smalot\PdfParser\Parser;
 use thiagoalessio\TesseractOCR\TesseractOCR;
 
 /**
@@ -158,28 +157,14 @@ final class BerkasContoh
     {
         $sumber = self::FOLDER_SUMBER.'/'.$namaBerkas;
         $ekstensi = pathinfo($namaBerkas, PATHINFO_EXTENSION);
+        $ekstraktor = new DocumentTextExtractor;
 
         return match ($ekstensi) {
-            'pdf' => trim((new Parser)->parseFile($sumber)->getText()),
-            'txt' => trim((string) file_get_contents($sumber)),
-            'docx' => self::bacaDocx($sumber),
+            'pdf' => $ekstraktor->pdf($sumber),
+            'txt' => $ekstraktor->txt($sumber),
+            'docx' => $ekstraktor->docx($sumber),
             default => self::bacaGambar($sumber),
         };
-    }
-
-    private static function bacaDocx(string $sumber): string
-    {
-        $teks = '';
-
-        foreach (IOFactory::load($sumber)->getSections() as $section) {
-            foreach ($section->getElements() as $element) {
-                if (method_exists($element, 'getText') && is_string($element->getText())) {
-                    $teks .= $element->getText().' ';
-                }
-            }
-        }
-
-        return trim($teks);
     }
 
     private static function bacaGambar(string $sumber): string

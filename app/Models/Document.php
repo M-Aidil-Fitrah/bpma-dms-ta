@@ -266,7 +266,10 @@ class Document extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        // Kolom dikualifikasi dengan nama tabel: `categories` dan `units` juga
+        // punya `is_active`, sehingga scope ini akan ambigu begitu dipakai
+        // bersama join — galat yang baru muncul jauh setelah scope ditulis.
+        return $query->where($query->qualifyColumn('is_active'), true);
     }
 
     /**
@@ -281,9 +284,9 @@ class Document extends Model
     public function scopeMendekatiMasaEvaluasi(Builder $query, int $hari): Builder
     {
         return $query
-            ->where('status', DocumentStatus::Berlaku)
-            ->whereNotNull('masa_berlaku')
-            ->whereBetween('masa_berlaku', [
+            ->where($query->qualifyColumn('status'), DocumentStatus::Berlaku)
+            ->whereNotNull($query->qualifyColumn('masa_berlaku'))
+            ->whereBetween($query->qualifyColumn('masa_berlaku'), [
                 now()->toDateString(),
                 now()->addDays($hari)->toDateString(),
             ]);

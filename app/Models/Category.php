@@ -41,6 +41,6 @@ class Category extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where($query->qualifyColumn('is_active'), true);
     }
 }

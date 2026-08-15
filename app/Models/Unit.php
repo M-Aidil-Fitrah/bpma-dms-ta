@@ -93,7 +93,7 @@ class Unit extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where($query->qualifyColumn('is_active'), true);
     }
 
     /**
@@ -102,6 +102,6 @@ class Unit extends Model
      */
     public function scopeTopLevel(Builder $query): Builder
     {
-        return $query->whereNull('parent_id');
+        return $query->whereNull($query->qualifyColumn('parent_id'));
     }
 }

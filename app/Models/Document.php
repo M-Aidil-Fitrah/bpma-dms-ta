@@ -28,7 +28,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'nomor', 'judul', 'category_id', 'origin_unit_id',
     'tanggal', 'masa_berlaku', 'status', 'deskripsi',
     'file_path', 'file_name_original', 'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path',
-    'extracted_text', 'extraction_status',
+    'extracted_text', 'extraction_status', 'extraction_pages_total', 'extraction_pages_processed',
+    'extraction_estimated_seconds', 'extraction_message', 'extraction_started_at',
     'is_shared_to_all', 'min_tingkat_akses', 'edit_scope',
     'uploaded_by', 'is_active',
 ])]
@@ -67,6 +68,10 @@ class Document extends Model
             'is_active' => 'boolean',
             'min_tingkat_akses' => 'integer',
             'file_size' => 'integer',
+            'extraction_pages_total' => 'integer',
+            'extraction_pages_processed' => 'integer',
+            'extraction_estimated_seconds' => 'integer',
+            'extraction_started_at' => 'datetime',
         ];
     }
 

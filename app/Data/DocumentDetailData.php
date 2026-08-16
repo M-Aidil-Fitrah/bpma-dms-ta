@@ -45,6 +45,10 @@ final class DocumentDetailData extends Data
         public string $tipe_berkas,
         public int $ukuran_berkas,
         public ExtractionStatus $extraction_status,
+        public ?int $halaman_ekstraksi_total,
+        public ?int $halaman_ekstraksi_selesai,
+        public ?int $estimasi_ekstraksi_detik,
+        public ?string $pesan_ekstraksi,
         public bool $preview_tersedia,
         /** Isi teks hasil ekstraksi; dasar pratinjau untuk berkas non-visual. */
         public ?string $isi_teks,
@@ -94,6 +98,10 @@ final class DocumentDetailData extends Data
             tipe_berkas: $document->file_mime_type,
             ukuran_berkas: $document->file_size,
             extraction_status: $document->extraction_status,
+            halaman_ekstraksi_total: $document->extraction_pages_total,
+            halaman_ekstraksi_selesai: $document->extraction_pages_processed,
+            estimasi_ekstraksi_detik: $document->extraction_estimated_seconds,
+            pesan_ekstraksi: $document->extraction_message,
             preview_tersedia: $document->preview_path !== null,
             isi_teks: $document->extracted_text,
 

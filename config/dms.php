@@ -124,6 +124,13 @@ return [
          */
         'bahasa_ocr' => 'ind+eng',
 
+        // PDF tanpa text layer diraster halaman demi halaman. Batas ini
+        // mencegah satu unggahan memonopoli worker database queue.
+        'pdf_ocr_maks_halaman' => 50,
+        'pdf_ocr_dpi' => 150,
+        'pdf_ocr_timeout_per_halaman_detik' => 60,
+        'pdf_ocr_timeout_detik' => 900,
+
         /*
          * Polling status ekstraksi di antarmuka. Tanpa batas percobaan, tab yang
          * ditinggalkan terbuka akan memanggil server tanpa henti.

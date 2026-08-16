@@ -61,6 +61,11 @@ final class ReextractDocumentText extends Command
         $document->update([
             'extracted_text' => null,
             'extraction_status' => ExtractionStatus::Pending,
+            'extraction_pages_total' => null,
+            'extraction_pages_processed' => null,
+            'extraction_estimated_seconds' => null,
+            'extraction_message' => null,
+            'extraction_started_at' => null,
         ]);
         ExtractDocumentTextJob::dispatch($document);
 

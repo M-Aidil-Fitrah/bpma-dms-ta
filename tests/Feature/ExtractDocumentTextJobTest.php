@@ -49,17 +49,43 @@ final class ExtractDocumentTextJobTest extends TestCase
         $this->assertNotSame('', $document->extracted_text);
     }
 
-    public function test_pdf_hasil_pindaian_menjadi_completed_tanpa_teks(): void
+    public function test_pdf_hasil_pindaian_menjadi_completed_dengan_teks_ocr_dan_progres_halaman(): void
     {
-        // FR-32c: PDF pindaian sah tidak dirasterisasi untuk OCR. Tidak ada
-        // teks memang bukan galat, maka status akhirnya tetap `completed`.
+        // PDF ini sengaja tidak punya text layer. Ia harus diraster halaman
+        // demi halaman lalu dibaca Tesseract, bukan dianggap selesai kosong.
         $document = $this->taruhBerkasContoh('nota-dinas-hasil-pindai.pdf', 'application/pdf');
 
         app()->call([new ExtractDocumentTextJob($document), 'handle']);
 
         $document->refresh();
         $this->assertSame(ExtractionStatus::Completed, $document->extraction_status);
-        $this->assertNull($document->extracted_text);
+        $this->assertNotNull($document->extracted_text);
+        $this->assertStringContainsString('Anggaran', $document->extracted_text);
+        $this->assertSame(2, $document->extraction_pages_total);
+        $this->assertSame(2, $document->extraction_pages_processed);
+        $this->assertNull($document->extraction_estimated_seconds);
+        $this->assertNotNull($document->extraction_started_at);
+        $this->assertNull($document->extraction_message);
+    }
+
+    public function test_pdf_pindaian_melebihi_batas_halaman_berakhir_gagal_tanpa_dicoba_ulang(): void
+    {
+        $document = $this->taruhBerkasContoh('nota-dinas-hasil-pindai.pdf', 'application/pdf');
+        $batasAsli = config('dms.ekstraksi.pdf_ocr_maks_halaman');
+        config(['dms.ekstraksi.pdf_ocr_maks_halaman' => 0]);
+
+        try {
+            app()->call([new ExtractDocumentTextJob($document), 'handle']);
+        } finally {
+            config(['dms.ekstraksi.pdf_ocr_maks_halaman' => $batasAsli]);
+        }
+
+        $document->refresh();
+        $this->assertSame(50, $batasAsli);
+        $this->assertSame(ExtractionStatus::Failed, $document->extraction_status);
+        $this->assertSame(2, $document->extraction_pages_total);
+        $this->assertSame(0, $document->extraction_pages_processed);
+        $this->assertSame('PDF pindaian melebihi batas OCR 0 halaman.', $document->extraction_message);
     }
 
     public function test_gambar_bernaskah_menjadi_completed_dengan_teks_ocr(): void

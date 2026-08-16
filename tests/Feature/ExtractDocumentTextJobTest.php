@@ -71,7 +71,7 @@ final class ExtractDocumentTextJobTest extends TestCase
         $document->refresh();
         $this->assertSame(ExtractionStatus::Completed, $document->extraction_status);
         $this->assertNotNull($document->extracted_text);
-        $this->assertNotSame('', $document->extracted_text);
+        $this->assertStringContainsString('Rekonsiliasi Data Penerimaan', $document->extracted_text);
     }
 
     public function test_docx_menjadi_completed(): void
@@ -134,6 +134,28 @@ final class ExtractDocumentTextJobTest extends TestCase
             'extraction_status' => ExtractionStatus::Pending,
         ]);
 
+        $job = new ExtractDocumentTextJob($document);
+
+        try {
+            app()->call([$job, 'handle']);
+        } catch (\Throwable $e) {
+            $job->failed($e);
+        }
+
+        $document->refresh();
+        $this->assertSame(ExtractionStatus::Failed, $document->extraction_status);
+    }
+
+    public function test_gambar_rusak_berakhir_gagal_bukan_menunggu_selamanya(): void
+    {
+        $tujuan = 'documents/2026/08/rusak.jpg';
+        Storage::disk('local')->put($tujuan, 'ini bukan gambar jpeg yang sah');
+
+        $document = Document::factory()->create([
+            'file_path' => $tujuan,
+            'file_mime_type' => 'image/jpeg',
+            'extraction_status' => ExtractionStatus::Pending,
+        ]);
         $job = new ExtractDocumentTextJob($document);
 
         try {

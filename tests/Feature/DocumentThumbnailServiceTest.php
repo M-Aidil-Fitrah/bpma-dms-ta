@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Jobs\GenerateDocumentThumbnailJob;
 use App\Models\Document;
 use App\Services\DocumentThumbnailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -91,6 +92,22 @@ final class DocumentThumbnailServiceTest extends TestCase
         $document = $this->dokumenDenganBerkas('arsip-lampiran-pendukung.zip', 'application/zip');
 
         $this->thumbnail->generate($document);
+
+        $document->refresh();
+        $this->assertNull($document->thumbnail_path);
+        $this->assertNull($document->preview_path);
+    }
+
+    public function test_job_thumbnail_gagal_tetap_membiarkan_dokumen_dapat_dipakai(): void
+    {
+        $path = 'documents/2026/08/rusak.pdf';
+        Storage::disk('local')->put($path, 'ini bukan PDF yang dapat dirender');
+        $document = Document::factory()->create([
+            'file_path' => $path,
+            'file_mime_type' => 'application/pdf',
+        ]);
+
+        (new GenerateDocumentThumbnailJob($document))->handle($this->thumbnail);
 
         $document->refresh();
         $this->assertNull($document->thumbnail_path);

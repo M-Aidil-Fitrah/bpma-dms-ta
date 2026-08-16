@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 #[Fillable([
     'nomor', 'judul', 'category_id', 'origin_unit_id',
     'tanggal', 'masa_berlaku', 'status', 'deskripsi',
-    'file_path', 'file_name_original', 'file_mime_type', 'file_size',
+    'file_path', 'file_name_original', 'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path',
     'extracted_text', 'extraction_status',
     'is_shared_to_all', 'min_tingkat_akses', 'edit_scope',
     'uploaded_by', 'is_active',
@@ -50,7 +50,7 @@ class Document extends Model
     public const KOLOM_DAFTAR = [
         'id', 'nomor', 'judul', 'category_id', 'origin_unit_id',
         'tanggal', 'masa_berlaku', 'status', 'extraction_status',
-        'file_mime_type', 'file_size',
+        'file_mime_type', 'file_size', 'thumbnail_path',
         'is_shared_to_all', 'min_tingkat_akses',
         'uploaded_by', 'is_active', 'created_at',
     ];

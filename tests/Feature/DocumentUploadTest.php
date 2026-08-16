@@ -374,18 +374,18 @@ final class DocumentUploadTest extends TestCase
         );
     }
 
-    public function test_gambar_ditandai_tidak_berlaku_sampai_ocr_tersedia(): void
+    public function test_gambar_ditandai_menunggu_dan_memicu_job_ocr(): void
     {
-        // OCR (FEAT-11b) belum berjalan. Gambar sengaja ditandai
-        // `not_applicable` sampai jalur itu ada, supaya tidak macet
-        // selamanya di `pending` tanpa job yang pernah memprosesnya.
         $this->actingAs($this->pengunggah)->post('/documents', $this->formulir([
             'file' => UploadedFile::fake()->create('foto.jpg', 200, 'image/jpeg'),
         ]));
 
-        $this->assertSame(
-            ExtractionStatus::NotApplicable,
-            Document::firstWhere('judul', 'Dokumen Uji Unggah')->extraction_status,
+        $document = Document::firstWhere('judul', 'Dokumen Uji Unggah');
+
+        $this->assertSame(ExtractionStatus::Pending, $document->extraction_status);
+        Queue::assertPushed(
+            ExtractDocumentTextJob::class,
+            fn (ExtractDocumentTextJob $job): bool => $job->document->is($document),
         );
     }
 

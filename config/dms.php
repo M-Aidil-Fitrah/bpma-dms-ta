@@ -106,10 +106,7 @@ return [
             'application/pdf',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'text/plain',
-            // 'image/' sengaja ditunda ke FEAT-11b: OCR Tesseract belum
-            // berjalan di 11a, dan menandai gambar `pending` tanpa job yang
-            // pernah memprosesnya berarti statusnya macet selamanya
-            // (Progres-dan-Lanjutan.md §6.1).
+            'image/',
         ],
 
         /*

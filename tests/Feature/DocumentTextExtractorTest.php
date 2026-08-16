@@ -8,7 +8,7 @@ use App\Services\DocumentTextExtractor;
 use Tests\TestCase;
 
 /**
- * Pembacaan teks mentah dari tiga tipe berkas yang didukung FEAT-11a.
+ * Pembacaan teks mentah dari tipe berkas yang didukung FEAT-11.
  *
  * Dijalankan atas berkas contoh sungguhan di `database/seeders/files/` —
  * bukan berkas tiruan — supaya benar-benar membuktikan pustaka pihak ketiga
@@ -49,6 +49,13 @@ final class DocumentTextExtractorTest extends TestCase
     public function test_txt_menghasilkan_isi(): void
     {
         $teks = $this->ekstraktor->txt(base_path('database/seeders/files/daftar-inventaris-aset.txt'));
+
+        $this->assertNotSame('', $teks);
+    }
+
+    public function test_gambar_bernaskah_menghasilkan_teks_ocr(): void
+    {
+        $teks = $this->ekstraktor->gambar(base_path('database/seeders/files/nota-dinas-foto.jpg'));
 
         $this->assertNotSame('', $teks);
     }

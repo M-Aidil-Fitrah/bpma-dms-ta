@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use LogicException;
 use Throwable;
@@ -20,9 +21,8 @@ use Throwable;
  * Mengisi `extracted_text` di latar belakang supaya dokumen dapat ditemukan
  * lewat pencarian isi (FR-32, FR-33).
  *
- * Hanya PDF, DOCX, dan TXT — tipe yang tidak butuh perkakas tingkat sistem
- * operasi. Gambar (OCR Tesseract) sengaja ditunda ke FEAT-11b; lihat
- * `config('dms.ekstraksi.mime_didukung')`.
+ * PDF, DOCX, TXT, dan gambar langsung diproses melalui satu jalur supaya
+ * hasil unggahan nyata dan seed tidak dapat menyimpang diam-diam.
  */
 final class ExtractDocumentTextJob implements ShouldQueue
 {
@@ -49,24 +49,18 @@ final class ExtractDocumentTextJob implements ShouldQueue
         $path = Storage::disk('local')->path($this->document->file_path);
         $mime = $this->document->file_mime_type;
 
-        $teks = match ($mime) {
-            'application/pdf' => $ekstraktor->pdf($path),
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => $ekstraktor->docx($path),
-            'text/plain' => $ekstraktor->txt($path),
+        $teks = match (true) {
+            $mime === 'application/pdf' => $ekstraktor->pdf($path),
+            $mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => $ekstraktor->docx($path),
+            $mime === 'text/plain' => $ekstraktor->txt($path),
+            str_starts_with($mime, 'image/') => $ekstraktor->gambar($path),
             default => throw new LogicException("ExtractDocumentTextJob belum menangani tipe {$mime}."),
         };
 
-        if ($teks === '' && $mime === 'application/pdf') {
-            // PDF hasil pindaian tanpa lapisan teks — bukan galat,
-            // `pdfparser` berhasil membaca berkasnya, memang tidak ada teks
-            // untuk diambil. Lihat keputusan di §7.3 dokumen progres.
-            $this->document->update(['extraction_status' => ExtractionStatus::Failed]);
-
-            return;
-        }
-
         $this->document->update([
-            'extracted_text' => $teks,
+            // PDF pindaian maupun foto tanpa naskah berhasil dibaca dengan
+            // hasil kosong. Itu `completed`, bukan kegagalan ekstraksi.
+            'extracted_text' => $teks === '' ? null : $teks,
             'extraction_status' => ExtractionStatus::Completed,
         ]);
     }
@@ -79,5 +73,11 @@ final class ExtractDocumentTextJob implements ShouldQueue
     public function failed(?Throwable $exception): void
     {
         $this->document->update(['extraction_status' => ExtractionStatus::Failed]);
+
+        Log::warning('Ekstraksi teks gagal permanen.', [
+            'document_id' => $this->document->id,
+            'mime' => $this->document->file_mime_type,
+            'error' => $exception?->getMessage(),
+        ]);
     }
 }

@@ -6,6 +6,8 @@ namespace App\Services;
 
 use PhpOffice\PhpWord\IOFactory;
 use Smalot\PdfParser\Parser;
+use thiagoalessio\TesseractOCR\TesseractOCR;
+use UnexpectedValueException;
 
 /**
  * Membaca isi teks berkas untuk keperluan pencarian (FR-32, FR-33).
@@ -19,6 +21,10 @@ final class DocumentTextExtractor
 {
     public function pdf(string $path): string
     {
+        if (file_get_contents($path, false, null, 0, 5) !== '%PDF-') {
+            throw new UnexpectedValueException('Berkas tidak memiliki header PDF yang sah.');
+        }
+
         return trim((new Parser)->parseFile($path)->getText());
     }
 
@@ -40,5 +46,16 @@ final class DocumentTextExtractor
     public function txt(string $path): string
     {
         return trim((string) file_get_contents($path));
+    }
+
+    /**
+     * Membaca teks dalam gambar langsung. HEIC tidak pernah mencapai metode
+     * ini karena ditandai `not_applicable` sebelum job dibuat.
+     */
+    public function gambar(string $path): string
+    {
+        return trim((new TesseractOCR($path))
+            ->lang(...explode('+', config('dms.ekstraksi.bahasa_ocr')))
+            ->run());
     }
 }

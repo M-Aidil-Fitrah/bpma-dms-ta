@@ -49,20 +49,29 @@ final class ExtractDocumentTextJobTest extends TestCase
         $this->assertNotSame('', $document->extracted_text);
     }
 
-    public function test_pdf_hasil_pindaian_menjadi_failed(): void
+    public function test_pdf_hasil_pindaian_menjadi_completed_tanpa_teks(): void
     {
-        // FR-32c pada FEAT-11 penuh minta `completed` teks kosong — itu
-        // berlaku begitu OCR (FEAT-11b) ada sebagai jalan keluar. Selama
-        // 11a berjalan sendirian, status ini dibuat `failed`
-        // (Progres-dan-Lanjutan.md §7.3) supaya tidak diam-diam terlihat
-        // "sudah dapat dicari" padahal isinya kosong.
+        // FR-32c: PDF pindaian sah tidak dirasterisasi untuk OCR. Tidak ada
+        // teks memang bukan galat, maka status akhirnya tetap `completed`.
         $document = $this->taruhBerkasContoh('nota-dinas-hasil-pindai.pdf', 'application/pdf');
 
         app()->call([new ExtractDocumentTextJob($document), 'handle']);
 
         $document->refresh();
-        $this->assertSame(ExtractionStatus::Failed, $document->extraction_status);
+        $this->assertSame(ExtractionStatus::Completed, $document->extraction_status);
         $this->assertNull($document->extracted_text);
+    }
+
+    public function test_gambar_bernaskah_menjadi_completed_dengan_teks_ocr(): void
+    {
+        $document = $this->taruhBerkasContoh('nota-dinas-foto.jpg', 'image/jpeg');
+
+        app()->call([new ExtractDocumentTextJob($document), 'handle']);
+
+        $document->refresh();
+        $this->assertSame(ExtractionStatus::Completed, $document->extraction_status);
+        $this->assertNotNull($document->extracted_text);
+        $this->assertNotSame('', $document->extracted_text);
     }
 
     public function test_docx_menjadi_completed(): void

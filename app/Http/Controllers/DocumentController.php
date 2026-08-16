@@ -16,6 +16,7 @@ use App\Http\Requests\DocumentIndexRequest;
 use App\Http\Requests\StoreDocumentRequest;
 use App\Http\Requests\UpdateDocumentRequest;
 use App\Jobs\ExtractDocumentTextJob;
+use App\Jobs\GenerateDocumentThumbnailJob;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\Unit;
@@ -24,6 +25,7 @@ use App\Services\ActivityLogQuery;
 use App\Services\ActivityLogService;
 use App\Services\DocumentAccessWriter;
 use App\Services\DocumentMetadataChanges;
+use App\Services\DocumentThumbnailService;
 use App\Services\DocumentUploadService;
 use App\Services\PengaturanService;
 use App\Support\BatasUnggah;
@@ -181,6 +183,10 @@ final class DocumentController extends Controller
         // (Progres-dan-Lanjutan.md §7.2).
         if ($document->extraction_status === ExtractionStatus::Pending) {
             ExtractDocumentTextJob::dispatch($document);
+        }
+
+        if (app(DocumentThumbnailService::class)->didukung($document->file_mime_type)) {
+            GenerateDocumentThumbnailJob::dispatch($document);
         }
 
         return redirect()
@@ -401,21 +407,53 @@ final class DocumentController extends Controller
     {
         $this->authorize('view', $document);
 
-        abort_unless(Storage::disk('local')->exists($document->file_path), 404);
+        $memakaiPreview = $document->preview_path !== null
+            && Storage::disk('local')->exists($document->preview_path);
+        $path = $memakaiPreview ? $document->preview_path : $document->file_path;
+        $mime = $memakaiPreview ? 'application/pdf' : $document->file_mime_type;
+        $nama = ! $memakaiPreview
+            ? $document->file_name_original
+            : pathinfo($document->file_name_original, PATHINFO_FILENAME).'.pdf';
 
-        if (! PenyajianBerkas::bolehInline($document->file_mime_type)) {
+        abort_unless(Storage::disk('local')->exists($path), 404);
+
+        if (! $memakaiPreview && ! PenyajianBerkas::bolehInline($mime)) {
             return $this->serveFile($request, $document, $aktivitas);
         }
 
         return Storage::disk('local')->response(
-            $document->file_path,
-            $document->file_name_original,
+            $path,
+            $nama,
             [
                 ...PenyajianBerkas::headerKeamanan(),
                 // Tipe diambil dari daftar-boleh, bukan dari kolom apa adanya,
                 // supaya nilai yang aneh di basis data tidak ikut diteruskan
                 // mentah-mentah ke peramban.
-                'Content-Type' => PenyajianBerkas::tipeAman($document->file_mime_type),
+                'Content-Type' => PenyajianBerkas::tipeAman($mime),
+            ],
+        );
+    }
+
+    /**
+     * Menyajikan turunan JPG yang dibuat server untuk kartu grid.
+     *
+     * Gambar mini tetap dokumen turunan yang sensitif: ia tidak boleh diberi
+     * URL penyimpanan langsung atau proteksi yang lebih longgar dari berkas
+     * aslinya.
+     */
+    public function thumbnail(Document $document): StreamedResponse
+    {
+        $this->authorize('view', $document);
+
+        abort_unless($document->thumbnail_path !== null, 404);
+        abort_unless(Storage::disk('local')->exists($document->thumbnail_path), 404);
+
+        return Storage::disk('local')->response(
+            $document->thumbnail_path,
+            "thumbnail-{$document->id}.jpg",
+            [
+                ...PenyajianBerkas::headerKeamanan(),
+                'Content-Type' => 'image/jpeg',
             ],
         );
     }

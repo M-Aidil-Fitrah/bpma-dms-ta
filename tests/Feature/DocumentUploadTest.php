@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Enums\DocumentEditScope;
 use App\Enums\ExtractionStatus;
 use App\Jobs\ExtractDocumentTextJob;
+use App\Jobs\GenerateDocumentThumbnailJob;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\Jabatan;
@@ -346,6 +347,18 @@ final class DocumentUploadTest extends TestCase
         Queue::assertPushed(
             ExtractDocumentTextJob::class,
             fn (ExtractDocumentTextJob $job): bool => $job->document->is($document),
+        );
+    }
+
+    public function test_pdf_memicu_job_gambar_mini_terpisah(): void
+    {
+        $this->actingAs($this->pengunggah)->post('/documents', $this->formulir());
+
+        $document = Document::firstWhere('judul', 'Dokumen Uji Unggah');
+
+        Queue::assertPushed(
+            GenerateDocumentThumbnailJob::class,
+            fn (GenerateDocumentThumbnailJob $job): bool => $job->document->is($document),
         );
     }
 

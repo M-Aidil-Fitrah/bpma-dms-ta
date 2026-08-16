@@ -77,6 +77,8 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('documents.file');
     Route::get('/documents/{document}/preview', [DocumentController::class, 'previewFile'])
         ->name('documents.preview');
+    Route::get('/documents/{document}/thumbnail', [DocumentController::class, 'thumbnail'])
+        ->name('documents.thumbnail');
 });
 
 /*

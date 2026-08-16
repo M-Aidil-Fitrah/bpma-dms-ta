@@ -223,6 +223,49 @@ final class DocumentShowTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_pratinjau_memakai_pdf_hasil_konversi_bila_tersedia(): void
+    {
+        $document = $this->buatDokumen([
+            'file_name_original' => 'notulen.docx',
+            'file_mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'preview_path' => 'previews/2026/08/notulen.pdf',
+        ]);
+        Storage::disk('local')->put($document->preview_path, '%PDF- berkas hasil konversi');
+
+        $this->actingAs($this->berhak)
+            ->get("/documents/{$document->id}/preview")
+            ->assertOk()
+            ->assertHeader('content-disposition', 'inline; filename=notulen.pdf')
+            ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_gambar_mini_memakai_proteksi_yang_sama_dengan_berkas_asli(): void
+    {
+        $document = $this->buatDokumen([
+            'thumbnail_path' => 'thumbnails/2026/08/dokumen-uji.jpg',
+            'is_shared_to_all' => false,
+        ]);
+        Storage::disk('local')->put($document->thumbnail_path, 'gambar mini uji');
+
+        $this->actingAs($this->tidakBerhak)
+            ->get("/documents/{$document->id}/thumbnail")
+            ->assertForbidden();
+
+        $this->actingAs($this->pengunggah)
+            ->get("/documents/{$document->id}/thumbnail")
+            ->assertOk()
+            ->assertHeader('content-type', 'image/jpeg');
+    }
+
+    public function test_gambar_mini_tidak_ada_menghasilkan_404(): void
+    {
+        $document = $this->buatDokumen();
+
+        $this->actingAs($this->berhak)
+            ->get("/documents/{$document->id}/thumbnail")
+            ->assertNotFound();
+    }
+
     public function test_tamu_tidak_dapat_menyentuh_berkas_sama_sekali(): void
     {
         $document = $this->buatDokumen();

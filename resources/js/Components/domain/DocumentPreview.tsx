@@ -20,14 +20,21 @@ export interface DocumentPreviewProps {
 /**
  * Menampilkan isi dokumen sesuai tipe berkasnya (FR-09b).
  *
- * Word dan Excel belum menampilkan tata letak aslinya — untuk itu diperlukan
- * konversi ke PDF di sisi server, yang dijadwalkan menyusul. Sampai saat itu,
- * isi teksnya yang ditampilkan, bukan sekadar ikon: teks yang benar jauh lebih
- * berguna daripada gambar berkas yang tidak mengatakan apa-apa.
+ * Dokumen Office memakai PDF hasil konversi bila server berhasil membuatnya.
+ * Bila tidak, panel teks hasil ekstraksi tetap menjadi fallback yang lebih
+ * berguna daripada ikon kosong.
  */
 export function DocumentPreview({ dokumen }: DocumentPreviewProps) {
     const url = `/documents/${dokumen.id}/preview`;
     const mime = dokumen.tipe_berkas;
+
+    if (dokumen.preview_tersedia) {
+        return (
+            <Suspense fallback={<Memuat />}>
+                <PdfViewer url={url} judul={dokumen.judul} />
+            </Suspense>
+        );
+    }
 
     if (mime.startsWith('image/')) {
         return (

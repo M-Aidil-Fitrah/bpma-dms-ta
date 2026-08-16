@@ -43,6 +43,7 @@ const DocumentGridCard = memo(function DocumentGridCard({
                 id={document.id}
                 mime={document.tipe_berkas}
                 judul={document.judul}
+                tersedia={document.thumbnail_tersedia}
             />
 
             <div className="flex flex-1 flex-col p-4">

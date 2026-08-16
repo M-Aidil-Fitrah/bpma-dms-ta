@@ -36,7 +36,7 @@ export default function Dashboard({ data }: DashboardProps) {
                         Statistik Dokumen
                     </h2>
 
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <StatCard
                             label="Total Dokumen"
                             value={data.total}
@@ -65,12 +65,12 @@ export default function Dashboard({ data }: DashboardProps) {
                     </div>
                 </section>
 
-                <div className="grid gap-5 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
                     <KartuMasaEvaluasi data={data} />
                     <KartuKategori data={data} />
                 </div>
 
-                <div className="grid gap-5 xl:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
                     <KartuTerbaru data={data} />
                     <KartuAktivitas data={data} />
                 </div>

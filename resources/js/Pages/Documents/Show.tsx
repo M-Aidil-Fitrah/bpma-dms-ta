@@ -169,7 +169,13 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
             </Baris>
 
             <Baris label="Pencarian Isi">
-                <ExtractionStatusBadge status={dokumen.extraction_status} />
+                <ExtractionStatusBadge
+                    status={dokumen.extraction_status}
+                    halamanTotal={dokumen.halaman_ekstraksi_total}
+                    halamanSelesai={dokumen.halaman_ekstraksi_selesai}
+                    estimasiDetik={dokumen.estimasi_ekstraksi_detik}
+                    pesan={dokumen.pesan_ekstraksi}
+                />
             </Baris>
 
             <hr className="border-line" />

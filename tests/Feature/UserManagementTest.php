@@ -8,6 +8,7 @@ use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -69,6 +70,38 @@ final class UserManagementTest extends TestCase
             ->assertInertia(fn (AssertableInertia $p) => $p
                 ->component('Users/Index')
                 ->has('pengguna.data', 2));
+    }
+
+    public function test_jumlah_query_daftar_pengguna_tidak_bertambah_seiring_data(): void
+    {
+        $this->actingAs($this->superadmin);
+
+        // Permintaan pertama turut memanaskan autentikasi dan cache role.
+        $this->hitungQueryDaftarPengguna();
+
+        $queryDenganSedikitPengguna = $this->hitungQueryDaftarPengguna();
+
+        User::factory()->count(40)->create([
+            'jabatan_id' => $this->jabatan->id,
+            'unit_id' => $this->unit->id,
+        ]);
+
+        $queryDenganBanyakPengguna = $this->hitungQueryDaftarPengguna();
+
+        $this->assertSame($queryDenganSedikitPengguna, $queryDenganBanyakPengguna);
+    }
+
+    private function hitungQueryDaftarPengguna(): int
+    {
+        $jumlahQuery = 0;
+
+        DB::listen(static function () use (&$jumlahQuery): void {
+            $jumlahQuery++;
+        });
+
+        $this->get('/admin/users')->assertOk();
+
+        return $jumlahQuery;
     }
 
     // -- Daftar, pencarian, dan filter --------------------------------------------

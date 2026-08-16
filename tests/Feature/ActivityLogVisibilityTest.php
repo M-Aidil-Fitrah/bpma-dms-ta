@@ -13,6 +13,7 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Services\ActivityLogService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -87,6 +88,45 @@ final class ActivityLogVisibilityTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('aktivitas.total', 1)
                 ->where('aktivitas.data.0.subjek', 'Dokumen Tertutup'));
+    }
+
+    public function test_jumlah_query_riwayat_tidak_bertambah_seiring_aktivitas(): void
+    {
+        $this->actingAs($this->superadmin);
+
+        // Permintaan pertama turut memanaskan autentikasi dan cache role.
+        $this->hitungQueryRiwayat();
+
+        $queryDenganSedikitAktivitas = $this->hitungQueryRiwayat();
+
+        $log = app(ActivityLogService::class);
+
+        foreach (range(1, 40) as $urutan) {
+            $log->record(
+                ActivityLogName::Dokumen,
+                AuditEvent::DocumentUpdated,
+                "Aktivitas tambahan {$urutan}.",
+                $this->terlihat,
+                $this->pemilikLain,
+            );
+        }
+
+        $queryDenganBanyakAktivitas = $this->hitungQueryRiwayat();
+
+        $this->assertSame($queryDenganSedikitAktivitas, $queryDenganBanyakAktivitas);
+    }
+
+    private function hitungQueryRiwayat(): int
+    {
+        $jumlahQuery = 0;
+
+        DB::listen(static function () use (&$jumlahQuery): void {
+            $jumlahQuery++;
+        });
+
+        $this->get('/activity-log')->assertOk();
+
+        return $jumlahQuery;
     }
 
     private function buatPengguna(Jabatan $jabatan, Unit $unit, string $name): User

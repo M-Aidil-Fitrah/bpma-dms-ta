@@ -10,6 +10,7 @@ use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -59,6 +60,36 @@ final class OrganizationManagementTest extends TestCase
         $this->get('/admin/jabatans')->assertInertia(fn (AssertableInertia $page) => $page->component('Positions/Index'));
         $this->get('/admin/units')->assertInertia(fn (AssertableInertia $page) => $page->component('Units/Index'));
         $this->get('/admin/categories')->assertInertia(fn (AssertableInertia $page) => $page->component('Categories/Index'));
+    }
+
+    public function test_jumlah_query_daftar_kategori_tidak_bertambah_seiring_data(): void
+    {
+        $this->actingAs($this->superadmin);
+        Category::factory()->count(3)->create();
+
+        // Permintaan pertama turut memanaskan autentikasi dan cache role.
+        $this->hitungQueryDaftarKategori();
+
+        $queryDenganSedikitKategori = $this->hitungQueryDaftarKategori();
+
+        Category::factory()->count(40)->create();
+
+        $queryDenganBanyakKategori = $this->hitungQueryDaftarKategori();
+
+        $this->assertSame($queryDenganSedikitKategori, $queryDenganBanyakKategori);
+    }
+
+    private function hitungQueryDaftarKategori(): int
+    {
+        $jumlahQuery = 0;
+
+        DB::listen(static function () use (&$jumlahQuery): void {
+            $jumlahQuery++;
+        });
+
+        $this->get('/admin/categories')->assertOk();
+
+        return $jumlahQuery;
     }
 
     public function test_superadmin_dapat_menambah_dan_mengubah_jabatan(): void

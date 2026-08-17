@@ -5,4 +5,4 @@ import { Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 
 interface Props { referensi: Pagination.Paginated<App.Data.ReferensiListData>; filter: { cari: string | null; status: string | null }; }
-export default function Index({ referensi, filter }: Props) { return <AppLayout title="Kategori" actions={<Link href="/admin/categories/create"><Button icon={Plus}>Tambah Kategori</Button></Link>}><div className="space-y-4"><ReferenceResourceIndex jenis="kategori" judul="Kategori" singular="kategori" alamat="/admin/categories" referensi={referensi} filter={filter} /></div></AppLayout>; }
+export default function Index({ referensi, filter }: Props) { return <AppLayout title="Kategori" actions={<Link href="/admin/categories/create"><Button icon={Plus}><span className="hidden sm:inline">Tambah Kategori</span><span className="sr-only sm:hidden">Tambah Kategori</span></Button></Link>}><div className="space-y-4"><ReferenceResourceIndex jenis="kategori" judul="Kategori" singular="kategori" alamat="/admin/categories" referensi={referensi} filter={filter} /></div></AppLayout>; }

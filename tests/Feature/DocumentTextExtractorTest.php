@@ -56,7 +56,7 @@ final class DocumentTextExtractorTest extends TestCase
 
     public function test_gambar_bernaskah_menghasilkan_teks_ocr(): void
     {
-        $teks = $this->ekstraktor->gambar(base_path('database/seeders/files/nota-dinas-foto.jpg'));
+        $teks = $this->ekstraktor->gambar(base_path('database/seeders/files/nota-dinas-foto.jpg'))->text;
 
         $this->assertNotSame('', $teks);
     }

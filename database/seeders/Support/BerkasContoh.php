@@ -9,7 +9,6 @@ use App\Services\DocumentTextExtractor;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
-use thiagoalessio\TesseractOCR\TesseractOCR;
 
 /**
  * Menyalin berkas contoh ke penyimpanan, meniru persis perilaku
@@ -77,10 +76,10 @@ final class BerkasContoh
             'status' => ExtractionStatus::Completed,
             'teks' => true,
         ],
-        // Foto tanpa naskah: OCR berjalan, hasilnya kosong. Tetap `completed`.
+        // Foto tanpa naskah: OCR berjalan, tetapi tidak layak untuk pencarian.
         'foto-fasilitas-produksi.jpg' => [
             'mime' => 'image/jpeg',
-            'status' => ExtractionStatus::Completed,
+            'status' => ExtractionStatus::ReviewRequired,
             'teks' => false,
         ],
         // Tipe tak didukung: tidak ada job yang pernah dibuat.
@@ -173,9 +172,7 @@ final class BerkasContoh
         // belum terpasang, seeding tetap berjalan — hanya isi teksnya kosong,
         // bukan seluruh proses yang gagal.
         try {
-            return trim((new TesseractOCR($sumber))
-                ->lang('ind', 'eng')
-                ->run());
+            return (new DocumentTextExtractor)->gambar($sumber)->text;
         } catch (\Throwable) {
             return '';
         }

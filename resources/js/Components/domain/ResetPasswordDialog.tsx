@@ -90,11 +90,12 @@ export function ResetPasswordDialog({ terbuka, onTutup, userId, nama }: ResetPas
                                 variant="secondary"
                                 onClick={onTutup}
                                 disabled={processing}
+                                className="w-full sm:w-auto"
                             >
                                 Batal
                             </Button>
 
-                            <Button type="submit" loading={processing}>
+                            <Button type="submit" loading={processing} className="w-full sm:w-auto">
                                 Atur Ulang
                             </Button>
                         </div>

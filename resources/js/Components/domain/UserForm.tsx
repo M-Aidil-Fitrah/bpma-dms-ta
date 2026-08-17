@@ -155,11 +155,12 @@ export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
                 </Card>
             )}
 
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
                 <Button
                     type="submit"
                     icon={mode === 'buat' ? UserPlus : Save}
                     loading={processing}
+                    className="w-full sm:w-auto"
                 >
                     {mode === 'buat'
                         ? processing
@@ -170,8 +171,8 @@ export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
                           : 'Simpan Perubahan'}
                 </Button>
 
-                <Link href={batal}>
-                    <Button type="button" variant="secondary">
+                <Link href={batal} className="w-full sm:w-auto">
+                    <Button type="button" variant="secondary" className="w-full">
                         Batal
                     </Button>
                 </Link>

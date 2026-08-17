@@ -80,11 +80,11 @@ export function ReferenceResourceForm({ jenis, mode, aksi, batal, awal, induk = 
                 </CardBody>
             </Card>
 
-            <div className="flex gap-2">
-                <Button type="submit" icon={Save} loading={processing}>
+            <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="submit" icon={Save} loading={processing} className="w-full sm:w-auto">
                     {processing ? 'Menyimpan…' : mode === 'buat' ? `Tambah ${label}` : 'Simpan Perubahan'}
                 </Button>
-                <Link href={batal}><Button type="button" variant="secondary">Batal</Button></Link>
+                <Link href={batal} className="w-full sm:w-auto"><Button type="button" variant="secondary" className="w-full">Batal</Button></Link>
             </div>
         </form>
     );

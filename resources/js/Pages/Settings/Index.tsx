@@ -63,9 +63,9 @@ export default function Index({ pengaturan }: SettingsProps) {
                     </CardBody>
                 </Card>
 
-                <div className="flex flex-wrap gap-2">
-                    <Button type="submit" icon={Save} loading={processing}>{processing ? 'Menyimpan…' : 'Simpan Pengaturan'}</Button>
-                    <Button type="button" variant="secondary" icon={RotateCcw} onClick={kembaliKeBawaan} disabled={processing}>Gunakan Nilai Bawaan</Button>
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <Button type="submit" icon={Save} loading={processing} className="w-full sm:w-auto">{processing ? 'Menyimpan…' : 'Simpan Pengaturan'}</Button>
+                    <Button type="button" variant="secondary" icon={RotateCcw} onClick={kembaliKeBawaan} disabled={processing} className="w-full sm:w-auto">Gunakan Nilai Bawaan</Button>
                 </div>
                 <p className="text-sm text-ink-muted">Nilai bawaan berarti override dihapus; aplikasi kembali membaca `config/dms.php`.</p>
             </form>

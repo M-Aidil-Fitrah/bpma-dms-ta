@@ -84,6 +84,7 @@ export function ConfirmDialog({
                             variant="secondary"
                             onClick={onTutup}
                             disabled={memproses}
+                            className="w-full sm:w-auto"
                         >
                             {labelBatal}
                         </Button>
@@ -93,6 +94,7 @@ export function ConfirmDialog({
                             variant={nada === 'danger' ? 'danger' : 'primary'}
                             onClick={onSetuju}
                             loading={memproses}
+                            className="w-full sm:w-auto"
                         >
                             {labelSetuju}
                         </Button>

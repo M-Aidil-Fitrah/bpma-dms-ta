@@ -5,7 +5,7 @@ import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
 import { Select, type SelectOption } from '@/Components/ui/Select';
 import { cn } from '@/lib/cn';
-import { Filter, X } from 'lucide-react';
+import { Filter, RotateCcw, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 export interface FilterChip {
@@ -72,6 +72,18 @@ export function FilterBar({
                         </span>
                     )}
                 </Button>
+
+                {chips.length > 0 && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={RotateCcw}
+                        onClick={onReset}
+                        className="shrink-0"
+                    >
+                        Reset filter
+                    </Button>
+                )}
             </div>
 
             {terbuka && (
@@ -136,9 +148,6 @@ export function FilterBar({
                         </button>
                     ))}
 
-                    <Button variant="ghost" size="sm" onClick={onReset}>
-                        Bersihkan semua
-                    </Button>
                 </div>
             )}
         </div>

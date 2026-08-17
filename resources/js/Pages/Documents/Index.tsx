@@ -17,7 +17,6 @@ import { useMemo } from 'react';
 interface OpsiFilter {
     kategori: { id: number; nama: string }[];
     unit: { id: number; nama: string }[];
-    unit_pohon: { id: number; nama: string; parent_id: number | null }[];
     pengunggah: { id: number; name: string }[];
 }
 
@@ -59,8 +58,9 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
             {
                 kunci: 'unit',
                 label: 'Unit Asal',
-                tipe: 'tree',
-                treeUnits: opsi?.unit_pohon ?? [],
+                tipe: 'select',
+                placeholder: 'Semua unit asal',
+                options: (opsi?.unit ?? []).map((unit) => ({ value: unit.id, label: unit.nama })),
             },
             { kunci: 'tipe', label: 'Tipe Berkas', tipe: 'select', placeholder: 'Semua tipe', options: TIPE_OPTIONS },
             { kunci: 'status_ekstraksi', label: 'Pencarian Isi', tipe: 'select', placeholder: 'Semua status', options: EKSTRAKSI_OPTIONS },
@@ -234,6 +234,21 @@ function susunChip(filter: FilterDokumen, opsi?: OpsiFilter): FilterChip[] {
     if (filter.status) {
         const label = STATUS_OPTIONS.find((s) => s.value === filter.status)?.label;
         chips.push({ kunci: 'status', label: `Status: ${label ?? filter.status}` });
+    }
+
+    if (filter.pengunggah) {
+        const nama = opsi?.pengunggah.find((pengunggah) => pengunggah.id === filter.pengunggah)?.name;
+        chips.push({ kunci: 'pengunggah', label: `Pengunggah: ${nama ?? filter.pengunggah}` });
+    }
+
+    if (filter.tipe) {
+        const label = TIPE_OPTIONS.find((tipe) => tipe.value === filter.tipe)?.label;
+        chips.push({ kunci: 'tipe', label: `Tipe: ${label ?? filter.tipe}` });
+    }
+
+    if (filter.status_ekstraksi) {
+        const label = EKSTRAKSI_OPTIONS.find((status) => status.value === filter.status_ekstraksi)?.label;
+        chips.push({ kunci: 'status_ekstraksi', label: `Ekstraksi: ${label ?? filter.status_ekstraksi}` });
     }
 
     if (filter.dari) chips.push({ kunci: 'dari', label: `Sejak ${filter.dari}` });

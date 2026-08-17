@@ -3,16 +3,15 @@ import { Button } from '@/Components/ui/Button';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
 import { AuthLayout } from '@/Layouts/AuthLayout';
-import { Link, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import { LogIn, Lock, Mail } from 'lucide-react';
 import { type FormEvent } from 'react';
 
 interface LoginProps {
     status?: string;
-    canResetPassword: boolean;
 }
 
-export default function Login({ status, canResetPassword }: LoginProps) {
+export default function Login({ status }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -68,26 +67,18 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     )}
                 </Field>
 
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <label className="flex min-h-touch cursor-pointer items-center gap-2 text-sm text-ink-muted sm:min-h-0">
-                        <input
-                            type="checkbox"
-                            checked={data.remember}
-                            onChange={(e) => setData('remember', e.target.checked)}
-                            className="size-4 rounded border-line text-brand-700 focus:ring-brand-700"
-                        />
-                        Ingat saya
-                    </label>
-
-                    {canResetPassword && (
-                        <Link
-                            href="/forgot-password"
-                            className="text-sm font-medium text-brand-700 hover:text-brand-800"
-                        >
-                            Lupa kata sandi?
-                        </Link>
-                    )}
-                </div>
+                {/* Tanpa tautan "Lupa kata sandi?" — aplikasi ini tidak pernah
+                    mengirim surel apa pun (lihat `ResetPasswordDialog.tsx`).
+                    Reset kata sandi selalu manual lewat Superadmin. */}
+                <label className="flex min-h-touch w-fit cursor-pointer items-center gap-2 text-sm text-ink-muted sm:min-h-0">
+                    <input
+                        type="checkbox"
+                        checked={data.remember}
+                        onChange={(e) => setData('remember', e.target.checked)}
+                        className="size-4 rounded border-line text-brand-700 focus:ring-brand-700"
+                    />
+                    Ingat saya
+                </label>
 
                 <Button
                     type="submit"

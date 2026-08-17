@@ -1,16 +1,18 @@
 import { AccessSummary } from '@/Components/domain/AccessSummary';
-import { ActivityEmpty, ActivityItem } from '@/Components/domain/ActivityItem';
+import { ActivityItem } from '@/Components/domain/ActivityItem';
 import { DocumentHeaderActions } from '@/Components/domain/DocumentHeaderActions';
 import { DocumentPreview } from '@/Components/domain/DocumentPreview';
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
 import { ExtractionStatusBadge } from '@/Components/domain/ExtractionStatusBadge';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
+import { Alert } from '@/Components/ui/Alert';
 import { Avatar } from '@/Components/ui/Avatar';
 import { Card } from '@/Components/ui/Card';
-import { useExtractionStatusPolling } from '@/hooks/useExtractionStatusPolling';
+import { EmptyState } from '@/Components/ui/EmptyState';
+import { useDocumentReloadPolling } from '@/hooks/useDocumentReloadPolling';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
-import { formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
+import { dalamJendelaWaktu, formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, History, Info, ShieldCheck } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
@@ -18,14 +20,39 @@ import { useState, type ReactNode } from 'react';
 interface ShowProps {
     dokumen: App.Data.DocumentDetailData;
     riwayat: App.Data.ActivityLogData[];
+    pollingKonfigurasi: { jedaMs: number; maksPercobaan: number };
 }
 
 type Tab = 'detail' | 'akses' | 'riwayat';
 
-export default function Show({ dokumen, riwayat }: ShowProps) {
-    const [tab, setTab] = useState<Tab>('detail');
+const TAB_VALID: readonly Tab[] = ['detail', 'akses', 'riwayat'];
 
-    useExtractionStatusPolling(dokumen.extraction_status);
+/**
+ * Tab awal mengikuti `location.hash` (mis. tautan menu "Lihat pengaturan
+ * akses" mengarah ke `#akses`) — tanpa ini, tab kontennya dirender kondisional
+ * sehingga `id="akses"` bahkan tidak ada di DOM saat halaman baru dimuat, dan
+ * pengguna selalu mendarat di tab "Detail" berapa pun hash di alamatnya.
+ */
+function tabDariHash(): Tab {
+    const hash = window.location.hash.slice(1);
+
+    return (TAB_VALID as string[]).includes(hash) ? (hash as Tab) : 'detail';
+}
+
+/**
+ * Batas atas menunggu konversi pratinjau Office. Melewati ini, kartu
+ * berhenti menganggapnya "sedang disiapkan" — kemungkinan besar job gagal
+ * permanen (perkakas server tidak terpasang) dan tidak akan pernah selesai.
+ */
+const JENDELA_PRATINJAU_MENIT = 5;
+
+export default function Show({ dokumen, riwayat, pollingKonfigurasi }: ShowProps) {
+    const [tab, setTab] = useState<Tab>(tabDariHash);
+
+    const masihMenyiapkanPratinjau =
+        dokumen.pratinjau_sedang_disiapkan && dalamJendelaWaktu(dokumen.diunggah_pada, JENDELA_PRATINJAU_MENIT);
+
+    useDocumentReloadPolling(dokumen.extraction_status === 'pending' || masihMenyiapkanPratinjau, pollingKonfigurasi);
 
     return (
         <AppLayout
@@ -42,12 +69,20 @@ export default function Show({ dokumen, riwayat }: ShowProps) {
                 />
             }
         >
+            {!dokumen.aktif && (
+                <Alert variant="warning" title="Dokumen ini nonaktif" className="mb-5">
+                    Disembunyikan dari daftar dokumen dan hasil pencarian untuk semua orang.
+                    Anda melihatnya karena berperan Superadmin — gunakan tombol "Aktifkan
+                    Kembali" di atas untuk memunculkannya lagi.
+                </Alert>
+            )}
+
             <div className="grid gap-5 xl:grid-cols-5">
                 {/* Pratinjau mendapat porsi terbesar: itu yang dicari orang saat
                     membuka halaman ini, bukan daftar metadatanya. */}
                 <Card className="overflow-hidden xl:col-span-3">
                     <div className="h-[28rem] xl:h-[38rem]">
-                        <DocumentPreview dokumen={dokumen} />
+                        <DocumentPreview dokumen={dokumen} sedangMenyiapkanPratinjau={masihMenyiapkanPratinjau} />
                     </div>
                 </Card>
 
@@ -323,7 +358,11 @@ function PanelRiwayat({ riwayat }: { riwayat: App.Data.ActivityLogData[] }) {
     }
 
     return (
-        <ActivityEmpty />
+        <EmptyState
+            icon={History}
+            title="Belum ada aktivitas"
+            description="Aktivitas yang dapat Anda akses akan muncul di sini."
+        />
     );
 }
 

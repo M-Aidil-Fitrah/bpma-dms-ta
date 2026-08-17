@@ -96,13 +96,12 @@ final class ExtractDocumentTextJob implements ShouldQueue
         ScannedPdfOcr $pdfOcr,
         CarbonInterface $mulai,
     ): ?string {
-        $teksDigital = $ekstraktor->pdf($path);
+        ['teks' => $teksDigital, 'halaman' => $jumlahHalaman] = $ekstraktor->pdfTeksDanHalaman($path);
 
         if ($teksDigital !== '') {
             return $teksDigital;
         }
 
-        $jumlahHalaman = $pdfOcr->jumlahHalaman($path);
         $batasHalaman = (int) config('dms.ekstraksi.pdf_ocr_maks_halaman');
 
         if ($jumlahHalaman > $batasHalaman) {

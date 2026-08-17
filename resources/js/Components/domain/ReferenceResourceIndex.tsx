@@ -6,7 +6,8 @@ import { ReferenceResourceTable } from '@/Components/domain/ReferenceResourceTab
 import { Button } from '@/Components/ui/Button';
 import { Card, CardFooter } from '@/Components/ui/Card';
 import { EmptyState } from '@/Components/ui/EmptyState';
-import { Link, router } from '@inertiajs/react';
+import { useFilters } from '@/hooks/useFilters';
+import { Link } from '@inertiajs/react';
 import { Plus, SearchX } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -36,13 +37,7 @@ export function ReferenceResourceIndex({ jenis, judul, singular, alamat, referen
         ...(filter.status ? [{ kunci: 'status', label: `Status: ${filter.status === 'aktif' ? 'Aktif' : 'Nonaktif'}` }] : []),
     ], [filter]);
 
-    function ubah(kunci: string, nilai: string) {
-        router.get(alamat, { ...filterAktif(filter), [kunci]: nilai || undefined }, { preserveState: true, preserveScroll: true, replace: true });
-    }
-
-    function bersihkan() {
-        router.get(alamat, {}, { preserveScroll: true, replace: true });
-    }
+    const { ubah, bersihkan } = useFilters(alamat, filter);
 
     return (
         <>
@@ -74,11 +69,4 @@ export function ReferenceResourceIndex({ jenis, judul, singular, alamat, referen
             </Card>
         </>
     );
-}
-
-function filterAktif(filter: { cari: string | null; status: string | null }): Record<string, string> {
-    return {
-        ...(filter.cari ? { cari: filter.cari } : {}),
-        ...(filter.status ? { status: filter.status } : {}),
-    };
 }

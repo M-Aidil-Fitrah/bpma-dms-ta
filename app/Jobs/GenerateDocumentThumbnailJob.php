@@ -22,7 +22,13 @@ final class GenerateDocumentThumbnailJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 1;
+    /**
+     * Satu kesempatan tambahan untuk kegagalan sementara (mis. proses
+     * `libreoffice`/`gs` bentrok sesaat dengan job lain di worker yang sama).
+     * Turunan visual tetap tidak kritis — kalau kedua percobaan gagal, kartu
+     * kembali memakai ikon dan aplikasi tidak terganggu.
+     */
+    public int $tries = 2;
 
     public bool $deleteWhenMissingModels = true;
 

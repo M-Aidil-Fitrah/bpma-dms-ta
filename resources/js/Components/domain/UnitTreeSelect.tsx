@@ -1,7 +1,7 @@
 import type { UnitPilihan } from '@/Components/domain/UnitTreePicker';
+import { useUnitTree } from '@/hooks/useUnitTree';
 import { cn } from '@/lib/cn';
 import { ChevronRight } from 'lucide-react';
-import { useMemo, useState } from 'react';
 
 export interface UnitTreeSelectProps {
     units: readonly UnitPilihan[];
@@ -19,30 +19,7 @@ export interface UnitTreeSelectProps {
  * baris.
  */
 export function UnitTreeSelect({ units, nilai, onChange }: UnitTreeSelectProps) {
-    const [terbuka, setTerbuka] = useState<Set<number>>(new Set());
-
-    const { induk, anakDari } = useMemo(() => {
-        const induk = units.filter((u) => u.parent_id === null);
-        const anakDari = new Map<number, UnitPilihan[]>();
-
-        for (const unit of units) {
-            if (unit.parent_id === null) continue;
-            const daftar = anakDari.get(unit.parent_id) ?? [];
-            daftar.push(unit);
-            anakDari.set(unit.parent_id, daftar);
-        }
-
-        return { induk, anakDari };
-    }, [units]);
-
-    function toggle(id: number) {
-        setTerbuka((s) => {
-            const n = new Set(s);
-            n.has(id) ? n.delete(id) : n.add(id);
-
-            return n;
-        });
-    }
+    const { induk, anakDari, terbuka, toggleTerbuka } = useUnitTree(units);
 
     return (
         <div className="max-h-72 space-y-0.5 overflow-y-auto rounded-lg border border-line p-2">
@@ -58,8 +35,8 @@ export function UnitTreeSelect({ units, nilai, onChange }: UnitTreeSelectProps) 
                             {anak.length > 0 ? (
                                 <button
                                     type="button"
-                                    onClick={() => toggle(unit.id)}
-                                    aria-label={isTerbuka ? 'Tutup divisi' : 'Buka divisi'}
+                                    onClick={() => toggleTerbuka(unit.id)}
+                                    aria-label={`${isTerbuka ? 'Tutup' : 'Buka'} divisi ${unit.nama}`}
                                     aria-expanded={isTerbuka}
                                     className="flex size-6 shrink-0 items-center justify-center rounded text-ink-subtle hover:bg-surface-sunken"
                                 >

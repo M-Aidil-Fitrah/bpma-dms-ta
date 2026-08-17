@@ -6,8 +6,9 @@ import { UserTable } from '@/Components/domain/UserTable';
 import { Button } from '@/Components/ui/Button';
 import { Card, CardFooter } from '@/Components/ui/Card';
 import { EmptyState } from '@/Components/ui/EmptyState';
+import { useFilters } from '@/hooks/useFilters';
 import { AppLayout } from '@/Layouts/AppLayout';
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { UserPlus, UserSearch, Users } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -39,17 +40,7 @@ export default function Index({ pengguna, filter, opsi }: UsersIndexProps) {
         auth: { user: App.Data.AuthUserData };
     };
 
-    function ubah(kunci: string, nilai: string) {
-        router.get(
-            '/admin/users',
-            { ...bersihkanFilter(filter), [kunci]: nilai || undefined },
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
-    }
-
-    function bersihkan() {
-        router.get('/admin/users', {}, { preserveScroll: true, replace: true });
-    }
+    const { ubah, bersihkan } = useFilters('/admin/users', filter);
 
     const definisi = useMemo<FilterDefinition[]>(
         () => [
@@ -160,16 +151,6 @@ export default function Index({ pengguna, filter, opsi }: UsersIndexProps) {
     );
 }
 
-function bersihkanFilter(filter: FilterPengguna): Record<string, string> {
-    const hasil: Record<string, string> = {};
-
-    if (filter.cari) hasil.cari = filter.cari;
-    if (filter.jabatan) hasil.jabatan = String(filter.jabatan);
-    if (filter.unit) hasil.unit = String(filter.unit);
-    if (filter.status) hasil.status = filter.status;
-
-    return hasil;
-}
 
 function KeadaanKosong({ adaPenyaring, onReset }: { adaPenyaring: boolean; onReset: () => void }) {
     if (adaPenyaring) {

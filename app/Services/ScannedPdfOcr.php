@@ -7,33 +7,19 @@ namespace App\Services;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Smalot\PdfParser\Parser;
 
 /**
  * Meraster PDF pindaian satu halaman demi satu halaman untuk Tesseract.
  *
  * Tidak pernah menyimpan hasil raster ke disk dokumen. Halaman sementara
  * hidup hanya sepanjang job agar OCR dapat melaporkan progres yang benar dan
- * agar PDF besar tidak sekaligus memenuhi cakram sementara.
+ * agar PDF besar tidak sekaligus memenuhi cakram sementara. Jumlah halaman
+ * didapat dari `DocumentTextExtractor::pdfTeksDanHalaman()` (satu parse yang
+ * sama dipakai untuk cek teks digital), bukan diparse ulang di sini.
  */
 final class ScannedPdfOcr
 {
     public function __construct(private readonly DocumentTextExtractor $ekstraktor) {}
-
-    public function jumlahHalaman(string $path): int
-    {
-        if (file_get_contents($path, false, null, 0, 5) !== '%PDF-') {
-            throw new RuntimeException('Berkas tidak memiliki header PDF yang sah.');
-        }
-
-        $jumlah = count((new Parser)->parseFile($path)->getPages());
-
-        if ($jumlah < 1) {
-            throw new RuntimeException('PDF tidak memiliki halaman yang dapat dipindai.');
-        }
-
-        return $jumlah;
-    }
 
     /**
      * @param  callable(int, int): void  $laporkanProgres

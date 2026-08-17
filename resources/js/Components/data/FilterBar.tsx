@@ -130,7 +130,7 @@ export function FilterBar({
                             onClick={() => onHapusChip(chip.kunci)}
                             className="inline-flex min-h-touch items-center gap-1.5 rounded-full border border-line bg-white px-3 text-sm text-ink-muted transition-colors hover:border-danger/30 hover:bg-danger-soft hover:text-danger sm:min-h-8"
                         >
-                            {chip.label}
+                            <span aria-hidden>{chip.label}</span>
                             <X className="size-3.5" aria-hidden />
                             <span className="sr-only">Hapus filter {chip.label}</span>
                         </button>

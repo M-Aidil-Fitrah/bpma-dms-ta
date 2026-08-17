@@ -200,6 +200,21 @@ final class DocumentShowTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_unduhan_mendukung_http_range_untuk_seek_video(): void
+    {
+        // Tanpa dukungan Range, peramban tidak bisa men-scrub video/audio —
+        // server selalu mengirim 200 penuh walau diminta sepotong.
+        $document = $this->buatDokumen(['file_mime_type' => 'video/mp4']);
+        $panjang = strlen((string) Storage::disk('local')->get($document->file_path));
+
+        $this->actingAs($this->berhak)
+            ->withHeaders(['Range' => 'bytes=0-4'])
+            ->get("/documents/{$document->id}/file")
+            ->assertStatus(206)
+            ->assertHeader('accept-ranges', 'bytes')
+            ->assertHeader('content-range', "bytes 0-4/{$panjang}");
+    }
+
     // -- Pratinjau ------------------------------------------------------------
 
     public function test_pratinjau_memakai_content_disposition_inline(): void

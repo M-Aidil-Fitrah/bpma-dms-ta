@@ -1,6 +1,6 @@
 import { KategoriChart } from '@/Components/data/KategoriChart';
 import { StatCard } from '@/Components/data/StatCard';
-import { ActivityEmpty, ActivityItem } from '@/Components/domain/ActivityItem';
+import { ActivityItem } from '@/Components/domain/ActivityItem';
 import { DocumentRow } from '@/Components/domain/DocumentRow';
 import { Card, CardBody, CardHeader, CardTitle } from '@/Components/ui/Card';
 import { EmptyState } from '@/Components/ui/EmptyState';
@@ -14,6 +14,7 @@ import {
     CircleX,
     FileText,
     FolderOpen,
+    History,
     Plus,
 } from 'lucide-react';
 
@@ -161,7 +162,7 @@ function KartuMasaEvaluasi({ data }: { data: App.Data.DashboardData }) {
                 </div>
             </CardHeader>
 
-            <CardBody className="p-2 sm:p-2">
+            <CardBody className="p-2">
                 {data.mendekati_evaluasi.length === 0 ? (
                     <EmptyState
                         icon={CalendarClock}
@@ -235,7 +236,7 @@ function KartuTerbaru({ data }: { data: App.Data.DashboardData }) {
                 </Link>
             </CardHeader>
 
-            <CardBody className="p-2 sm:p-2">
+            <CardBody className="p-2">
                 {data.terbaru.length === 0 ? (
                     <EmptyState
                         icon={FileText}
@@ -269,10 +270,16 @@ function KartuAktivitas({ data }: { data: App.Data.DashboardData }) {
                 <CardTitle>Aktivitas Terbaru</CardTitle>
             </CardHeader>
 
-            <CardBody className="p-2 sm:p-2">
+            <CardBody className="p-2">
                 {data.aktivitas_terbaru.length > 0 ? (
                     <div className="divide-y divide-line">{data.aktivitas_terbaru.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div>
-                ) : <ActivityEmpty />}
+                ) : (
+                    <EmptyState
+                        icon={History}
+                        title="Belum ada aktivitas"
+                        description="Aktivitas yang dapat Anda akses akan muncul di sini."
+                    />
+                )}
             </CardBody>
         </Card>
     );

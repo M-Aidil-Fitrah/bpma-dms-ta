@@ -39,7 +39,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 /**
@@ -186,7 +186,11 @@ final class DocumentController extends Controller
         }
 
         if (app(DocumentThumbnailService::class)->didukung($document->file_mime_type)) {
-            GenerateDocumentThumbnailJob::dispatch($document);
+            // Antrean terpisah dari ekstraksi teks (`default`) — OCR PDF
+            // pindaian bisa memakan waktu 15 menit; tanpa pemisahan ini,
+            // gambar mini dokumen lain ikut tertahan di belakang satu OCR
+            // yang sedang berjalan pada worker yang sama.
+            GenerateDocumentThumbnailJob::dispatch($document)->onQueue('thumbnail');
         }
 
         return redirect()
@@ -350,6 +354,15 @@ final class DocumentController extends Controller
                 bolehAktifkan: $request->user()->can('restore', $document),
             ),
             'riwayat' => $aktivitas->recentForDocument($document),
+            // Dikirim dari config, bukan di-hardcode di hook React — anggaran
+            // polling harus selalu cukup menutupi durasi OCR terpanjang yang
+            // mungkin terjadi (`pdf_ocr_timeout_detik`), dan satu-satunya cara
+            // menjamin itu tanpa dua angka yang bisa diam-diam menyimpang
+            // adalah membaca sumber yang sama.
+            'pollingKonfigurasi' => [
+                'jedaMs' => (int) config('dms.ekstraksi.polling_jeda_ms'),
+                'maksPercobaan' => (int) config('dms.ekstraksi.polling_maks_percobaan'),
+            ],
         ]);
     }
 
@@ -361,7 +374,7 @@ final class DocumentController extends Controller
      * tanpa aturan ini, seluruh sistem mekanisme akses dapat dilewati hanya
      * dengan menebak alamat berkasnya (`PRD.md` §8.2).
      */
-    public function serveFile(Request $request, Document $document, ActivityLogService $aktivitas): StreamedResponse
+    public function serveFile(Request $request, Document $document, ActivityLogService $aktivitas): BinaryFileResponse
     {
         $this->authorize('view', $document);
 
@@ -376,17 +389,15 @@ final class DocumentController extends Controller
             ['nama_berkas' => $document->file_name_original],
         );
 
-        return Storage::disk('local')->download(
-            $document->file_path,
+        // Tipe berkas tidak diteruskan apa adanya bahkan pada unduhan —
+        // `Content-Disposition: attachment` memang sudah menyuruh peramban
+        // menyimpan, tapi tidak semua peramban lama patuh, dan tipe generik
+        // menutup sisa celahnya.
+        return PenyajianBerkas::respons(
+            Storage::disk('local')->path($document->file_path),
             $document->file_name_original,
-            [
-                ...PenyajianBerkas::headerKeamanan(),
-                // Bahkan pada unduhan, tipe berkas tidak diteruskan apa adanya.
-                // `Content-Disposition: attachment` memang sudah menyuruh
-                // peramban menyimpan, tapi tidak semua peramban lama patuh —
-                // dan tipe generik menutup sisa celahnya.
-                'Content-Type' => PenyajianBerkas::tipeAman($document->file_mime_type),
-            ],
+            $document->file_mime_type,
+            'attachment',
         );
     }
 
@@ -403,7 +414,7 @@ final class DocumentController extends Controller
      * karena itu tetap dilayani, tapi dipaksa menjadi unduhan — pengguna tidak
      * kehilangan aksesnya ke berkas, hanya tidak dijalankan di tempat.
      */
-    public function previewFile(Request $request, Document $document, ActivityLogService $aktivitas): StreamedResponse
+    public function previewFile(Request $request, Document $document, ActivityLogService $aktivitas): BinaryFileResponse
     {
         $this->authorize('view', $document);
 
@@ -421,17 +432,10 @@ final class DocumentController extends Controller
             return $this->serveFile($request, $document, $aktivitas);
         }
 
-        return Storage::disk('local')->response(
-            $path,
-            $nama,
-            [
-                ...PenyajianBerkas::headerKeamanan(),
-                // Tipe diambil dari daftar-boleh, bukan dari kolom apa adanya,
-                // supaya nilai yang aneh di basis data tidak ikut diteruskan
-                // mentah-mentah ke peramban.
-                'Content-Type' => PenyajianBerkas::tipeAman($mime),
-            ],
-        );
+        // Tipe diambil dari daftar-boleh, bukan dari kolom apa adanya, supaya
+        // nilai yang aneh di basis data tidak ikut diteruskan mentah-mentah
+        // ke peramban.
+        return PenyajianBerkas::respons(Storage::disk('local')->path($path), $nama, $mime, 'inline');
     }
 
     /**
@@ -441,20 +445,18 @@ final class DocumentController extends Controller
      * URL penyimpanan langsung atau proteksi yang lebih longgar dari berkas
      * aslinya.
      */
-    public function thumbnail(Document $document): StreamedResponse
+    public function thumbnail(Document $document): BinaryFileResponse
     {
         $this->authorize('view', $document);
 
         abort_unless($document->thumbnail_path !== null, 404);
         abort_unless(Storage::disk('local')->exists($document->thumbnail_path), 404);
 
-        return Storage::disk('local')->response(
-            $document->thumbnail_path,
+        return PenyajianBerkas::respons(
+            Storage::disk('local')->path($document->thumbnail_path),
             "thumbnail-{$document->id}.jpg",
-            [
-                ...PenyajianBerkas::headerKeamanan(),
-                'Content-Type' => 'image/jpeg',
-            ],
+            'image/jpeg',
+            'inline',
         );
     }
 

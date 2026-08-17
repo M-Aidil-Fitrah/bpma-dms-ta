@@ -68,6 +68,11 @@ export function PdfViewer({ url, judul }: PdfViewerProps) {
 
         return () => {
             dibatalkan = true;
+            // Eksplisit, bukan mengandalkan `destroy()` di atas untuk ikut
+            // membatalkan render yang sedang jalan — perilaku itu detail
+            // internal pdf.js yang bisa berubah antar versi.
+            renderRef.current?.cancel();
+            renderRef.current = null;
             void tugasRef.current?.destroy();
             tugasRef.current = null;
             dokumenRef.current = null;

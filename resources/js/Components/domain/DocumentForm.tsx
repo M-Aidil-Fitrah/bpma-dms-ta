@@ -13,6 +13,7 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/Components/ui/Card';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
 import { Select } from '@/Components/ui/Select';
+import { Textarea } from '@/Components/ui/Textarea';
 import { formatUkuranBerkas } from '@/lib/format';
 import { Link, useForm } from '@inertiajs/react';
 import { Lock, Save, Upload } from 'lucide-react';
@@ -282,12 +283,12 @@ export function DocumentForm({
                             className="sm:col-span-2"
                         >
                             {(props) => (
-                                <textarea
+                                <Textarea
                                     {...props}
                                     rows={3}
                                     value={data.deskripsi}
+                                    invalid={Boolean(errors.deskripsi)}
                                     onChange={(e) => setData('deskripsi', e.target.value)}
-                                    className="block w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-ink-subtle focus:border-brand-700 focus:ring-1 focus:ring-brand-700"
                                 />
                             )}
                         </Field>

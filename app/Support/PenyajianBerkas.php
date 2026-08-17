@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+
 /**
  * Aturan penyajian berkas unggahan ke peramban.
  *
@@ -82,6 +84,34 @@ final class PenyajianBerkas
             // oleh proxy perusahaan — isinya bergantung pada siapa yang meminta.
             'Cache-Control' => 'private, no-store, max-age=0',
         ];
+    }
+
+    /**
+     * Respons berkas dengan dukungan HTTP Range (`Accept-Ranges` + 206
+     * Partial Content) — video/audio dapat di-*seek* dan PDF besar dimuat
+     * progresif per potongan, bukan mengunduh seluruh berkas dulu setiap
+     * kali. `Storage::response()`/`download()` bawaan Laravel memakai
+     * `StreamedResponse` yang selalu mengirim seluruh isi dan mengabaikan
+     * header `Range` sama sekali — `BinaryFileResponse` Symfony menanganinya
+     * otomatis lewat `prepare()`, yang dipanggil framework untuk setiap
+     * respons yang dikembalikan controller.
+     *
+     * @param  string  $pathAbsolut  Jalur filesystem asli, BUKAN jalur relatif disk Storage.
+     */
+    public static function respons(string $pathAbsolut, string $nama, ?string $mime, string $disposisi): BinaryFileResponse
+    {
+        // `public: false` mencegah Symfony menyetel `Cache-Control: public`
+        // bawaannya — header keamanan di bawah yang menentukan, bukan default
+        // library.
+        $respons = new BinaryFileResponse($pathAbsolut, 200, [], public: false);
+        $respons->setContentDisposition($disposisi, $nama);
+        $respons->headers->set('Content-Type', self::tipeAman($mime));
+
+        foreach (self::headerKeamanan() as $kunci => $nilai) {
+            $respons->headers->set($kunci, $nilai);
+        }
+
+        return $respons;
     }
 
     /**

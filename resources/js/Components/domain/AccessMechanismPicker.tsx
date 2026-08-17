@@ -99,7 +99,6 @@ export function AccessMechanismPicker({
 
             <Mekanisme
                 aktif={nilai.unit_ids.length > 0}
-                onToggle={() => ubah({ unit_ids: nilai.unit_ids.length > 0 ? [] : [] })}
                 icon={Users}
                 judul="Bagikan ke unit"
                 keterangan={
@@ -118,7 +117,6 @@ export function AccessMechanismPicker({
 
             <Mekanisme
                 aktif={nilai.shared_users.length > 0}
-                onToggle={() => ubah({ shared_users: [] })}
                 icon={Users}
                 judul="Bagikan ke orang tertentu"
                 keterangan={
@@ -220,13 +218,6 @@ function JenjangPicker({
 }
 
 /**
- * Nama jenjang apa adanya, mis. "Deputi & Sekretaris".
- *
- * Angka tingkat sengaja tidak ikut ditampilkan: ia nomor internal basis data,
- * dan menampilkannya hanya menambah satu hal lagi yang harus diterjemahkan
- * pembaca.
- */
-/**
  * Ringkasan satu baris untuk panel pratinjau, mis. "7 orang berjabatan Kepala
  * BPMA, Wakil Kepala BPMA, Deputi, Sekretaris".
  */
@@ -241,6 +232,13 @@ function ringkasJenjang(
     return `${jumlah} orang berjabatan ${nama.join(', ')}`;
 }
 
+/**
+ * Nama jenjang apa adanya, mis. "Deputi & Sekretaris".
+ *
+ * Angka tingkat sengaja tidak ikut ditampilkan: ia nomor internal basis data,
+ * dan menampilkannya hanya menambah satu hal lagi yang harus diterjemahkan
+ * pembaca.
+ */
 function namaJenjang(j: JenjangJabatan): string {
     const nama = j.jabatan.map((p) => p.nama);
 
@@ -259,7 +257,14 @@ function Mekanisme({
     selaluTerbuka = false,
 }: {
     aktif: boolean;
-    onToggle: () => void;
+    /**
+     * Tidak dipakai (dan tidak perlu diisi) untuk mekanisme `selaluTerbuka`
+     * seperti "Bagikan ke unit"/"Bagikan ke orang tertentu" — isinya sudah
+     * selalu tampil terlepas status aktif, dan status aktifnya sendiri
+     * berubah otomatis begitu pemilih di dalamnya memilih/melepas sesuatu,
+     * bukan lewat klik header ini.
+     */
+    onToggle?: () => void;
     icon: typeof Globe;
     judul: string;
     keterangan: string;
@@ -276,11 +281,11 @@ function Mekanisme({
         >
             <button
                 type="button"
-                onClick={selaluTerbuka && aktif ? undefined : onToggle}
+                onClick={selaluTerbuka ? undefined : onToggle}
                 aria-pressed={aktif}
                 className={cn(
                     'flex w-full items-start gap-3 p-3 text-left',
-                    selaluTerbuka && aktif ? 'cursor-default' : 'cursor-pointer',
+                    selaluTerbuka ? 'cursor-default' : 'cursor-pointer',
                 )}
             >
                 <span

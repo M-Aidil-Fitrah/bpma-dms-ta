@@ -1,11 +1,12 @@
-import { ActivityEmpty, ActivityItem } from '@/Components/domain/ActivityItem';
+import { ActivityItem } from '@/Components/domain/ActivityItem';
 import { FilterBar, type FilterChip, type FilterDefinition } from '@/Components/data/FilterBar';
 import { Pagination } from '@/Components/data/Pagination';
 import { SearchInput } from '@/Components/data/SearchInput';
 import { Card, CardFooter } from '@/Components/ui/Card';
+import { EmptyState } from '@/Components/ui/EmptyState';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { router } from '@inertiajs/react';
-import { SearchX } from 'lucide-react';
+import { History, SearchX } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface FilterActivity {
@@ -52,8 +53,23 @@ export default function Index({ aktivitas, filter, opsi }: ActivityIndexProps) {
                     {aktivitas.data.length > 0 ? (
                         <div className="divide-y divide-line">{aktivitas.data.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div>
                     ) : chips.length > 0 ? (
-                        <div className="flex flex-col items-center py-10 text-center"><SearchX className="size-6 text-ink-subtle" /><p className="mt-3 text-sm font-medium text-ink">Tidak ada aktivitas yang cocok</p><button type="button" onClick={reset} className="mt-2 text-sm font-medium text-brand-700">Bersihkan semua filter</button></div>
-                    ) : <ActivityEmpty />}
+                        <EmptyState
+                            icon={SearchX}
+                            title="Tidak ada aktivitas yang cocok"
+                            description="Tidak ada aktivitas yang sesuai dengan penyaring yang sedang aktif. Coba longgarkan atau bersihkan penyaringnya."
+                            action={
+                                <button type="button" onClick={reset} className="text-sm font-medium text-brand-700 hover:text-brand-800">
+                                    Bersihkan semua filter
+                                </button>
+                            }
+                        />
+                    ) : (
+                        <EmptyState
+                            icon={History}
+                            title="Belum ada aktivitas"
+                            description="Aktivitas yang dapat Anda akses akan muncul di sini."
+                        />
+                    )}
                     {aktivitas.total > 0 && <CardFooter><Pagination meta={aktivitas} labelItem="aktivitas" /></CardFooter>}
                 </Card>
             </div>

@@ -1,7 +1,7 @@
 import { Avatar } from '@/Components/ui/Avatar';
 import { formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
-import { ArrowRight, History } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export function ActivityItem({ activity }: { activity: App.Data.ActivityLogData }) {
     const before = (activity.perubahan.old ?? {}) as Record<string, string>;
@@ -41,17 +41,5 @@ export function ActivityItem({ activity }: { activity: App.Data.ActivityLogData 
                 )}
             </div>
         </article>
-    );
-}
-
-export function ActivityEmpty() {
-    return (
-        <div className="flex flex-col items-center py-10 text-center">
-            <span className="mb-3 inline-flex size-11 items-center justify-center rounded-full bg-surface-sunken text-ink-subtle">
-                <History className="size-5" aria-hidden />
-            </span>
-            <p className="text-sm font-medium text-ink">Belum ada aktivitas</p>
-            <p className="mt-1 max-w-xs text-sm text-ink-muted">Aktivitas yang dapat Anda akses akan muncul di sini.</p>
-        </div>
     );
 }

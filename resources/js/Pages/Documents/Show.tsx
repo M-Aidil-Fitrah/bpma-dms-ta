@@ -1,12 +1,14 @@
 import { AccessSummary } from '@/Components/domain/AccessSummary';
-import { ActivityEmpty, ActivityItem } from '@/Components/domain/ActivityItem';
+import { ActivityItem } from '@/Components/domain/ActivityItem';
 import { DocumentHeaderActions } from '@/Components/domain/DocumentHeaderActions';
 import { DocumentPreview } from '@/Components/domain/DocumentPreview';
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
 import { ExtractionStatusBadge } from '@/Components/domain/ExtractionStatusBadge';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
+import { Alert } from '@/Components/ui/Alert';
 import { Avatar } from '@/Components/ui/Avatar';
 import { Card } from '@/Components/ui/Card';
+import { EmptyState } from '@/Components/ui/EmptyState';
 import { useDocumentReloadPolling } from '@/hooks/useDocumentReloadPolling';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
@@ -67,6 +69,14 @@ export default function Show({ dokumen, riwayat, pollingKonfigurasi }: ShowProps
                 />
             }
         >
+            {!dokumen.aktif && (
+                <Alert variant="warning" title="Dokumen ini nonaktif" className="mb-5">
+                    Disembunyikan dari daftar dokumen dan hasil pencarian untuk semua orang.
+                    Anda melihatnya karena berperan Superadmin — gunakan tombol "Aktifkan
+                    Kembali" di atas untuk memunculkannya lagi.
+                </Alert>
+            )}
+
             <div className="grid gap-5 xl:grid-cols-5">
                 {/* Pratinjau mendapat porsi terbesar: itu yang dicari orang saat
                     membuka halaman ini, bukan daftar metadatanya. */}
@@ -348,7 +358,11 @@ function PanelRiwayat({ riwayat }: { riwayat: App.Data.ActivityLogData[] }) {
     }
 
     return (
-        <ActivityEmpty />
+        <EmptyState
+            icon={History}
+            title="Belum ada aktivitas"
+            description="Aktivitas yang dapat Anda akses akan muncul di sini."
+        />
     );
 }
 

@@ -548,8 +548,9 @@ final class DocumentController extends Controller
             $pencarianDenganRelevansi = $this->tambahkanKonteksPencarian($query, $kata);
         }
 
-        if ($pencarianDenganRelevansi && ! $request->filled('urut')) {
-            $query->orderByDesc('search_relevance');
+        if ($pencarianDenganRelevansi && ! $request->boolean('urut_manual')) {
+            $query->orderByDesc('search_field_priority')
+                ->orderByDesc('search_relevance');
         } else {
             $query->orderBy($request->kolomUrutan(), $request->arahUrutan());
         }
@@ -611,7 +612,7 @@ final class DocumentController extends Controller
 
         $query->whereFullText(
             ['documents.nomor', 'documents.judul', 'documents.deskripsi', 'documents.extracted_text'],
-            $kata,
+            $this->kueriBoolean($kata),
             ['mode' => 'boolean'],
         );
     }
@@ -642,6 +643,7 @@ final class DocumentController extends Controller
 
         $frasa = mb_strtolower($kata);
         $pola = '%'.$this->escapeLike($frasa).'%';
+        $nomorDalamFrasa = $this->nomorDiDalamFrasa($kata);
         $query->selectRaw('CASE WHEN LOWER(documents.nomor) LIKE ? THEN 1 ELSE 0 END AS search_matches_nomor', [$pola])
             ->selectRaw('CASE WHEN LOWER(documents.judul) LIKE ? THEN 1 ELSE 0 END AS search_matches_judul', [$pola])
             ->selectRaw('CASE WHEN LOWER(COALESCE(documents.deskripsi, \'\')) LIKE ? THEN 1 ELSE 0 END AS search_matches_deskripsi', [$pola]);
@@ -661,8 +663,24 @@ final class DocumentController extends Controller
 
         $query->selectRaw(
             'MATCH(documents.nomor, documents.judul, documents.deskripsi, documents.extracted_text) AGAINST (? IN BOOLEAN MODE) AS search_relevance',
-            [$kata],
+            [$this->kueriBoolean($kata)],
         )
+            ->selectRaw(
+                'CASE
+                    WHEN LOWER(documents.judul) LIKE ? THEN 600
+                    WHEN LOWER(documents.judul) LIKE ? THEN 500
+                    WHEN ? <> \'\' AND documents.nomor_normalized LIKE ? THEN 400
+                    WHEN LOWER(COALESCE(documents.deskripsi, \'\')) LIKE ? THEN 300
+                    ELSE 0
+                END AS search_field_priority',
+                [
+                    $pola,
+                    '%'.$this->escapeLike($this->kataCuplikan($frasa)).'%',
+                    $nomorDalamFrasa,
+                    '%'.$this->escapeLike($nomorDalamFrasa).'%',
+                    $pola,
+                ],
+            )
             ->selectRaw(
                 'CASE WHEN LOCATE(?, LOWER(COALESCE(documents.extracted_text, \'\'))) > 0 THEN 1 ELSE 0 END AS search_matches_isi',
                 [$kataCuplikan],
@@ -681,7 +699,35 @@ final class DocumentController extends Controller
 
     private function adalahPencarianNomor(string $kata, string $nomor): bool
     {
-        return $nomor !== '' && (str_contains($kata, '/') || ctype_digit($kata));
+        // Hanya nomor dokumen MURNI yang memakai jalur prefix terindeks.
+        // "notulen 002/BPMA" adalah pencarian campuran, bukan nomor, dan
+        // wajib tetap mencari judul + nomor melalui FULLTEXT.
+        return $nomor !== ''
+            && preg_match('/^(?=.*\\d)[a-z0-9]+(?:[\\/-][a-z0-9]+)+$/i', $kata) === 1;
+    }
+
+    private function kueriBoolean(string $kata): string
+    {
+        $istilah = $this->istilahPencarian($kata);
+
+        return $istilah === [] ? $kata : implode(' ', array_map(fn (string $istilah): string => "+{$istilah}", $istilah));
+    }
+
+    /** @return list<string> */
+    private function istilahPencarian(string $kata): array
+    {
+        preg_match_all('/[\\p{L}\\p{N}]{3,}/u', mb_strtolower($kata), $hasil);
+
+        return array_values(array_unique($hasil[0]));
+    }
+
+    private function nomorDiDalamFrasa(string $kata): string
+    {
+        if (preg_match('/\\b\\d{2,}(?:[\\/-][[:alnum:]]+)+/iu', $kata, $hasil) !== 1) {
+            return '';
+        }
+
+        return preg_replace('/[^a-z0-9]+/i', '', strtolower($hasil[0])) ?? '';
     }
 
     private function escapeLike(string $nilai): string
@@ -691,16 +737,7 @@ final class DocumentController extends Controller
 
     private function kataCuplikan(string $kata): string
     {
-        $kataBersih = preg_replace('/[^[:alnum:]]+/u', ' ', $kata) ?? '';
-        $bagian = preg_split('/\\s+/u', trim($kataBersih)) ?: [];
-
-        foreach ($bagian as $bagianKata) {
-            if (mb_strlen($bagianKata) >= 3) {
-                return $bagianKata;
-            }
-        }
-
-        return '';
+        return $this->istilahPencarian($kata)[0] ?? '';
     }
 
     /**

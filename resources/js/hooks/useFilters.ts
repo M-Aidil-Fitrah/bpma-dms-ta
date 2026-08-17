@@ -1,7 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useCallback } from 'react';
 
-type NilaiFilter = string | number | null;
+type NilaiFilter = string | number | boolean | null;
 
 export interface OpsiFilter<F> {
     /**

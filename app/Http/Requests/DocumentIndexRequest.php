@@ -55,6 +55,10 @@ final class DocumentIndexRequest extends FormRequest
             'sampai' => ['nullable', 'date', 'after_or_equal:dari'],
             'urut' => ['nullable', Rule::in(array_keys(self::URUTAN))],
             'arah' => ['nullable', Rule::in(['asc', 'desc'])],
+            // `urut` selalu ikut dalam state antarmuka agar ikon kolom stabil.
+            // Flag ini membedakan nilai bawaan itu dari pilihan urut sadar
+            // pengguna, sehingga pencarian normal tetap boleh memakai ranking.
+            'urut_manual' => ['nullable', 'boolean'],
             'tampilan' => ['nullable', Rule::in(['tabel', 'grid'])],
             'halaman' => ['nullable', 'integer', 'min:1'],
         ];
@@ -102,6 +106,7 @@ final class DocumentIndexRequest extends FormRequest
             'dari' => $this->string('dari')->toString() ?: null,
             'sampai' => $this->string('sampai')->toString() ?: null,
             'urut' => $this->string('urut')->toString() ?: 'tanggal',
+            'urut_manual' => $this->boolean('urut_manual'),
             'tampilan' => $this->string('tampilan')->toString() === 'grid' ? 'grid' : 'tabel',
             'arah' => $this->arahUrutan(),
         ];

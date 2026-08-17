@@ -12,6 +12,7 @@ export interface FilterDokumen {
     dari: string | null;
     sampai: string | null;
     urut: string;
+    urut_manual: boolean;
     arah: 'asc' | 'desc';
     tampilan: 'tabel' | 'grid';
 }
@@ -32,7 +33,7 @@ export function useDocumentFilters(filter: FilterDokumen) {
     });
 
     const urutkan = useCallback(
-        (urut: string, arah: 'asc' | 'desc') => terapkan({ urut, arah }),
+        (urut: string, arah: 'asc' | 'desc') => terapkan({ urut, arah, urut_manual: true }),
         [terapkan],
     );
 

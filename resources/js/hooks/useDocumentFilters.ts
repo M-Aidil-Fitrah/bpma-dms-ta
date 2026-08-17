@@ -6,6 +6,9 @@ export interface FilterDokumen {
     kategori: number | null;
     unit: number | null;
     status: string | null;
+    status_ekstraksi: string | null;
+    pengunggah: number | null;
+    tipe: string | null;
     dari: string | null;
     sampai: string | null;
     urut: string;

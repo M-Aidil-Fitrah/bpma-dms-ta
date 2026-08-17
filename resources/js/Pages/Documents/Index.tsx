@@ -18,6 +18,7 @@ interface OpsiFilter {
     kategori: { id: number; nama: string }[];
     unit: { id: number; nama: string }[];
     unit_pohon: { id: number; nama: string; parent_id: number | null }[];
+    pengunggah: { id: number; name: string }[];
 }
 
 interface DocumentsIndexProps {
@@ -29,6 +30,17 @@ interface DocumentsIndexProps {
 const STATUS_OPTIONS = [
     { value: 'berlaku', label: 'Berlaku' },
     { value: 'kadaluarsa', label: 'Kadaluarsa' },
+] as const;
+const EKSTRAKSI_OPTIONS = [
+    { value: 'completed', label: 'Dapat dicari' },
+    { value: 'review_required', label: 'Perlu ditinjau' },
+    { value: 'pending', label: 'Memproses' },
+    { value: 'failed', label: 'Gagal' },
+    { value: 'not_applicable', label: 'Lampiran biasa' },
+] as const;
+const TIPE_OPTIONS = [
+    { value: 'pdf', label: 'PDF' }, { value: 'gambar', label: 'Gambar' },
+    { value: 'word', label: 'Word' }, { value: 'teks', label: 'Teks' }, { value: 'lainnya', label: 'Lainnya' },
 ] as const;
 
 export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
@@ -43,12 +55,15 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
                 placeholder: 'Semua kategori',
                 options: (opsi?.kategori ?? []).map((k) => ({ value: k.id, label: k.nama })),
             },
+            { kunci: 'pengunggah', label: 'Pengunggah', tipe: 'select', placeholder: 'Semua pengunggah', options: (opsi?.pengunggah ?? []).map((p) => ({ value: p.id, label: p.name })) },
             {
                 kunci: 'unit',
                 label: 'Unit Asal',
                 tipe: 'tree',
                 treeUnits: opsi?.unit_pohon ?? [],
             },
+            { kunci: 'tipe', label: 'Tipe Berkas', tipe: 'select', placeholder: 'Semua tipe', options: TIPE_OPTIONS },
+            { kunci: 'status_ekstraksi', label: 'Pencarian Isi', tipe: 'select', placeholder: 'Semua status', options: EKSTRAKSI_OPTIONS },
             {
                 kunci: 'status',
                 label: 'Status',
@@ -72,6 +87,9 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
             kategori: filter.kategori?.toString() ?? '',
             unit: filter.unit?.toString() ?? '',
             status: filter.status ?? '',
+            pengunggah: filter.pengunggah?.toString() ?? '',
+            tipe: filter.tipe ?? '',
+            status_ekstraksi: filter.status_ekstraksi ?? '',
             dari: filter.dari ?? '',
             sampai: filter.sampai ?? '',
         }),
@@ -106,7 +124,7 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
                     <SearchInput
                         value={filter.cari ?? ''}
                         onChange={(nilai) => ubah('cari', nilai)}
-                        placeholder="Cari judul atau nomor dokumen…"
+                        placeholder="Cari nomor, judul, deskripsi, atau isi dokumen…"
                         className="flex-1"
                     />
 

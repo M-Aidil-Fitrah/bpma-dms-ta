@@ -14,7 +14,8 @@ import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
 import { dalamJendelaWaktu, formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, History, Info, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, History, Info, ShieldCheck, Upload } from 'lucide-react';
+import { Button } from '@/Components/ui/Button';
 import { useState, type ReactNode } from 'react';
 
 interface ShowProps {
@@ -204,13 +205,21 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
             </Baris>
 
             <Baris label="Pencarian Isi">
-                <ExtractionStatusBadge
-                    status={dokumen.extraction_status}
-                    halamanTotal={dokumen.halaman_ekstraksi_total}
-                    halamanSelesai={dokumen.halaman_ekstraksi_selesai}
-                    estimasiDetik={dokumen.estimasi_ekstraksi_detik}
-                    pesan={dokumen.pesan_ekstraksi}
-                />
+                <div className="space-y-2">
+                    <ExtractionStatusBadge
+                        status={dokumen.extraction_status}
+                        halamanTotal={dokumen.halaman_ekstraksi_total}
+                        halamanSelesai={dokumen.halaman_ekstraksi_selesai}
+                        estimasiDetik={dokumen.estimasi_ekstraksi_detik}
+                        pesan={dokumen.pesan_ekstraksi}
+                    />
+                    {dokumen.extraction_status === 'review_required' && dokumen.boleh_ubah && (
+                        <div className="flex flex-wrap gap-2">
+                            <Link href="/documents/create"><Button size="sm" variant="secondary" icon={Upload}>Unggah dokumen lain</Button></Link>
+                            <Link href={`/documents/create?replace=${dokumen.id}`}><Button size="sm" icon={Upload}>Unggah pengganti</Button></Link>
+                        </div>
+                    )}
+                </div>
             </Baris>
 
             <hr className="border-line" />

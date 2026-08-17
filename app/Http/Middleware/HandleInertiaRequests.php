@@ -50,9 +50,15 @@ class HandleInertiaRequests extends Middleware
 
             // Pesan sekali-tampil setelah sebuah aksi. Dibungkus closure supaya
             // hanya dibaca saat props benar-benar dikirim.
+            // Kunci di sini persis sama dengan status toast di antarmuka
+            // (`Components/ui/Toast.tsx`). Menambah status baru berarti
+            // menambahnya di kedua tempat — dan yang tidak terdaftar di sini
+            // tidak akan pernah sampai ke layar.
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                'warning' => fn () => $request->session()->get('warning'),
+                'info' => fn () => $request->session()->get('info'),
             ],
         ];
     }

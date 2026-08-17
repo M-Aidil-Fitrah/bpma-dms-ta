@@ -31,8 +31,38 @@ final class DocumentPolicy
         return true;
     }
 
+    /**
+     * Setiap pengguna aktif boleh mengunggah dokumen (FR-06).
+     *
+     * Tidak ada pembatasan berdasarkan jabatan atau unit: siapa pun yang punya
+     * akun berhak menerbitkan dokumen dari unitnya. Yang dibatasi adalah siapa
+     * yang dapat MELIHATNYA — dan itu ditentukan mekanisme akses yang dipilih
+     * pengunggah, bukan oleh siapa yang boleh mengunggah.
+     *
+     * Method ini wajib ada meski isinya sederhana. Policy tanpa method yang
+     * dipanggil `authorize()` berarti penolakan — seluruh pengguna, termasuk
+     * Superadmin, akan menerima 403 tanpa penjelasan.
+     */
+    public function create(User $user): bool
+    {
+        return $user->is_active;
+    }
+
+    /**
+     * Dokumen nonaktif hanya dapat dibuka Superadmin.
+     *
+     * Menyembunyikannya dari daftar saja tidak cukup: alamatnya tetap dapat
+     * diketik langsung, dan tautan lama masih tersimpan di riwayat peramban
+     * maupun di surel (FR-43). Superadmin tetap boleh membukanya karena dialah
+     * satu-satunya yang dapat mengaktifkannya kembali — tanpa itu dokumen yang
+     * keliru dinonaktifkan menjadi mustahil dipulihkan lewat antarmuka.
+     */
     public function view(User $user, Document $document): bool
     {
+        if (! $document->is_active && ! $user->isSuperadmin()) {
+            return false;
+        }
+
         return Document::query()
             ->visibleTo($user)
             ->whereKey($document->getKey())
@@ -47,6 +77,14 @@ final class DocumentPolicy
      */
     public function update(User $user, Document $document): bool
     {
+        // Dokumen nonaktif dibekukan. Menyuntingnya berarti mengubah sesuatu
+        // yang sudah dinyatakan tidak berlaku, dan perubahannya tidak akan
+        // terlihat siapa pun — kecuali kelak dokumen itu diaktifkan kembali dan
+        // ternyata isinya sudah berbeda dari yang dulu dinonaktifkan.
+        if (! $document->is_active && ! $user->isSuperadmin()) {
+            return false;
+        }
+
         if ($user->bypassesDocumentAccess()) {
             return true;
         }

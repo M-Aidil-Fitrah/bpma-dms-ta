@@ -1,0 +1,139 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use App\Enums\ActivityLogName;
+use App\Enums\AuditEvent;
+use App\Models\Category;
+use App\Models\Document;
+use App\Models\Jabatan;
+use App\Models\Unit;
+use App\Models\User;
+use App\Services\ActivityLogService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Inertia\Testing\AssertableInertia;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+/** Batas akses riwayat FEAT-15 tidak boleh bocor lewat query atau tab detail. */
+final class ActivityLogVisibilityTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $anggota;
+
+    private User $pemilikLain;
+
+    private User $superadmin;
+
+    private Document $terlihat;
+
+    private Document $tertutup;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        foreach ([User::ROLE_PENGGUNA, User::ROLE_SUPERADMIN] as $role) {
+            Role::findOrCreate($role, 'web');
+        }
+
+        $jabatan = Jabatan::factory()->tingkat(4)->create();
+        $unit = Unit::factory()->create();
+        $this->anggota = $this->buatPengguna($jabatan, $unit, 'Anggota Terbatas');
+        $this->pemilikLain = $this->buatPengguna($jabatan, $unit, 'Pemilik Lain');
+        $this->superadmin = User::factory()->create(['jabatan_id' => null, 'unit_id' => null]);
+        $this->superadmin->assignRole(User::ROLE_SUPERADMIN);
+
+        $this->terlihat = Document::factory()->dibagikanKeSemua()->create([
+            'judul' => 'Dokumen Terlihat',
+            'uploaded_by' => $this->pemilikLain->id,
+        ]);
+        $this->tertutup = Document::factory()->create([
+            'judul' => 'Dokumen Tertutup',
+            'uploaded_by' => $this->pemilikLain->id,
+        ]);
+
+        $log = app(ActivityLogService::class);
+        $log->record(ActivityLogName::Dokumen, AuditEvent::DocumentUpdated, 'Dokumen terlihat diperbarui.', $this->terlihat, $this->pemilikLain);
+        $log->record(ActivityLogName::Dokumen, AuditEvent::DocumentUpdated, 'Dokumen tertutup diperbarui.', $this->tertutup, $this->pemilikLain);
+        $log->record(ActivityLogName::Kategori, AuditEvent::Created, 'Kategori audit ditambahkan.', Category::factory()->create(), $this->superadmin);
+    }
+
+    public function test_pengguna_biasa_hanya_melihat_aktivitas_dokumen_yang_dapat_dibukanya(): void
+    {
+        $this->actingAs($this->anggota)
+            ->get('/activity-log')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('ActivityLog/Index')
+                ->where('aktivitas.total', 1)
+                ->where('aktivitas.data.0.subjek', 'Dokumen Terlihat'));
+
+        $this->get("/documents/{$this->terlihat->id}")
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('riwayat', 1));
+    }
+
+    public function test_superadmin_melihat_semua_aktivitas_termasuk_subjek_non_dokumen_dan_filternya(): void
+    {
+        $this->actingAs($this->superadmin)
+            ->get('/activity-log?jenis=kategori')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('aktivitas.total', 1)
+                ->where('aktivitas.data.0.log_name', ActivityLogName::Kategori->value));
+
+        $this->get('/activity-log?cari=tertutup')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('aktivitas.total', 1)
+                ->where('aktivitas.data.0.subjek', 'Dokumen Tertutup'));
+    }
+
+    public function test_jumlah_query_riwayat_tidak_bertambah_seiring_aktivitas(): void
+    {
+        $this->actingAs($this->superadmin);
+
+        // Permintaan pertama turut memanaskan autentikasi dan cache role.
+        $this->hitungQueryRiwayat();
+
+        $queryDenganSedikitAktivitas = $this->hitungQueryRiwayat();
+
+        $log = app(ActivityLogService::class);
+
+        foreach (range(1, 40) as $urutan) {
+            $log->record(
+                ActivityLogName::Dokumen,
+                AuditEvent::DocumentUpdated,
+                "Aktivitas tambahan {$urutan}.",
+                $this->terlihat,
+                $this->pemilikLain,
+            );
+        }
+
+        $queryDenganBanyakAktivitas = $this->hitungQueryRiwayat();
+
+        $this->assertSame($queryDenganSedikitAktivitas, $queryDenganBanyakAktivitas);
+    }
+
+    private function hitungQueryRiwayat(): int
+    {
+        $jumlahQuery = 0;
+
+        DB::listen(static function () use (&$jumlahQuery): void {
+            $jumlahQuery++;
+        });
+
+        $this->get('/activity-log')->assertOk();
+
+        return $jumlahQuery;
+    }
+
+    private function buatPengguna(Jabatan $jabatan, Unit $unit, string $name): User
+    {
+        $user = User::factory()->create(['name' => $name, 'jabatan_id' => $jabatan->id, 'unit_id' => $unit->id]);
+        $user->assignRole(User::ROLE_PENGGUNA);
+
+        return $user;
+    }
+}

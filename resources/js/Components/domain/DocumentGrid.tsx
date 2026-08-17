@@ -5,6 +5,7 @@ import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
 import { Avatar } from '@/Components/ui/Avatar';
 import { formatTanggal, formatUkuranBerkas } from '@/lib/format';
 import { Link } from '@inertiajs/react';
+import { Eye } from 'lucide-react';
 import { memo } from 'react';
 
 export interface DocumentGridProps {
@@ -43,6 +44,7 @@ const DocumentGridCard = memo(function DocumentGridCard({
                 id={document.id}
                 mime={document.tipe_berkas}
                 judul={document.judul}
+                tersedia={document.thumbnail_tersedia}
             />
 
             <div className="flex flex-1 flex-col p-4">
@@ -84,6 +86,13 @@ const DocumentGridCard = memo(function DocumentGridCard({
                 <p className="mt-2 font-mono text-xs text-ink-subtle">
                     {formatTanggal(document.tanggal)} · {formatUkuranBerkas(document.ukuran_berkas)}
                 </p>
+
+                {document.alasan_terlihat && (
+                    <p className="mt-1.5 flex items-center gap-1 text-xs text-ink-subtle">
+                        <Eye className="size-3 shrink-0" aria-hidden />
+                        <span className="truncate">Terlihat karena: {document.alasan_terlihat}</span>
+                    </p>
+                )}
 
                 {/* `mt-auto` menahan baris ini tetap di dasar kartu, sehingga
                     seluruh kartu dalam satu baris grid berakhir sejajar walau

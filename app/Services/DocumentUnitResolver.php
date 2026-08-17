@@ -5,71 +5,48 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Unit;
-use Illuminate\Support\Collection;
 
 /**
- * Menentukan unit mana saja yang tercakup ketika pengunggah memilih satu unit.
+ * Menentukan unit mana yang benar-benar disimpan pada sebuah dokumen.
  *
- * Memilih unit tingkat atas — Sekretaris atau Deputi — secara wajar berarti
- * "beserta divisi di bawahnya". Cascade itu diselesaikan **di sini, saat
- * menyimpan**, dengan menyisipkan tiap divisi sebagai baris tersendiri di
- * `document_units`.
+ * **Yang tersimpan adalah persis yang dikirim** — tidak ada unit yang ditambahkan
+ * diam-diam oleh server. Cascade "memilih Deputi berarti seluruh divisinya ikut"
+ * (FR-39) diselesaikan di antarmuka: `UnitTreePicker` mencentang induk beserta
+ * seluruh anaknya sekaligus, lalu mengirim daftar lengkapnya.
  *
- * Kenapa saat menyimpan dan bukan saat membaca: isi `document_units` jadi
- * mencerminkan persis siapa yang berhak, tanpa aturan tersembunyi yang hanya
- * hidup di dalam query. Akibatnya pengunggah benar-benar dapat mengurangi unit
- * secara manual (FR-39), dan `accessSummary()` selalu menampilkan kenyataan.
- * Kalau cascade juga dihitung ulang saat membaca, menghapus unit induk dari
- * daftar tidak akan berpengaruh apa pun — pengaturan manualnya diam-diam
- * diabaikan (`Catatan_Audit.md` isu #15).
+ * Sebelumnya server yang menurunkan pohon itu, dan akibatnya menghapus satu
+ * divisi menjadi mustahil: selama induknya masih tercentang, divisi yang baru
+ * saja dibuang pengguna dipasang kembali saat menyimpan. Pengaturan manual
+ * pengguna diabaikan tanpa satu pun pesan — persis yang dilarang FR-39 dan
+ * `Catatan_Audit.md` isu #15.
+ *
+ * Dengan aturan sekarang, isi `document_units` selalu mencerminkan apa yang
+ * dilihat pengguna di layar saat ia menekan simpan.
  */
 final class DocumentUnitResolver
 {
     /**
-     * Unit yang disarankan ketika sebuah unit dipilih: unit itu sendiri beserta
-     * seluruh divisi aktif di bawahnya.
+     * Menyaring pilihan unit menjadi bentuk yang layak disimpan.
      *
-     * Hanya unit aktif yang disarankan — unit nonaktif tidak lagi muncul
-     * sebagai pilihan baru, walau yang sudah tercatat di dokumen lama tetap
-     * utuh (`Struktur_Data.md` §3.3).
-     *
-     * @return Collection<int, Unit>
-     */
-    public function defaultUnitsFor(Unit $anchor): Collection
-    {
-        return Unit::query()
-            ->active()
-            ->where(function ($query) use ($anchor): void {
-                $query->whereKey($anchor->getKey())
-                    ->orWhere('parent_id', $anchor->getKey());
-            })
-            ->orderBy('parent_id')
-            ->orderBy('nama')
-            ->get();
-    }
-
-    /**
-     * Bentuk siap simpan: daftar id unit hasil cascade dari beberapa unit yang
-     * dipilih sekaligus, tanpa duplikat.
+     * Hanya unit AKTIF yang boleh dipasang baru — unit nonaktif tidak lagi
+     * menjadi sasaran baru, walau yang sudah tercatat di dokumen lama tetap utuh
+     * (`Struktur_Data.md` §3.3). Duplikat dibuang supaya pivot tidak menerima
+     * baris kembar.
      *
      * @param  list<int>  $unitIds
      * @return list<int>
      */
-    public function resolveIds(array $unitIds): array
+    public function untukDisimpan(array $unitIds): array
     {
         if ($unitIds === []) {
             return [];
         }
 
-        $terpilih = Unit::query()->active()->whereKey($unitIds)->get();
-
-        $hasil = $terpilih->pluck('id')
-            ->merge(
-                Unit::query()->active()
-                    ->whereIn('parent_id', $terpilih->pluck('id'))
-                    ->pluck('id'),
-            );
-
-        return $hasil->unique()->values()->map(intval(...))->all();
+        return Unit::query()
+            ->active()
+            ->whereKey(array_unique($unitIds))
+            ->pluck('id')
+            ->map(intval(...))
+            ->all();
     }
 }

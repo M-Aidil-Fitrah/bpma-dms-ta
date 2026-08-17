@@ -1,5 +1,6 @@
 import { KategoriChart } from '@/Components/data/KategoriChart';
 import { StatCard } from '@/Components/data/StatCard';
+import { ActivityItem } from '@/Components/domain/ActivityItem';
 import { DocumentRow } from '@/Components/domain/DocumentRow';
 import { Card, CardBody, CardHeader, CardTitle } from '@/Components/ui/Card';
 import { EmptyState } from '@/Components/ui/EmptyState';
@@ -12,6 +13,7 @@ import {
     CircleCheck,
     CircleX,
     FileText,
+    FolderOpen,
     History,
     Plus,
 } from 'lucide-react';
@@ -35,7 +37,7 @@ export default function Dashboard({ data }: DashboardProps) {
                         Statistik Dokumen
                     </h2>
 
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <StatCard
                             label="Total Dokumen"
                             value={data.total}
@@ -64,14 +66,14 @@ export default function Dashboard({ data }: DashboardProps) {
                     </div>
                 </section>
 
-                <div className="grid gap-5 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
                     <KartuMasaEvaluasi data={data} />
                     <KartuKategori data={data} />
                 </div>
 
-                <div className="grid gap-5 xl:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
                     <KartuTerbaru data={data} />
-                    <KartuAktivitas />
+                    <KartuAktivitas data={data} />
                 </div>
             </div>
         </AppLayout>
@@ -96,13 +98,23 @@ function SambutanBanner({ user }: { user: App.Data.AuthUserData }) {
                 {user.unit && ` · ${user.unit}`}
             </p>
 
-            <Link
-                href="/documents"
-                className="mt-5 inline-flex min-h-touch items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-                <Plus className="size-4" aria-hidden />
-                Jelajahi Dokumen
-            </Link>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                <Link
+                    href="/documents/create"
+                    className="inline-flex min-h-touch items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                    <Plus className="size-4" aria-hidden />
+                    Unggah Dokumen
+                </Link>
+
+                <Link
+                    href="/documents"
+                    className="inline-flex min-h-touch items-center justify-center gap-2 rounded-lg border border-white/40 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                    <FolderOpen className="size-4" aria-hidden />
+                    Jelajahi Dokumen
+                </Link>
+            </div>
         </div>
     );
 }
@@ -150,7 +162,7 @@ function KartuMasaEvaluasi({ data }: { data: App.Data.DashboardData }) {
                 </div>
             </CardHeader>
 
-            <CardBody className="p-2 sm:p-2">
+            <CardBody className="p-2">
                 {data.mendekati_evaluasi.length === 0 ? (
                     <EmptyState
                         icon={CalendarClock}
@@ -224,7 +236,7 @@ function KartuTerbaru({ data }: { data: App.Data.DashboardData }) {
                 </Link>
             </CardHeader>
 
-            <CardBody className="p-2 sm:p-2">
+            <CardBody className="p-2">
                 {data.terbaru.length === 0 ? (
                     <EmptyState
                         icon={FileText}
@@ -251,19 +263,23 @@ function KartuTerbaru({ data }: { data: App.Data.DashboardData }) {
  * Ditampilkan apa adanya, bukan diisi contoh — angka atau nama palsu di dasbor
  * mudah terbawa sampai demo dan disangka data sungguhan.
  */
-function KartuAktivitas() {
+function KartuAktivitas({ data }: { data: App.Data.DashboardData }) {
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Aktivitas Terbaru</CardTitle>
             </CardHeader>
 
-            <CardBody className="p-2 sm:p-2">
-                <EmptyState
-                    icon={History}
-                    title="Riwayat aktivitas belum aktif"
-                    description="Pencatatan unggah, perubahan, dan unduhan akan tampil di sini setelah modul riwayat aktivitas selesai dikerjakan."
-                />
+            <CardBody className="p-2">
+                {data.aktivitas_terbaru.length > 0 ? (
+                    <div className="divide-y divide-line">{data.aktivitas_terbaru.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div>
+                ) : (
+                    <EmptyState
+                        icon={History}
+                        title="Belum ada aktivitas"
+                        description="Aktivitas yang dapat Anda akses akan muncul di sini."
+                    />
+                )}
             </CardBody>
         </Card>
     );

@@ -80,16 +80,152 @@ cukup — dua proses terakhir menangani pekerjaan latar yang tidak akan berjalan
 tanpanya:
 
 ```bash
-php artisan serve          # 1. Server aplikasi
-npm run dev                # 2. Server aset frontend
-php artisan queue:work     # 3. Ekstraksi teks & OCR asinkron
-php artisan schedule:work  # 4. Perpindahan status dokumen ke Kadaluarsa
+php artisan serve                          # 1. Server aplikasi
+npm run dev                                # 2. Server aset frontend
+php artisan queue:work --queue=default,thumbnail  # 3. Ekstraksi teks, OCR & gambar mini
+php artisan schedule:work                  # 4. Perpindahan status dokumen ke Kadaluarsa
 ```
 
 Kalau lupa menjalankan nomor 3 atau 4, aplikasi tetap terbuka dan terlihat
 normal — tapi status ekstraksi dokumen akan macet selamanya di "Memproses", dan
 dokumen yang masa berlakunya lewat tidak pernah berpindah status. Keduanya
 terlihat seperti bug, padahal hanya prosesnya yang belum jalan.
+
+Gambar mini/pratinjau Office berjalan di antrean **`thumbnail`**, terpisah
+dari ekstraksi teks/OCR di antrean **`default`** — sengaja dipisah supaya satu
+OCR PDF pindaian yang berjalan lama (bisa sampai 15 menit) tidak menahan
+gambar mini dokumen lain yang seharusnya cepat selesai. Satu proses
+`queue:work` yang memantau keduanya (seperti perintah di atas) sudah cukup
+untuk pemakaian lokal/tim kecil. Di VPS dengan trafik unggah yang lebih
+padat, jalankan **dua** proses `queue:work` terpisah (masing-masing program
+Supervisor/systemd sendiri) — satu `--queue=default`, satu lagi
+`--queue=thumbnail` — supaya keduanya benar-benar berjalan paralel, bukan
+sekadar bergiliran dalam satu proses.
+
+### Status dokumen kedaluwarsa
+
+Scheduler menjalankan `documents:update-expired-status` setiap hari pukul
+**00.05**. Command ini hanya memindahkan dokumen berstatus **Berlaku** yang
+masa berlakunya sebelum hari ini ke **Kadaluarsa**, lalu mencatat setiap
+perubahan sebagai aktivitas otomatis oleh Sistem. Untuk demonstrasi atau
+pengecekan manual, jalankan:
+
+```bash
+php artisan documents:update-expired-status
+```
+
+Command ini aman dijalankan berulang; dokumen yang sudah Kadaluarsa tidak
+akan diubah atau dicatat lagi.
+
+### Menjaga `queue:work` tetap hidup di VPS
+
+Proses nomor 3 tidak boleh berhenti begitu sesi terminal ditutup, dan
+Laravel sendiri tidak menyalakannya ulang kalau prosesnya mati. Pakai
+**Supervisor** atau **systemd** supaya proses itu otomatis dijalankan lagi.
+
+Kalau workernya sempat mati, tidak ada data yang rusak — dokumen yang
+terlanjur diunggah selama itu hanya menunggu di tabel `jobs` dengan status
+tetap "Memproses" sampai workernya hidup kembali dan memprosesnya.
+
+---
+
+## Batas Ukuran Unggahan
+
+Aplikasi menetapkan batas **1 GB**, dan angka itu **berlaku sama di semua
+lingkungan** — laptop pengembangan maupun VPS. Batas yang berbeda-beda per mesin
+membuat pengujian tidak dapat dipercaya: berkas yang lolos di laptop bisa
+ditolak di server tanpa satu pun perubahan kode.
+
+Sebagian besar setelannya **sudah ikut di repositori** dan berlaku otomatis
+saat di-deploy. Yang benar-benar perlu disentuh manual hanya satu, dan itu pun
+cuma pada VPS ber-nginx.
+
+### Apa yang perlu Anda lakukan, per lingkungan
+
+| Lingkungan | Yang perlu disetel manual |
+|---|---|
+| **Laptop tim** (`php artisan serve`) | **Tidak ada** |
+| **cPanel / Plesk / CyberPanel / aaPanel** | **Tidak ada** |
+| **Shared hosting** (PHP-FPM) | **Tidak ada** |
+| **VPS: Apache** | **Tidak ada** |
+| **VPS: nginx + PHP-FPM** | Satu blok di konfigurasi nginx |
+
+### Kenapa sebagian besar tidak perlu disetel
+
+Tiga berkas menanganinya, masing-masing untuk lingkungan yang berbeda:
+
+| Berkas | Menangani | Berlaku pada |
+|---|---|---|
+| `app/Console/Commands/ServeCommand.php` | Menyalakan PHP dengan batas yang benar | `php artisan serve` di laptop |
+| `public/.user.ini` | `upload_max_filesize`, `post_max_size` | PHP-FPM & CGI — cPanel, Plesk, shared hosting, mayoritas VPS |
+| `public/.htaccess` | `LimitRequestBody` dan `php_value` | Apache, baik mod_php maupun FPM |
+
+`public/.user.ini` itu yang menutup sebagian besar kasus: PHP membacanya langsung
+dari direktori akar dokumen, tanpa akses root dan tanpa membuka panel apa pun.
+Perubahannya tersimpan di cache selama lima menit, jadi efeknya bisa tertunda
+sebentar setelah deploy.
+
+### VPS ber-nginx — satu-satunya yang manual
+
+`client_max_body_size` milik nginx tidak dapat diatur dari sisi PHP. Nginx
+menolak permintaan besar **sebelum** PHP dijalankan, jadi berkas apa pun di
+`public/` tidak akan terbaca.
+
+Tambahkan ke blok `server` atau `location`:
+
+```nginx
+client_max_body_size 1074M;
+
+# Unggahan 1 GB pada koneksi lambat butuh waktu. Tanpa tiga baris ini,
+# unggahan besar terputus di tengah dengan galat 504 yang terlihat acak —
+# karena bergantung kecepatan jaringan penggunanya, bukan pada berkasnya.
+client_body_timeout  600s;
+proxy_read_timeout   600s;
+fastcgi_read_timeout 600s;
+```
+
+Lalu `sudo nginx -t && sudo systemctl reload nginx`.
+
+### Kalau memakai panel dan tetap ingin memastikan
+
+Bila karena suatu hal `.user.ini` tidak terbaca, panel biasanya menyediakan
+jalur GUI:
+
+| Panel | Jalur |
+|---|---|
+| cPanel | Software → **MultiPHP INI Editor** → pilih domain → ubah `upload_max_filesize` dan `post_max_size` |
+| Plesk | Websites & Domains → **PHP Settings** |
+| CyberPanel | PHP → **Edit PHP Configs** → Advanced |
+| aaPanel | App Store → PHP → **Settings** → Configuration |
+
+### Kalau lingkungan belum disetel
+
+Aplikasi tidak diam dan tidak gagal secara misterius. Formulir unggah membaca
+batas yang sedang benar-benar berlaku, menampilkannya, dan memperingatkan bahwa
+angka itu di bawah yang seharusnya. Tanpa mekanisme ini, berkas kebesaran
+ditolak PHP **sebelum** Laravel sempat berjalan — dan pesan yang muncul menjadi
+"berkas wajib diisi", bukan "berkas terlalu besar".
+
+### Di laptop pengembangan — tidak perlu disetel
+
+`php artisan serve` sudah otomatis menyalakan PHP dengan batas yang sesuai
+konfigurasi aplikasi. Tidak ada flag yang perlu diingat, dan `php.ini` sistem
+tidak perlu disentuh.
+
+Ini bukan kebetulan: perintah `serve` bawaan Laravel ditimpa di
+`app/Console/Commands/ServeCommand.php`, karena `upload_max_filesize` bersifat
+`PHP_INI_PERDIR` dan mustahil diubah dari dalam kode setelah PHP berjalan.
+Angkanya dibaca dari `config/dms.php`, sehingga tidak ada dua tempat yang dapat
+berselisih.
+
+`php artisan dev` ikut terbantu — ia menyalakan servernya lewat perintah yang
+sama.
+
+Memeriksa batas yang sedang berlaku di dalam server:
+
+```bash
+php -d upload_max_filesize=1048576K -r 'echo ini_get("upload_max_filesize");'
+```
 
 ---
 

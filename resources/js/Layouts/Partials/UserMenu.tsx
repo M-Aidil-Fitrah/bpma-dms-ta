@@ -6,32 +6,21 @@ import { ChevronDown, LogOut, UserCog } from 'lucide-react';
 
 export interface UserMenuProps {
     user: App.Data.AuthUserData;
-    /** Tampilan ringkas untuk bilah atas; tampilan penuh untuk kaki bilah sisi. */
-    variant?: 'compact' | 'full';
 }
 
-export function UserMenu({ user, variant = 'compact' }: UserMenuProps) {
+export function UserMenu({ user }: UserMenuProps) {
     return (
         <Menu as="div" className="relative">
             <MenuButton
                 className={cn(
                     'flex min-h-touch items-center gap-2 rounded-lg border border-line bg-white px-2 py-1.5 text-left transition-colors',
                     'hover:bg-surface-sunken focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700',
-                    variant === 'full' && 'w-full border-0 px-3',
                 )}
             >
-                <Avatar initials={user.initials} size={variant === 'full' ? 'md' : 'sm'} />
+                <Avatar initials={user.initials} size="sm" />
 
-                {/* Pada varian penuh nama selalu tampil: komponennya berada di
-                    dalam bilah sisi atau laci yang lebarnya sudah pasti cukup,
-                    berapa pun lebar layarnya. Varian ringkas di bilah atas baru
-                    menampilkan nama saat ruangnya memang ada. */}
-                <span
-                    className={cn(
-                        'min-w-0 flex-1',
-                        variant === 'full' ? 'block' : 'hidden sm:block',
-                    )}
-                >
+                {/* Bilah atas baru menampilkan nama saat ruangnya memang ada. */}
+                <span className="hidden min-w-0 flex-1 sm:block">
                     <span className="block truncate text-sm font-medium text-ink">
                         {user.name}
                     </span>
@@ -44,7 +33,7 @@ export function UserMenu({ user, variant = 'compact' }: UserMenuProps) {
             </MenuButton>
 
             <MenuItems
-                anchor={variant === 'full' ? 'top start' : 'bottom end'}
+                anchor="bottom end"
                 className="z-50 mt-2 w-60 rounded-card border border-line bg-white p-1 shadow-pop focus:outline-none"
             >
                 <div className="border-b border-line px-3 py-2">

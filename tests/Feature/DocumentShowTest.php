@@ -200,6 +200,21 @@ final class DocumentShowTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_unduhan_mendukung_http_range_untuk_seek_video(): void
+    {
+        // Tanpa dukungan Range, peramban tidak bisa men-scrub video/audio —
+        // server selalu mengirim 200 penuh walau diminta sepotong.
+        $document = $this->buatDokumen(['file_mime_type' => 'video/mp4']);
+        $panjang = strlen((string) Storage::disk('local')->get($document->file_path));
+
+        $this->actingAs($this->berhak)
+            ->withHeaders(['Range' => 'bytes=0-4'])
+            ->get("/documents/{$document->id}/file")
+            ->assertStatus(206)
+            ->assertHeader('accept-ranges', 'bytes')
+            ->assertHeader('content-range', "bytes 0-4/{$panjang}");
+    }
+
     // -- Pratinjau ------------------------------------------------------------
 
     public function test_pratinjau_memakai_content_disposition_inline(): void
@@ -221,6 +236,49 @@ final class DocumentShowTest extends TestCase
         $this->actingAs($this->tidakBerhak)
             ->get("/documents/{$document->id}/preview")
             ->assertForbidden();
+    }
+
+    public function test_pratinjau_memakai_pdf_hasil_konversi_bila_tersedia(): void
+    {
+        $document = $this->buatDokumen([
+            'file_name_original' => 'notulen.docx',
+            'file_mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'preview_path' => 'previews/2026/08/notulen.pdf',
+        ]);
+        Storage::disk('local')->put($document->preview_path, '%PDF- berkas hasil konversi');
+
+        $this->actingAs($this->berhak)
+            ->get("/documents/{$document->id}/preview")
+            ->assertOk()
+            ->assertHeader('content-disposition', 'inline; filename=notulen.pdf')
+            ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_gambar_mini_memakai_proteksi_yang_sama_dengan_berkas_asli(): void
+    {
+        $document = $this->buatDokumen([
+            'thumbnail_path' => 'thumbnails/2026/08/dokumen-uji.jpg',
+            'is_shared_to_all' => false,
+        ]);
+        Storage::disk('local')->put($document->thumbnail_path, 'gambar mini uji');
+
+        $this->actingAs($this->tidakBerhak)
+            ->get("/documents/{$document->id}/thumbnail")
+            ->assertForbidden();
+
+        $this->actingAs($this->pengunggah)
+            ->get("/documents/{$document->id}/thumbnail")
+            ->assertOk()
+            ->assertHeader('content-type', 'image/jpeg');
+    }
+
+    public function test_gambar_mini_tidak_ada_menghasilkan_404(): void
+    {
+        $document = $this->buatDokumen();
+
+        $this->actingAs($this->berhak)
+            ->get("/documents/{$document->id}/thumbnail")
+            ->assertNotFound();
     }
 
     public function test_tamu_tidak_dapat_menyentuh_berkas_sama_sekali(): void

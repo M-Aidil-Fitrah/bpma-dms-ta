@@ -111,6 +111,24 @@ export default {
                 card: '0 1px 2px 0 rgb(17 24 39 / 0.04), 0 1px 3px 0 rgb(17 24 39 / 0.03)',
                 pop: '0 10px 30px -12px rgb(17 24 39 / 0.18)',
             },
+
+            // Animasi masuk toast. Didefinisikan sendiri, bukan lewat
+            // `tailwindcss-animate`: satu keyframe tidak sebanding dengan
+            // menambah satu dependensi lagi ke berkas bundel.
+            keyframes: {
+                'toast-masuk': {
+                    from: { opacity: '0', transform: 'translateY(-0.5rem)' },
+                    to: { opacity: '1', transform: 'translateY(0)' },
+                },
+                // Bilah hitung mundur toast; durasinya disetel per kartu.
+                'toast-mundur': {
+                    from: { transform: 'scaleX(1)' },
+                    to: { transform: 'scaleX(0)' },
+                },
+            },
+            animation: {
+                'toast-masuk': 'toast-masuk 180ms ease-out',
+            },
         },
     },
 

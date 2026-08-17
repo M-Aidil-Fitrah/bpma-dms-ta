@@ -10,6 +10,8 @@ use App\Data\KategoriRingkasData;
 use App\Enums\DocumentStatus;
 use App\Models\Document;
 use App\Models\User;
+use App\Services\ActivityLogQuery;
+use App\Services\PengaturanService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,10 +30,10 @@ final class DashboardController extends Controller
 
     private const JUMLAH_EVALUASI = 5;
 
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, PengaturanService $pengaturan, ActivityLogQuery $aktivitas): Response
     {
         $user = $request->user();
-        $rentang = $this->rentangEvaluasi($request);
+        $rentang = $this->rentangEvaluasi($request, $pengaturan);
 
         $rekap = $this->rekap($user, $rentang);
 
@@ -44,6 +46,7 @@ final class DashboardController extends Controller
                 per_kategori: $this->perKategori($user),
                 terbaru: $this->terbaru($user),
                 mendekati_evaluasi: $this->mendekatiEvaluasi($user, $rentang),
+                aktivitas_terbaru: $aktivitas->latestFor($user),
                 rentang_evaluasi: $rentang,
                 rentang_pilihan: config('dms.dokumen.rentang_evaluasi_pilihan'),
             ),
@@ -178,13 +181,13 @@ final class DashboardController extends Controller
      * tersedia diabaikan, supaya query string yang disunting sembarangan tidak
      * menghasilkan rentang yang tidak masuk akal.
      */
-    private function rentangEvaluasi(Request $request): int
+    private function rentangEvaluasi(Request $request, PengaturanService $pengaturan): int
     {
         $pilihan = config('dms.dokumen.rentang_evaluasi_pilihan');
         $diminta = (int) $request->integer('rentang');
 
         return in_array($diminta, $pilihan, true)
             ? $diminta
-            : config('dms.dokumen.rentang_evaluasi_awal');
+            : ($pengaturan->integer('dokumen.rentang_evaluasi_awal') ?? (int) config('dms.dokumen.rentang_evaluasi_awal'));
     }
 }

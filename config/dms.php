@@ -58,9 +58,21 @@ return [
         'per_halaman' => 20,
 
         /*
-         * Ukuran maksimum berkas unggahan dalam kilobyte (20 MB).
+         * Batas ukuran unggahan, dalam kilobyte. Berlaku SAMA di mana pun —
+         * laptop pengembangan maupun VPS.
+         *
+         * Angka tunggal ini disengaja. Batas yang berbeda-beda per mesin
+         * membuat pengujian manual tidak dapat dipercaya: berkas yang lolos di
+         * laptop bisa ditolak di server tanpa ada perubahan kode apa pun, dan
+         * penguji tidak punya cara mengetahui batas mana yang sedang berlaku.
+         *
+         * Lingkungan WAJIB disetel agar sanggup memenuhinya — lihat README
+         * bagian "Batas Ukuran Unggahan". Bila lingkungannya lebih ketat,
+         * aplikasi tidak diam: `App\Support\BatasUnggah` mendeteksinya, dan
+         * formulir unggah menampilkan peringatan beserta batas yang sebenarnya
+         * berlaku.
          */
-        'ukuran_maksimum_kb' => 20480,
+        'ukuran_maksimum_kb' => 1048576, // 1 GB
 
         /*
          * Ekstensi yang ditolak saat unggah — `PRD.md` §8.2.
@@ -113,11 +125,54 @@ return [
         'bahasa_ocr' => 'ind+eng',
 
         /*
+         * Batas berkas TXT yang dibaca ke `extracted_text`, dalam byte.
+         * Batas unggah keseluruhan 1 GB tidak berarti seluruh isinya wajar
+         * dimuat ke memori, disimpan di kolom, lalu dikirim utuh sebagai
+         * respons JSON tiap kali halaman detail dibuka. 2 MB jauh lebih dari
+         * cukup untuk dokumen teks apa pun yang realistis.
+         */
+        'txt_maks_bytes' => 2 * 1024 * 1024,
+
+        // PDF tanpa text layer diraster halaman demi halaman. Batas ini
+        // mencegah satu unggahan memonopoli worker database queue.
+        'pdf_ocr_maks_halaman' => 50,
+        'pdf_ocr_dpi' => 150,
+        'pdf_ocr_timeout_per_halaman_detik' => 60,
+        'pdf_ocr_timeout_detik' => 900,
+
+        /*
+         * Timeout proses Tesseract itu sendiri, dalam detik. Berlaku untuk
+         * gambar langsung maupun tiap halaman PDF pindaian — tanpa ini
+         * Tesseract dapat menggantung tanpa batas pada citra tertentu,
+         * berbeda dari timeout render Ghostscript di atas yang hanya
+         * membungkus proses raster, bukan proses OCR-nya.
+         */
+        'ocr_timeout_detik' => 60,
+
+        /*
          * Polling status ekstraksi di antarmuka. Tanpa batas percobaan, tab yang
          * ditinggalkan terbuka akan memanggil server tanpa henti.
+         *
+         * Jumlah percobaan WAJIB menutupi `pdf_ocr_timeout_detik` di atas
+         * (900 detik) plus jeda antre di worker — kalau tidak, badge macet di
+         * "Memproses" walau job backend masih berjalan sungguhan, dan
+         * pengguna terpaksa memuat ulang manual justru pada kasus PDF 50
+         * halaman yang paling didokumentasikan sebagai "sudah selesai".
+         * 320 percobaan x 3 detik = 960 detik, sedikit di atas timeout job.
          */
         'polling_jeda_ms' => 3000,
-        'polling_maks_percobaan' => 40,
+        'polling_maks_percobaan' => 320,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Gambar Mini & Pratinjau (`DocumentThumbnailService`)
+    |--------------------------------------------------------------------------
+    */
+
+    'thumbnail' => [
+        'libreoffice_timeout_detik' => 60,
+        'ghostscript_timeout_detik' => 60,
     ],
 
 ];

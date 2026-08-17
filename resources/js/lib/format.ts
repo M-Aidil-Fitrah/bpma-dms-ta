@@ -95,6 +95,20 @@ export function labelTipeBerkas(mime: string): string {
     return 'Berkas';
 }
 
+/**
+ * Apakah suatu waktu ISO masih dalam N menit terakhir dari sekarang.
+ *
+ * Dipakai untuk membatasi jendela "masih menunggu proses latar belakang"
+ * (mis. konversi pratinjau Office) — tanpa batas waktu, dokumen yang job-nya
+ * gagal permanen (perkakas server tidak terpasang, dsb.) akan tampak
+ * "sedang disiapkan" selamanya alih-alih jatuh ke fallback yang aman.
+ */
+export function dalamJendelaWaktu(value: string, menit: number): boolean {
+    const berlalu = Date.now() - new Date(value).getTime();
+
+    return berlalu < menit * 60_000;
+}
+
 /** Memotong teks panjang tanpa memutus di tengah kata. */
 export function potongTeks(text: string, maksimum: number): string {
     if (text.length <= maksimum) return text;

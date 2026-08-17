@@ -18,23 +18,22 @@ export interface DocumentThumbnailProps {
     id: number;
     mime: string;
     judul: string;
+    tersedia: boolean;
     className?: string;
 }
 
 /**
  * Gambar mini isi dokumen untuk kartu pada tampilan grid.
  *
- * Berkas yang isinya dapat dilihat langsung — gambar, video, dan PDF —
- * menampilkan isinya sungguhan. Sisanya menampilkan ikon, karena memang tidak
- * ada yang bisa ditampilkan: Word dan Excel menuntut konversi di server yang
- * berada di luar lingkup (`PRD.md` §12), sementara ZIP dan audio memang tidak
- * punya wujud visual.
+ * Bila server sudah menyiapkan gambar mini, kartu memakainya untuk semua tipe
+ * dokumen yang dapat divisualkan. Jika perkakas server gagal atau tipe memang
+ * tidak punya wujud visual, perilaku lama menjadi fallback yang aman.
  *
  * Seluruh pemuatan ditunda sampai kartunya masuk ke area pandang. Tanpa itu,
  * membuka halaman grid berarti mengunduh dua puluh berkas sekaligus — sebagian
  * besar untuk kartu yang bahkan belum tergulir ke layar.
  */
-export function DocumentThumbnail({ id, mime, judul, className }: DocumentThumbnailProps) {
+export function DocumentThumbnail({ id, mime, judul, tersedia, className }: DocumentThumbnailProps) {
     const { ref, tampak } = useTampakDiLayar<HTMLDivElement>();
     const url = `/documents/${id}/preview`;
 
@@ -47,7 +46,7 @@ export function DocumentThumbnail({ id, mime, judul, className }: DocumentThumbn
             )}
         >
             {tampak ? (
-                <Isi mime={mime} url={url} judul={judul} />
+                <Isi id={id} mime={mime} url={url} judul={judul} thumbnailTersedia={tersedia} />
             ) : (
                 <IkonBerkas mime={mime} />
             )}
@@ -55,7 +54,34 @@ export function DocumentThumbnail({ id, mime, judul, className }: DocumentThumbn
     );
 }
 
-function Isi({ mime, url, judul }: { mime: string; url: string; judul: string }) {
+function Isi({
+    id,
+    mime,
+    url,
+    judul,
+    thumbnailTersedia,
+}: {
+    id: number;
+    mime: string;
+    url: string;
+    judul: string;
+    thumbnailTersedia: boolean;
+}) {
+    const [thumbnailGagal, setThumbnailGagal] = useState(false);
+
+    if (thumbnailTersedia && !thumbnailGagal) {
+        return (
+            <img
+                src={`/documents/${id}/thumbnail`}
+                alt={`Pratinjau ${judul}`}
+                loading="lazy"
+                decoding="async"
+                className="size-full object-cover"
+                onError={() => setThumbnailGagal(true)}
+            />
+        );
+    }
+
     if (mime.startsWith('image/')) {
         return (
             <img

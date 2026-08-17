@@ -4,6 +4,7 @@ import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
 import { Avatar } from '@/Components/ui/Avatar';
 import { formatTanggal, formatUkuranBerkas } from '@/lib/format';
 import { Link } from '@inertiajs/react';
+import { Eye } from 'lucide-react';
 import { memo } from 'react';
 
 export interface DocumentCardListProps {
@@ -80,6 +81,18 @@ const DocumentCard = memo(function DocumentCard({
             <div className="mt-2.5">
                 <AccessSummary ringkasan={document.ringkasan_akses} ringkas />
             </div>
+
+            {document.alasan_terlihat && (
+                <p className="mt-1.5 flex items-center gap-1 text-xs text-ink-subtle">
+                    {/* Beda dari AccessSummary di atas: itu daftar SELURUH
+                        mekanisme yang aktif pada dokumen, ini alasan
+                        SPESIFIK kenapa pengguna yang sedang login bisa
+                        melihatnya (FEAT-12). Dua orang berbeda bisa melihat
+                        dokumen yang sama lewat alasan yang berbeda pula. */}
+                    <Eye className="size-3 shrink-0" aria-hidden />
+                    Terlihat karena: {document.alasan_terlihat}
+                </p>
+            )}
         </Link>
     );
 });

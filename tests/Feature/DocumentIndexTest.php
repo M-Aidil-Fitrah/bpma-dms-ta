@@ -179,15 +179,10 @@ final class DocumentIndexTest extends TestCase
 
     // -- Penyaring ------------------------------------------------------------
 
-    public function test_pencarian_mencakup_judul_dan_nomor(): void
-    {
-        $this->buatDokumen(['judul' => 'Laporan Seismik Blok A', 'nomor' => '001/BPMA/X/I/2026']);
-        $this->buatDokumen(['judul' => 'Notulen Rapat', 'nomor' => '042/BPMA/SEISMIK/I/2026']);
-        $this->buatDokumen(['judul' => 'Kontrak Jasa', 'nomor' => '003/BPMA/X/I/2026']);
-
-        $this->actingAs($this->anggota)->get('/documents?cari=seismik')
-            ->assertInertia(fn (AssertableInertia $p) => $p->has('dokumen.data', 2));
-    }
+    // Pencarian kata kunci (`cari`) diuji di `DocumentFulltextSearchTest`,
+    // bukan di sini — FULLTEXT MariaDB tidak melihat baris yang baru dibuat
+    // dalam transaksi yang sama yang belum di-commit, dan `RefreshDatabase`
+    // di berkas ini membungkus tiap tes dalam transaksi yang di-rollback.
 
     public function test_penyaring_kategori_unit_dan_status_bekerja(): void
     {
@@ -220,28 +215,6 @@ final class DocumentIndexTest extends TestCase
         $this->actingAs($this->anggota)
             ->get('/documents?dari=2026-01-01&sampai=2026-06-30')
             ->assertInertia(fn (AssertableInertia $p) => $p->has('dokumen.data', 1));
-    }
-
-    public function test_beberapa_penyaring_dapat_digabung(): void
-    {
-        $this->buatDokumen(['judul' => 'Laporan Alpha', 'status' => DocumentStatus::Berlaku]);
-        $this->buatDokumen(['judul' => 'Laporan Beta', 'status' => DocumentStatus::Kadaluarsa]);
-        $this->buatDokumen(['judul' => 'Notulen Alpha', 'status' => DocumentStatus::Berlaku]);
-
-        $this->actingAs($this->anggota)
-            ->get('/documents?cari=Laporan&status=berlaku')
-            ->assertInertia(fn (AssertableInertia $p) => $p
-                ->has('dokumen.data', 1)
-                ->where('dokumen.data.0.judul', 'Laporan Alpha'));
-    }
-
-    public function test_penyaring_tidak_pernah_membocorkan_dokumen_di_luar_hak(): void
-    {
-        // Kata kuncinya cocok persis, tapi dokumennya tertutup bagi anggota.
-        $this->buatDokumen(['judul' => 'Rahasia Seismik', 'is_shared_to_all' => false]);
-
-        $this->actingAs($this->anggota)->get('/documents?cari=Rahasia')
-            ->assertInertia(fn (AssertableInertia $p) => $p->has('dokumen.data', 0));
     }
 
     public function test_tanggal_akhir_tidak_boleh_mendahului_tanggal_awal(): void
@@ -293,6 +266,38 @@ final class DocumentIndexTest extends TestCase
         foreach ($sql as $statement) {
             $this->assertStringNotContainsString('extracted_text', $statement);
         }
+    }
+
+    public function test_pencarian_memakai_index_fulltext(): void
+    {
+        // Tanpa bukti EXPLAIN ini, MATCH...AGAINST bisa saja diam-diam jatuh
+        // ke pemindaian tabel penuh — hasilnya tetap benar tapi lambat begitu
+        // datanya besar, dan tidak ada tes lain yang menangkap regresi itu.
+        $this->buatDokumen(['extracted_text' => 'kandungan minyak bumi cadangan']);
+
+        $this->actingAs($this->anggota);
+
+        $sql = null;
+        $bindings = null;
+        DB::listen(function ($query) use (&$sql, &$bindings): void {
+            if (str_contains($query->sql, 'match')) {
+                $sql = $query->sql;
+                $bindings = $query->bindings;
+            }
+        });
+
+        $this->get('/documents?cari=minyak')->assertOk();
+
+        $this->assertNotNull($sql, 'Query dengan MATCH...AGAINST tidak ditemukan.');
+
+        $baris = DB::select('EXPLAIN '.$sql, $bindings);
+        $tipeAkses = collect($baris)->pluck('type')->implode(',');
+
+        $this->assertStringContainsString(
+            'fulltext',
+            $tipeAkses,
+            "EXPLAIN tidak menunjukkan akses fulltext (type: {$tipeAkses}).",
+        );
     }
 
     public function test_jumlah_query_tidak_bertambah_seiring_baris(): void

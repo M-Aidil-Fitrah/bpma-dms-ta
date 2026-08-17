@@ -5,16 +5,19 @@ import { ViewToggle } from '@/Components/data/ViewToggle';
 import { DocumentCardList } from '@/Components/domain/DocumentCardList';
 import { DocumentGrid } from '@/Components/domain/DocumentGrid';
 import { DocumentTable } from '@/Components/domain/DocumentTable';
+import { Button } from '@/Components/ui/Button';
 import { Card, CardFooter } from '@/Components/ui/Card';
 import { EmptyState } from '@/Components/ui/EmptyState';
 import { useDocumentFilters, type FilterDokumen } from '@/hooks/useDocumentFilters';
 import { AppLayout } from '@/Layouts/AppLayout';
-import { FileText, SearchX } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { FileText, SearchX, Upload } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface OpsiFilter {
     kategori: { id: number; nama: string }[];
     unit: { id: number; nama: string }[];
+    unit_pohon: { id: number; nama: string; parent_id: number | null }[];
 }
 
 interface DocumentsIndexProps {
@@ -43,9 +46,8 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
             {
                 kunci: 'unit',
                 label: 'Unit Asal',
-                tipe: 'select',
-                placeholder: 'Semua unit',
-                options: (opsi?.unit ?? []).map((u) => ({ value: u.id, label: u.nama })),
+                tipe: 'tree',
+                treeUnits: opsi?.unit_pohon ?? [],
             },
             {
                 kunci: 'status',
@@ -79,7 +81,19 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
     const adaPenyaring = chips.length > 0;
 
     return (
-        <AppLayout title="Semua Dokumen">
+        <AppLayout
+            title="Semua Dokumen"
+            actions={
+                <Link href="/documents/create">
+                    <Button icon={Upload}>
+                        {/* Di ponsel hanya ikonnya yang tersisa; label penuh
+                            memakan hampir separuh lebar bilah atas. */}
+                        <span className="hidden sm:inline">Unggah Dokumen</span>
+                        <span className="sr-only sm:hidden">Unggah Dokumen</span>
+                    </Button>
+                </Link>
+            }
+        >
             <div className="space-y-4">
                 <FilterBar
                     definisi={definisi}
@@ -173,6 +187,11 @@ function KeadaanKosong({
             icon={FileText}
             title="Belum ada dokumen"
             description="Belum ada dokumen yang dapat Anda akses. Dokumen akan tampil di sini setelah diunggah dan dibagikan kepada Anda."
+            action={
+                <Link href="/documents/create">
+                    <Button icon={Upload}>Unggah Dokumen Pertama</Button>
+                </Link>
+            }
         />
     );
 }

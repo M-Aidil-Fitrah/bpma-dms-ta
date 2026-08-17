@@ -1,7 +1,7 @@
 import { Button } from '@/Components/ui/Button';
 import { formatUkuranBerkas } from '@/lib/format';
-import { Download, FileQuestion } from 'lucide-react';
-import { lazy, Suspense } from 'react';
+import { Download, FileQuestion, Loader2 } from 'lucide-react';
+import { lazy, Suspense, useState } from 'react';
 
 /**
  * pdf.js dimuat hanya saat berkasnya memang PDF.
@@ -15,30 +15,36 @@ const PdfViewer = lazy(() =>
 
 export interface DocumentPreviewProps {
     dokumen: App.Data.DocumentDetailData;
+    /**
+     * Job konversi Office masih mungkin berjalan (dalam jendela waktu wajar
+     * sejak unggah) — ditampilkan alih-alih langsung lompat ke fallback teks
+     * atau unduh, karena tab ini sedang di-polling dan akan otomatis berganti
+     * begitu `preview_tersedia` jadi true.
+     */
+    sedangMenyiapkanPratinjau?: boolean;
 }
 
 /**
  * Menampilkan isi dokumen sesuai tipe berkasnya (FR-09b).
  *
- * Word dan Excel belum menampilkan tata letak aslinya — untuk itu diperlukan
- * konversi ke PDF di sisi server, yang dijadwalkan menyusul. Sampai saat itu,
- * isi teksnya yang ditampilkan, bukan sekadar ikon: teks yang benar jauh lebih
- * berguna daripada gambar berkas yang tidak mengatakan apa-apa.
+ * Dokumen Office memakai PDF hasil konversi bila server berhasil membuatnya.
+ * Bila tidak, panel teks hasil ekstraksi tetap menjadi fallback yang lebih
+ * berguna daripada ikon kosong.
  */
-export function DocumentPreview({ dokumen }: DocumentPreviewProps) {
+export function DocumentPreview({ dokumen, sedangMenyiapkanPratinjau = false }: DocumentPreviewProps) {
     const url = `/documents/${dokumen.id}/preview`;
     const mime = dokumen.tipe_berkas;
 
-    if (mime.startsWith('image/')) {
+    if (dokumen.preview_tersedia) {
         return (
-            <div className="flex h-full items-center justify-center overflow-auto bg-surface-sunken p-4">
-                <img
-                    src={url}
-                    alt={dokumen.judul}
-                    className="max-h-full rounded shadow-card"
-                />
-            </div>
+            <Suspense fallback={<Memuat />}>
+                <PdfViewer url={url} judul={dokumen.judul} />
+            </Suspense>
         );
+    }
+
+    if (mime.startsWith('image/')) {
+        return <PratinjauGambar url={url} dokumen={dokumen} />;
     }
 
     if (mime === 'application/pdf') {
@@ -69,11 +75,51 @@ export function DocumentPreview({ dokumen }: DocumentPreviewProps) {
         );
     }
 
+    if (sedangMenyiapkanPratinjau) {
+        return <MenyiapkanPratinjau />;
+    }
+
     if (dokumen.isi_teks) {
         return <PanelTeks teks={dokumen.isi_teks} mime={mime} />;
     }
 
     return <TanpaPratinjau dokumen={dokumen} />;
+}
+
+function MenyiapkanPratinjau() {
+    return (
+        <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+            <Loader2 className="size-6 animate-spin text-ink-subtle" aria-hidden />
+            <p className="text-sm text-ink-muted">Pratinjau sedang disiapkan di latar belakang…</p>
+        </div>
+    );
+}
+
+/**
+ * Sebagian tipe gambar (mis. HEIC/HEIF foto kamera iPhone) lolos pengecekan
+ * awalan `image/` di sini tapi tidak ada di daftar-boleh inline server
+ * (`PenyajianBerkas::AMAN_INLINE`) — server menyajikannya sebagai unduhan,
+ * bukan gambar. Tanpa `onError`, itu tampil sebagai ikon gambar rusak yang
+ * diam selamanya, bukan fallback "Unduh Berkas" yang sudah ada untuk tipe
+ * tak-terdukung lain.
+ */
+function PratinjauGambar({ url, dokumen }: { url: string; dokumen: App.Data.DocumentDetailData }) {
+    const [gagal, setGagal] = useState(false);
+
+    if (gagal) {
+        return <TanpaPratinjau dokumen={dokumen} />;
+    }
+
+    return (
+        <div className="flex h-full items-center justify-center overflow-auto bg-surface-sunken p-4">
+            <img
+                src={url}
+                alt={dokumen.judul}
+                className="max-h-full rounded shadow-card"
+                onError={() => setGagal(true)}
+            />
+        </div>
+    );
 }
 
 function PanelTeks({ teks, mime }: { teks: string; mime: string }) {

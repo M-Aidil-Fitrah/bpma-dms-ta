@@ -5,11 +5,11 @@ import { type ImgHTMLAttributes } from 'react';
  *
  * Tinggi yang dipakai tata letak ditetapkan lewat `size`, lebarnya dibiarkan
  * mengikuti rasio secara otomatis. Dengan begitu, mengganti berkas logo tidak
- * menuntut penyesuaian lebar di mana pun — selama `viewBox`-nya dipertahankan.
+ * menuntut penyesuaian lebar di mana pun — selama rasio gambarnya dipertahankan.
  */
 const LOGO_RATIO = 638 / 168;
 
-const LOGO_SRC = '/images/logo-bpma.svg';
+const LOGO_SRC = '/images/logo-bpma.jpg';
 
 const SIZE_HEIGHT = {
     sm: 24,
@@ -25,8 +25,7 @@ interface LogoProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'a
 /**
  * Logo penuh BPMA (lambang + wordmark).
  *
- * Memakai SVG supaya tetap tajam di layar high-DPI — `PRD.md` §9, NFR
- * Ketajaman Aset Visual.
+ * Memakai berkas JPG resmi BPMA dari direktori publik.
  */
 export function Logo({ size = 'md', ...props }: LogoProps) {
     const height = SIZE_HEIGHT[size];

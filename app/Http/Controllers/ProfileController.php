@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ActivityLogName;
+use App\Enums\AuditEvent;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\ActivityLogService;
+use App\Services\AuditAttributeChanges;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -26,15 +31,37 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
-    {
-        $request->user()->fill($request->validated());
+    public function update(
+        ProfileUpdateRequest $request,
+        AuditAttributeChanges $perubahan,
+        ActivityLogService $aktivitas,
+    ): RedirectResponse {
+        $user = $request->user();
+        $user->fill($request->validated());
+        $perubahanAtribut = $perubahan->fromDirty($user, [
+            'name' => 'Nama',
+            'email' => 'Surel',
+        ]);
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        DB::transaction(function () use ($user, $perubahanAtribut, $aktivitas): void {
+            $user->save();
+
+            if ($perubahanAtribut['before'] !== []) {
+                $aktivitas->record(
+                    ActivityLogName::Pengguna,
+                    AuditEvent::Updated,
+                    'Profil pengguna diperbarui.',
+                    $user,
+                    $user,
+                    before: $perubahanAtribut['before'],
+                    after: $perubahanAtribut['after'],
+                );
+            }
+        });
 
         return Redirect::route('profile.edit');
     }

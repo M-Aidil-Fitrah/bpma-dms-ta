@@ -8,6 +8,7 @@ use App\Enums\DocumentEditScope;
 use App\Enums\DocumentStatus;
 use App\Enums\ExtractionStatus;
 use App\Models\Document;
+use App\Services\DocumentThumbnailService;
 use App\Support\Inisial;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -45,6 +46,17 @@ final class DocumentDetailData extends Data
         public string $tipe_berkas,
         public int $ukuran_berkas,
         public ExtractionStatus $extraction_status,
+        public ?int $halaman_ekstraksi_total,
+        public ?int $halaman_ekstraksi_selesai,
+        public ?int $estimasi_ekstraksi_detik,
+        public ?string $pesan_ekstraksi,
+        public bool $preview_tersedia,
+        /**
+         * Berkas Office yang PDF konversinya belum jadi — antarmuka
+         * menunggu, bukan langsung menyerah ke fallback unduh, karena job
+         * `GenerateDocumentThumbnailJob` masih mungkin berjalan.
+         */
+        public bool $pratinjau_sedang_disiapkan,
         /** Isi teks hasil ekstraksi; dasar pratinjau untuk berkas non-visual. */
         public ?string $isi_teks,
 
@@ -65,13 +77,19 @@ final class DocumentDetailData extends Data
         public DocumentEditScope $edit_scope,
         public string $label_edit_scope,
 
-        // -- Wewenang pengguna yang sedang membuka ----------------------------
+        // -- Keadaan & wewenang pengguna yang sedang membuka ------------------
+        /** Dokumen nonaktif hanya terlihat Superadmin (FR-10). */
+        public bool $aktif,
         public bool $boleh_ubah,
         public bool $boleh_nonaktifkan,
+        public bool $boleh_aktifkan,
     ) {}
 
-    public static function fromModel(Document $document, bool $bolehUbah): self
-    {
+    public static function fromModel(
+        Document $document,
+        bool $bolehUbah,
+        bool $bolehAktifkan = false,
+    ): self {
         return new self(
             id: $document->id,
             nomor: $document->nomor,
@@ -87,6 +105,13 @@ final class DocumentDetailData extends Data
             tipe_berkas: $document->file_mime_type,
             ukuran_berkas: $document->file_size,
             extraction_status: $document->extraction_status,
+            halaman_ekstraksi_total: $document->extraction_pages_total,
+            halaman_ekstraksi_selesai: $document->extraction_pages_processed,
+            estimasi_ekstraksi_detik: $document->extraction_estimated_seconds,
+            pesan_ekstraksi: $document->extraction_message,
+            preview_tersedia: $document->preview_path !== null,
+            pratinjau_sedang_disiapkan: $document->preview_path === null
+                && in_array($document->file_mime_type, DocumentThumbnailService::MIME_OFFICE, true),
             isi_teks: $document->extracted_text,
 
             pengunggah: $document->uploader?->name,
@@ -104,8 +129,10 @@ final class DocumentDetailData extends Data
             edit_scope: $document->edit_scope,
             label_edit_scope: $document->edit_scope->label(),
 
+            aktif: $document->is_active,
             boleh_ubah: $bolehUbah,
             boleh_nonaktifkan: $bolehUbah,
+            boleh_aktifkan: $bolehAktifkan,
         );
     }
 }

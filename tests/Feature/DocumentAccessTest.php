@@ -254,6 +254,58 @@ final class DocumentAccessTest extends TestCase
         $this->assertSame(1, Document::query()->visibleTo($tanpaJabatan)->count());
     }
 
+    // -- Alasan terlihat (FEAT-12) ---------------------------------------------
+
+    public function test_alasan_terlihat_mengikuti_mekanisme_yang_benar_benar_berlaku(): void
+    {
+        $lewatSemua = $this->buatDokumen(['is_shared_to_all' => true])->load(['targetUnits', 'sharedUsers']);
+        $this->assertSame('Dibagikan ke semua pengguna', $lewatSemua->alasanTerlihat($this->anggotaA));
+
+        $lewatJenjang = $this->buatDokumen(['min_tingkat_akses' => 2])->load(['targetUnits', 'sharedUsers']);
+        $this->assertSame('Jenjang jabatan Anda', $lewatJenjang->alasanTerlihat($this->deputiUser));
+
+        $lewatUnit = $this->buatDokumen();
+        $lewatUnit->targetUnits()->attach($this->divisiA->id);
+        $lewatUnit->load(['targetUnits', 'sharedUsers']);
+        $this->assertSame('Unit kerja Anda', $lewatUnit->alasanTerlihat($this->anggotaA));
+
+        $lewatOrang = $this->buatDokumen();
+        $lewatOrang->sharedUsers()->attach($this->anggotaB->id);
+        $lewatOrang->load(['targetUnits', 'sharedUsers']);
+        $this->assertSame('Dibagikan langsung ke Anda', $lewatOrang->alasanTerlihat($this->anggotaB));
+    }
+
+    public function test_alasan_terlihat_pengunggah_selalu_didahulukan(): void
+    {
+        // Pengunggah tetap "Anda pengunggahnya" walau dokumennya juga
+        // dibagikan ke semua — jaminan bawaan lebih spesifik daripada
+        // mekanisme mana pun.
+        $document = $this->buatDokumen(['is_shared_to_all' => true])->load(['targetUnits', 'sharedUsers']);
+
+        $this->assertSame('Anda pengunggahnya', $document->alasanTerlihat($this->pengunggah));
+    }
+
+    public function test_alasan_terlihat_pelewatan_superadmin_dan_pimpinan(): void
+    {
+        $document = $this->buatDokumen()->load(['targetUnits', 'sharedUsers']);
+
+        $this->assertSame('Superadmin', $document->alasanTerlihat($this->superadmin));
+        $this->assertSame('Jabatan tingkat 1', $document->alasanTerlihat($this->pimpinan));
+    }
+
+    public function test_alasan_terlihat_beberapa_mekanisme_memilih_yang_pertama_cocok(): void
+    {
+        // Rantai OR `scopeVisibleTo()` mengurutkan "bagikan ke semua" lebih
+        // dulu dari jenjang jabatan dan unit. `alasanTerlihat()` mengikuti
+        // urutan yang sama supaya jawabannya konsisten dengan urutan
+        // evaluasi sungguhan.
+        $document = $this->buatDokumen(['is_shared_to_all' => true, 'min_tingkat_akses' => 2]);
+        $document->targetUnits()->attach($this->divisiA->id);
+        $document->load(['targetUnits', 'sharedUsers']);
+
+        $this->assertSame('Dibagikan ke semua pengguna', $document->alasanTerlihat($this->anggotaA));
+    }
+
     // -- Penyaring tambahan ---------------------------------------------------
 
     public function test_penyaring_tambahan_tidak_membocorkan_dokumen(): void

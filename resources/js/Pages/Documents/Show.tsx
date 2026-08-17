@@ -1,45 +1,88 @@
 import { AccessSummary } from '@/Components/domain/AccessSummary';
+import { ActivityItem } from '@/Components/domain/ActivityItem';
+import { DocumentHeaderActions } from '@/Components/domain/DocumentHeaderActions';
 import { DocumentPreview } from '@/Components/domain/DocumentPreview';
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
 import { ExtractionStatusBadge } from '@/Components/domain/ExtractionStatusBadge';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
+import { Alert } from '@/Components/ui/Alert';
 import { Avatar } from '@/Components/ui/Avatar';
-import { Button } from '@/Components/ui/Button';
 import { Card } from '@/Components/ui/Card';
+import { EmptyState } from '@/Components/ui/EmptyState';
+import { useDocumentReloadPolling } from '@/hooks/useDocumentReloadPolling';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
-import { formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
+import { dalamJendelaWaktu, formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, Download, History, Info, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, History, Info, ShieldCheck } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 interface ShowProps {
     dokumen: App.Data.DocumentDetailData;
+    riwayat: App.Data.ActivityLogData[];
+    pollingKonfigurasi: { jedaMs: number; maksPercobaan: number };
 }
 
 type Tab = 'detail' | 'akses' | 'riwayat';
 
-export default function Show({ dokumen }: ShowProps) {
-    const [tab, setTab] = useState<Tab>('detail');
+const TAB_VALID: readonly Tab[] = ['detail', 'akses', 'riwayat'];
+
+/**
+ * Tab awal mengikuti `location.hash` (mis. tautan menu "Lihat pengaturan
+ * akses" mengarah ke `#akses`) — tanpa ini, tab kontennya dirender kondisional
+ * sehingga `id="akses"` bahkan tidak ada di DOM saat halaman baru dimuat, dan
+ * pengguna selalu mendarat di tab "Detail" berapa pun hash di alamatnya.
+ */
+function tabDariHash(): Tab {
+    const hash = window.location.hash.slice(1);
+
+    return (TAB_VALID as string[]).includes(hash) ? (hash as Tab) : 'detail';
+}
+
+/**
+ * Batas atas menunggu konversi pratinjau Office. Melewati ini, kartu
+ * berhenti menganggapnya "sedang disiapkan" — kemungkinan besar job gagal
+ * permanen (perkakas server tidak terpasang) dan tidak akan pernah selesai.
+ */
+const JENDELA_PRATINJAU_MENIT = 5;
+
+export default function Show({ dokumen, riwayat, pollingKonfigurasi }: ShowProps) {
+    const [tab, setTab] = useState<Tab>(tabDariHash);
+
+    const masihMenyiapkanPratinjau =
+        dokumen.pratinjau_sedang_disiapkan && dalamJendelaWaktu(dokumen.diunggah_pada, JENDELA_PRATINJAU_MENIT);
+
+    useDocumentReloadPolling(dokumen.extraction_status === 'pending' || masihMenyiapkanPratinjau, pollingKonfigurasi);
 
     return (
         <AppLayout
             title={dokumen.judul}
             header={<Remah judul={dokumen.judul} />}
             actions={
-                <a href={`/documents/${dokumen.id}/file`} download>
-                    <Button icon={Download} size="sm">
-                        Unduh
-                    </Button>
-                </a>
+                <DocumentHeaderActions
+                    dokumenId={dokumen.id}
+                    judul={dokumen.judul}
+                    aktif={dokumen.aktif}
+                    bolehUbah={dokumen.boleh_ubah}
+                    bolehNonaktifkan={dokumen.boleh_nonaktifkan}
+                    bolehAktifkan={dokumen.boleh_aktifkan}
+                />
             }
         >
+            {!dokumen.aktif && (
+                <Alert variant="warning" title="Dokumen ini nonaktif" className="mb-5">
+                    Disembunyikan dari daftar dokumen dan hasil pencarian untuk semua orang.
+                    Anda melihatnya karena berperan Superadmin — gunakan tombol "Aktifkan
+                    Kembali" di atas untuk memunculkannya lagi.
+                </Alert>
+            )}
+
             <div className="grid gap-5 xl:grid-cols-5">
                 {/* Pratinjau mendapat porsi terbesar: itu yang dicari orang saat
                     membuka halaman ini, bukan daftar metadatanya. */}
                 <Card className="overflow-hidden xl:col-span-3">
                     <div className="h-[28rem] xl:h-[38rem]">
-                        <DocumentPreview dokumen={dokumen} />
+                        <DocumentPreview dokumen={dokumen} sedangMenyiapkanPratinjau={masihMenyiapkanPratinjau} />
                     </div>
                 </Card>
 
@@ -59,7 +102,7 @@ export default function Show({ dokumen }: ShowProps) {
                     <div className="flex-1 overflow-auto p-5">
                         {tab === 'detail' && <PanelDetail dokumen={dokumen} />}
                         {tab === 'akses' && <PanelAkses dokumen={dokumen} />}
-                        {tab === 'riwayat' && <PanelRiwayat />}
+                        {tab === 'riwayat' && <PanelRiwayat riwayat={riwayat} />}
                     </div>
                 </Card>
             </div>
@@ -161,7 +204,13 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
             </Baris>
 
             <Baris label="Pencarian Isi">
-                <ExtractionStatusBadge status={dokumen.extraction_status} />
+                <ExtractionStatusBadge
+                    status={dokumen.extraction_status}
+                    halamanTotal={dokumen.halaman_ekstraksi_total}
+                    halamanSelesai={dokumen.halaman_ekstraksi_selesai}
+                    estimasiDetik={dokumen.estimasi_ekstraksi_detik}
+                    pesan={dokumen.pesan_ekstraksi}
+                />
             </Baris>
 
             <hr className="border-line" />
@@ -303,18 +352,17 @@ function MekanismeAkses({
     );
 }
 
-function PanelRiwayat() {
+function PanelRiwayat({ riwayat }: { riwayat: App.Data.ActivityLogData[] }) {
+    if (riwayat.length > 0) {
+        return <div className="-mx-5 -my-5 divide-y divide-line"><div className="px-2 py-2">{riwayat.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div></div>;
+    }
+
     return (
-        <div className="flex flex-col items-center py-10 text-center">
-            <span className="mb-3 inline-flex size-11 items-center justify-center rounded-full bg-surface-sunken text-ink-subtle">
-                <History className="size-5" aria-hidden />
-            </span>
-            <p className="text-sm font-medium text-ink">Riwayat belum aktif</p>
-            <p className="mt-1 max-w-xs text-sm text-ink-muted">
-                Pencatatan perubahan, unduhan, dan pengaturan akses akan tampil di sini
-                setelah modul riwayat aktivitas selesai dikerjakan.
-            </p>
-        </div>
+        <EmptyState
+            icon={History}
+            title="Belum ada aktivitas"
+            description="Aktivitas yang dapat Anda akses akan muncul di sini."
+        />
     );
 }
 

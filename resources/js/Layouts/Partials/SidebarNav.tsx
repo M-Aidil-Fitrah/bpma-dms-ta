@@ -46,7 +46,8 @@ const NAV: NavGroup[] = [
             { label: 'Pengguna', href: '/admin/users', icon: Users, match: '/admin/users', superadminOnly: true },
             { label: 'Unit Kerja', href: '/admin/units', icon: Building2, match: '/admin/units', superadminOnly: true },
             { label: 'Jabatan', href: '/admin/jabatans', icon: FolderTree, match: '/admin/jabatans', superadminOnly: true },
-            { label: 'Kategori', href: '/admin/categories', icon: Settings, match: '/admin/categories', superadminOnly: true },
+            { label: 'Kategori', href: '/admin/categories', icon: FolderTree, match: '/admin/categories', superadminOnly: true },
+            { label: 'Pengaturan', href: '/admin/settings', icon: Settings, match: '/admin/settings', superadminOnly: true },
         ],
     },
 ];

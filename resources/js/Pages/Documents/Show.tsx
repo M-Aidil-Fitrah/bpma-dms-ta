@@ -255,7 +255,16 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                     />
                     {dokumen.extraction_status === 'review_required' && dokumen.boleh_ubah && (
                         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                            <Link href="/documents/create" className="w-full sm:w-auto"><Button size="sm" variant="secondary" icon={Upload} className="w-full">Unggah dokumen lain</Button></Link>
+                            <Link href={`/documents/create?replace=${dokumen.id}`} className="w-full sm:w-auto">
+                                <Button size="sm" variant="secondary" icon={Upload} className="w-full">
+                                    Unggah pengganti
+                                </Button>
+                            </Link>
+                            <Link href="/documents/create" className="w-full sm:w-auto">
+                                <Button size="sm" variant="secondary" icon={Upload} className="w-full">
+                                    Unggah dokumen lain
+                                </Button>
+                            </Link>
                         </div>
                     )}
                 </div>

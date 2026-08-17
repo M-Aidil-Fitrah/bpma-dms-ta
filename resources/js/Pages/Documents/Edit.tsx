@@ -42,6 +42,7 @@ export default function Edit({ dokumen, opsi }: EditProps) {
                     tipe: dokumen.tipe_berkas,
                     ukuran: dokumen.ukuran_berkas,
                 }}
+                unggahVersiBaru={`/documents/create?replace=${dokumen.id}`}
                 awal={{
                     nomor: dokumen.nomor,
                     judul: dokumen.judul,

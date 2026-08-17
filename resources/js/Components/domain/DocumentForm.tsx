@@ -56,6 +56,8 @@ export interface DocumentFormProps {
     mode: 'buat' | 'ubah';
     /** Keterangan berkas yang sudah tersimpan — hanya pada mode `ubah`. */
     berkas?: { nama: string; tipe: string; ukuran: number };
+    /** Jalur membuat pengganti berkas saat menyunting metadata versi aktif. */
+    unggahVersiBaru?: string;
     replacesDocumentId?: number | null;
 }
 
@@ -79,6 +81,7 @@ export function DocumentForm({
     batal,
     mode,
     berkas,
+    unggahVersiBaru,
     replacesDocumentId = null,
 }: DocumentFormProps) {
     const [akses, setAkses] = useState<NilaiAkses>(aksesAwal);
@@ -158,7 +161,7 @@ export function DocumentForm({
                     </CardHeader>
                     <CardBody>
                         {mode === 'ubah' && berkas !== undefined ? (
-                            <BerkasTerkunci berkas={berkas} />
+                            <BerkasTerkunci berkas={berkas} unggahVersiBaru={unggahVersiBaru} />
                         ) : sedangMengunggah && progress ? (
                             <UploadProgress
                                 persen={progress.percentage ?? null}
@@ -255,38 +258,39 @@ export function DocumentForm({
                             )}
                         </Field>
 
-                        <Field
-                            label="Masa Berlaku"
-                            hint="Kosongkan bila berlaku tanpa batas waktu."
-                            error={errors.masa_berlaku}
-                        >
-                            {(props) => (
-                                <Input
-                                    {...props}
-                                    type="date"
-                                    value={data.masa_berlaku}
-                                    invalid={Boolean(errors.masa_berlaku)}
-                                    onChange={(e) => setData('masa_berlaku', e.target.value)}
-                                />
-                            )}
-                        </Field>
+                        <div className="space-y-1.5 sm:col-span-2">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <Field label="Masa Berlaku" error={errors.masa_berlaku}>
+                                    {(props) => (
+                                        <Input
+                                            {...props}
+                                            type="date"
+                                            value={data.masa_berlaku}
+                                            invalid={Boolean(errors.masa_berlaku)}
+                                            onChange={(e) => setData('masa_berlaku', e.target.value)}
+                                        />
+                                    )}
+                                </Field>
 
-                        <Field label="Siapa yang Boleh Mengubah" error={errors.edit_scope}>
-                            {(props) => (
-                                <Select
-                                    {...props}
-                                    value={data.edit_scope}
-                                    options={[
-                                        { value: 'owner_only', label: 'Hanya saya' },
-                                        {
-                                            value: 'match_visibility',
-                                            label: 'Sama seperti akses',
-                                        },
-                                    ]}
-                                    onChange={(e) => setData('edit_scope', e.target.value)}
-                                />
-                            )}
-                        </Field>
+                                <Field label="Siapa yang Boleh Mengubah" error={errors.edit_scope}>
+                                    {(props) => (
+                                        <Select
+                                            {...props}
+                                            value={data.edit_scope}
+                                            options={[
+                                                { value: 'owner_only', label: 'Hanya saya' },
+                                                {
+                                                    value: 'match_visibility',
+                                                    label: 'Sama seperti akses',
+                                                },
+                                            ]}
+                                            onChange={(e) => setData('edit_scope', e.target.value)}
+                                        />
+                                    )}
+                                </Field>
+                            </div>
+                            <p className="text-xs text-ink-muted">Kosongkan Masa Berlaku bila dokumen berlaku tanpa batas waktu.</p>
+                        </div>
 
                         <Field
                             label="Deskripsi"
@@ -365,8 +369,10 @@ export function DocumentForm({
  */
 function BerkasTerkunci({
     berkas,
+    unggahVersiBaru,
 }: {
     berkas: { nama: string; tipe: string; ukuran: number };
+    unggahVersiBaru?: string;
 }) {
     return (
         <div className="space-y-2">
@@ -384,9 +390,17 @@ function BerkasTerkunci({
             </div>
 
             <p className="text-xs text-ink-muted">
-                Berkas tidak dapat diganti. Bila isinya berubah, unggah sebagai dokumen
-                baru supaya riwayat dokumen ini tetap utuh.
+                Metadata dan akses dapat diubah di halaman ini. Bila isi berkas berubah,
+                buat versi baru agar riwayat dokumen ini tetap utuh.
             </p>
+
+            {unggahVersiBaru && (
+                <Link href={unggahVersiBaru} className="inline-flex">
+                    <Button type="button" variant="secondary" size="sm" icon={Upload}>
+                        Unggah versi baru
+                    </Button>
+                </Link>
+            )}
         </div>
     );
 }

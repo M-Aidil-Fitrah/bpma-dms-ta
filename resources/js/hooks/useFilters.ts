@@ -44,7 +44,12 @@ export function useFilters<F extends object>(
 
             Object.entries(gabungan).forEach(([kunci, nilai]) => {
                 if (nilai !== null && nilai !== '' && nilai !== undefined) {
-                    query[kunci] = String(nilai);
+                    // Laravel menolak "true"/"false" untuk rule `boolean` — hanya
+                    // menerima "1"/"0". `String(true)` menghasilkan bentuk yang
+                    // gagal validasi dan membuat SETIAP permintaan penyaring
+                    // (bukan cuma yang berisi field boolean) dikembalikan tanpa
+                    // query string oleh redirect galat validasi.
+                    query[kunci] = typeof nilai === 'boolean' ? (nilai ? '1' : '0') : String(nilai);
                 }
             });
 

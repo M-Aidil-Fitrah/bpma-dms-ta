@@ -15,8 +15,10 @@ export interface UnitTreeSelectProps {
 
 /**
  * Satu pemilih Unit Asal yang tampak seperti dropdown, tetapi menjaga pohon
- * Deputi → Divisi di dalam panelnya. Menekan nama Deputi membuka daftar
- * Divisi; pilihan cakupan seluruh Deputi tetap tersedia di dalam cabangnya.
+ * Deputi → Divisi di dalam panelnya. Deputi adalah pembuka cabang, sedangkan
+ * nilai filter selalu Unit Asal yang benar-benar dipilih (Divisi atau unit
+ * tanpa anak); ini menghindari klaim keliru bahwa memilih Deputi otomatis
+ * mencakup seluruh Divisi di bawahnya.
  */
 export function UnitTreeSelect({
     units,
@@ -106,7 +108,7 @@ export function UnitTreeSelect({
                                     )}
 
                                     {anak.length > 0 ? (
-                                        <BarisPilih nama={unit.nama} terpilih={isTerbuka} onClick={() => toggleTerbuka(unit.id)} tebal />
+                                        <BarisPilih nama={unit.nama} terpilih={false} onClick={() => toggleTerbuka(unit.id)} tebal />
                                     ) : (
                                         <BarisPilih nama={unit.nama} terpilih={nilai === unit.id} onClick={() => pilih(unit.id)} tebal />
                                     )}
@@ -114,11 +116,6 @@ export function UnitTreeSelect({
 
                                 {isTerbuka && anak.length > 0 && (
                                     <div role="group" className="ml-8 space-y-0.5 border-l border-line pl-2">
-                                        <BarisPilih
-                                            nama={`Semua unit di ${unit.nama}`}
-                                            terpilih={nilai === unit.id}
-                                            onClick={() => pilih(unit.id)}
-                                        />
                                         {anak.map((divisi) => (
                                             <div key={divisi.id} role="treeitem">
                                                 <BarisPilih nama={divisi.nama} terpilih={nilai === divisi.id} onClick={() => pilih(divisi.id)} />

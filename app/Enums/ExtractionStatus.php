@@ -48,10 +48,4 @@ enum ExtractionStatus: string
             self::Failed => 'Isi dokumen tidak dapat dibaca. Berkas tetap dapat diunduh seperti biasa.',
         };
     }
-
-    /** Apakah antarmuka perlu memantau perubahan status ini secara berkala. */
-    public function needsPolling(): bool
-    {
-        return $this === self::Pending;
-    }
 }

@@ -92,6 +92,66 @@ final class OrganizationManagementTest extends TestCase
         return $jumlahQuery;
     }
 
+    public function test_jumlah_query_daftar_unit_tidak_bertambah_seiring_data(): void
+    {
+        $this->actingAs($this->superadmin);
+        Unit::factory()->count(3)->create();
+
+        // Permintaan pertama turut memanaskan autentikasi dan cache role.
+        $this->hitungQueryDaftarUnit();
+
+        $queryDenganSedikitUnit = $this->hitungQueryDaftarUnit();
+
+        Unit::factory()->count(40)->create();
+
+        $queryDenganBanyakUnit = $this->hitungQueryDaftarUnit();
+
+        $this->assertSame($queryDenganSedikitUnit, $queryDenganBanyakUnit);
+    }
+
+    private function hitungQueryDaftarUnit(): int
+    {
+        $jumlahQuery = 0;
+
+        DB::listen(static function () use (&$jumlahQuery): void {
+            $jumlahQuery++;
+        });
+
+        $this->get('/admin/units')->assertOk();
+
+        return $jumlahQuery;
+    }
+
+    public function test_jumlah_query_daftar_jabatan_tidak_bertambah_seiring_data(): void
+    {
+        $this->actingAs($this->superadmin);
+        Jabatan::factory()->count(3)->create();
+
+        // Permintaan pertama turut memanaskan autentikasi dan cache role.
+        $this->hitungQueryDaftarJabatan();
+
+        $queryDenganSedikitJabatan = $this->hitungQueryDaftarJabatan();
+
+        Jabatan::factory()->count(40)->create();
+
+        $queryDenganBanyakJabatan = $this->hitungQueryDaftarJabatan();
+
+        $this->assertSame($queryDenganSedikitJabatan, $queryDenganBanyakJabatan);
+    }
+
+    private function hitungQueryDaftarJabatan(): int
+    {
+        $jumlahQuery = 0;
+
+        DB::listen(static function () use (&$jumlahQuery): void {
+            $jumlahQuery++;
+        });
+
+        $this->get('/admin/jabatans')->assertOk();
+
+        return $jumlahQuery;
+    }
+
     public function test_superadmin_dapat_menambah_dan_mengubah_jabatan(): void
     {
         $this->actingAs($this->superadmin)

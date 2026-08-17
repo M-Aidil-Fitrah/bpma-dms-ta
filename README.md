@@ -80,16 +80,27 @@ cukup — dua proses terakhir menangani pekerjaan latar yang tidak akan berjalan
 tanpanya:
 
 ```bash
-php artisan serve          # 1. Server aplikasi
-npm run dev                # 2. Server aset frontend
-php artisan queue:work     # 3. Ekstraksi teks & OCR asinkron
-php artisan schedule:work  # 4. Perpindahan status dokumen ke Kadaluarsa
+php artisan serve                          # 1. Server aplikasi
+npm run dev                                # 2. Server aset frontend
+php artisan queue:work --queue=default,thumbnail  # 3. Ekstraksi teks, OCR & gambar mini
+php artisan schedule:work                  # 4. Perpindahan status dokumen ke Kadaluarsa
 ```
 
 Kalau lupa menjalankan nomor 3 atau 4, aplikasi tetap terbuka dan terlihat
 normal — tapi status ekstraksi dokumen akan macet selamanya di "Memproses", dan
 dokumen yang masa berlakunya lewat tidak pernah berpindah status. Keduanya
 terlihat seperti bug, padahal hanya prosesnya yang belum jalan.
+
+Gambar mini/pratinjau Office berjalan di antrean **`thumbnail`**, terpisah
+dari ekstraksi teks/OCR di antrean **`default`** — sengaja dipisah supaya satu
+OCR PDF pindaian yang berjalan lama (bisa sampai 15 menit) tidak menahan
+gambar mini dokumen lain yang seharusnya cepat selesai. Satu proses
+`queue:work` yang memantau keduanya (seperti perintah di atas) sudah cukup
+untuk pemakaian lokal/tim kecil. Di VPS dengan trafik unggah yang lebih
+padat, jalankan **dua** proses `queue:work` terpisah (masing-masing program
+Supervisor/systemd sendiri) — satu `--queue=default`, satu lagi
+`--queue=thumbnail` — supaya keduanya benar-benar berjalan paralel, bukan
+sekadar bergiliran dalam satu proses.
 
 ### Status dokumen kedaluwarsa
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Document;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -97,8 +98,17 @@ final class DocumentThumbnailService
 
     private function konversiOfficeKePdf(string $sumber, string $ruangKerja): string
     {
-        $hasil = Process::timeout(60)->run([
-            'libreoffice', '--headless', '--convert-to', 'pdf:writer_pdf_Export', '--outdir', $ruangKerja, $sumber,
+        // Profil pengguna unik per konversi (bukan profil default bersama)
+        // mencegah LibreOffice gagal intermiten dengan "another instance is
+        // running" saat dua job konversi berjalan bersamaan di worker yang
+        // sama — kegagalan itu tidak pernah dicoba ulang otomatis oleh
+        // LibreOffice sendiri dan job ini gagal permanen kalau terjadi.
+        $profil = $ruangKerja.'/profil-libreoffice';
+
+        $hasil = Process::timeout((int) config('dms.thumbnail.libreoffice_timeout_detik'))->run([
+            'libreoffice', '--headless',
+            '-env:UserInstallation=file://'.$profil,
+            '--convert-to', 'pdf:writer_pdf_Export', '--outdir', $ruangKerja, $sumber,
         ]);
 
         if ($hasil->failed()) {
@@ -116,7 +126,7 @@ final class DocumentThumbnailService
 
     private function renderHalamanPertama(string $pdf, string $tujuan): void
     {
-        $hasil = Process::timeout(60)->run([
+        $hasil = Process::timeout((int) config('dms.thumbnail.ghostscript_timeout_detik'))->run([
             'gs', '-dSAFER', '-dBATCH', '-dNOPAUSE', '-sDEVICE=jpeg', '-dJPEGQ=85',
             '-r150', '-dFirstPage=1', '-dLastPage=1', "-sOutputFile={$tujuan}", $pdf,
         ]);
@@ -149,16 +159,9 @@ final class DocumentThumbnailService
 
     private function hapusRuangKerja(string $ruangKerja): void
     {
-        if (! is_dir($ruangKerja)) {
-            return;
-        }
-
-        foreach (scandir($ruangKerja) ?: [] as $berkas) {
-            if ($berkas !== '.' && $berkas !== '..') {
-                unlink($ruangKerja.'/'.$berkas);
-            }
-        }
-
-        rmdir($ruangKerja);
+        // Rekursif, bukan `scandir()`+`unlink()` satu tingkat: profil
+        // LibreOffice unik (lihat `konversiOfficeKePdf()`) membuat
+        // sub-direktori bertingkat di dalam ruang kerja ini.
+        File::deleteDirectory($ruangKerja);
     }
 }

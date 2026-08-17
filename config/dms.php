@@ -155,4 +155,15 @@ return [
         'polling_maks_percobaan' => 320,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Gambar Mini & Pratinjau (`DocumentThumbnailService`)
+    |--------------------------------------------------------------------------
+    */
+
+    'thumbnail' => [
+        'libreoffice_timeout_detik' => 60,
+        'ghostscript_timeout_detik' => 60,
+    ],
+
 ];

@@ -186,7 +186,11 @@ final class DocumentController extends Controller
         }
 
         if (app(DocumentThumbnailService::class)->didukung($document->file_mime_type)) {
-            GenerateDocumentThumbnailJob::dispatch($document);
+            // Antrean terpisah dari ekstraksi teks (`default`) — OCR PDF
+            // pindaian bisa memakan waktu 15 menit; tanpa pemisahan ini,
+            // gambar mini dokumen lain ikut tertahan di belakang satu OCR
+            // yang sedang berjalan pada worker yang sama.
+            GenerateDocumentThumbnailJob::dispatch($document)->onQueue('thumbnail');
         }
 
         return redirect()

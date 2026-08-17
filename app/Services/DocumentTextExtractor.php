@@ -28,6 +28,31 @@ final class DocumentTextExtractor
         return trim((new Parser)->parseFile($path)->getText());
     }
 
+    /**
+     * Membaca teks dan jumlah halaman dalam SATU parse — dipakai jalur OCR
+     * PDF pindaian, yang sebelumnya memparse penuh berkas yang sama dua kali
+     * berurutan (`pdf()` untuk cek teks digital, lalu parse kedua khusus
+     * menghitung halaman sebelum limit OCR diterapkan). PDF pindaian besar
+     * mahal untuk diparse; ini memangkas biayanya jadi separuh.
+     *
+     * @return array{teks: string, halaman: int}
+     */
+    public function pdfTeksDanHalaman(string $path): array
+    {
+        if (file_get_contents($path, false, null, 0, 5) !== '%PDF-') {
+            throw new UnexpectedValueException('Berkas tidak memiliki header PDF yang sah.');
+        }
+
+        $dokumen = (new Parser)->parseFile($path);
+        $halaman = count($dokumen->getPages());
+
+        if ($halaman < 1) {
+            throw new UnexpectedValueException('PDF tidak memiliki halaman yang dapat dipindai.');
+        }
+
+        return ['teks' => trim($dokumen->getText()), 'halaman' => $halaman];
+    }
+
     public function docx(string $path): string
     {
         $teks = '';

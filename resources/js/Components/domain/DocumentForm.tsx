@@ -56,6 +56,7 @@ export interface DocumentFormProps {
     mode: 'buat' | 'ubah';
     /** Keterangan berkas yang sudah tersimpan — hanya pada mode `ubah`. */
     berkas?: { nama: string; tipe: string; ukuran: number };
+    replacesDocumentId?: number | null;
 }
 
 /**
@@ -78,13 +79,15 @@ export function DocumentForm({
     batal,
     mode,
     berkas,
+    replacesDocumentId = null,
 }: DocumentFormProps) {
     const [akses, setAkses] = useState<NilaiAkses>(aksesAwal);
 
     const { data, setData, post, patch, processing, progress, errors, transform } =
-        useForm<NilaiAwalDokumen & { file: File | null }>({
+        useForm<NilaiAwalDokumen & { file: File | null; replaces_document_id: number | null }>({
             ...awal,
             file: null,
+            replaces_document_id: replacesDocumentId,
         });
 
     function handleSubmit(event: FormEvent) {

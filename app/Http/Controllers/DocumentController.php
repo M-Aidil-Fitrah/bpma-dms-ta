@@ -114,8 +114,17 @@ final class DocumentController extends Controller
     {
         $this->authorize('create', Document::class);
 
+        $pengganti = null;
+        if (request()->filled('replace')) {
+            $pengganti = Document::with(['targetUnits:id,nama', 'sharedUsers:id,name,jabatan_id,unit_id', 'sharedUsers.jabatan:id,nama', 'sharedUsers.unit:id,nama'])
+                ->findOrFail(request()->integer('replace'));
+            $this->authorize('update', $pengganti);
+            abort_unless($pengganti->is_active && $pengganti->replacementDocument()->doesntExist(), 422);
+        }
+
         return Inertia::render('Documents/Create', [
             'opsi' => $this->opsiFormulir(),
+            'pengganti' => $pengganti === null ? null : DocumentEditData::fromModel($pengganti),
         ]);
     }
 
@@ -141,12 +150,20 @@ final class DocumentController extends Controller
 
         try {
             $document = DB::transaction(function () use ($request, $berkas, $akses, $aktivitas): Document {
+                $lama = $request->filled('replaces_document_id')
+                    ? Document::query()->lockForUpdate()->findOrFail($request->integer('replaces_document_id'))
+                    : null;
+                if ($lama !== null) {
+                    $this->authorize('update', $lama);
+                    abort_unless($lama->is_active && $lama->replacementDocument()->doesntExist(), 422);
+                }
                 $document = Document::create([
                     ...$request->kolomDokumen(),
                     ...$berkas,
                     'status' => DocumentStatus::Berlaku,
                     'uploaded_by' => $request->user()->id,
                     'is_active' => true,
+                    'replaces_document_id' => $lama?->id,
                 ]);
 
                 $perubahanAkses = $akses->sinkron(
@@ -166,6 +183,11 @@ final class DocumentController extends Controller
                         'mekanisme_akses' => $this->mekanismeAkses($document, $perubahanAkses),
                     ],
                 );
+
+                if ($lama !== null) {
+                    $lama->update(['is_active' => false]);
+                    $aktivitas->record(ActivityLogName::Dokumen, AuditEvent::DocumentReplaced, 'Dokumen digantikan oleh unggahan baru.', $lama, $request->user(), ['replacement_document_id' => $document->id]);
+                }
 
                 return $document;
             });
@@ -501,6 +523,19 @@ final class DocumentController extends Controller
                 $request->string('status')->toString(),
                 fn ($query, string $status) => $query->where('documents.status', $status),
             )
+            ->when($request->string('status_ekstraksi')->toString(), fn ($query, string $status) => $query->where('documents.extraction_status', $status))
+            ->when($request->integer('pengunggah'), fn ($query, int $id) => $query->where('documents.uploaded_by', $id))
+            ->when($request->string('tipe')->toString(), function ($query, string $tipe): void {
+                match ($tipe) {
+                    'pdf' => $query->where('documents.file_mime_type', 'application/pdf'),
+                    'gambar' => $query->where('documents.file_mime_type', 'like', 'image/%'),
+                    'word' => $query->where('documents.file_mime_type', 'like', '%wordprocessingml%'),
+                    'teks' => $query->where('documents.file_mime_type', 'text/plain'),
+                    default => $query->whereNotIn('documents.file_mime_type', ['application/pdf', 'text/plain'])
+                        ->where('documents.file_mime_type', 'not like', 'image/%')
+                        ->where('documents.file_mime_type', 'not like', '%wordprocessingml%'),
+                };
+            })
             ->when(
                 $request->string('dari')->toString(),
                 fn ($query, string $tanggal) => $query->whereDate('documents.tanggal', '>=', $tanggal),
@@ -542,6 +577,12 @@ final class DocumentController extends Controller
     private function terapkanPencarian(Builder $query, string $kata): void
     {
         $kata = trim($kata);
+        $nomor = preg_replace('/[^a-z0-9]+/i', '', strtolower($kata)) ?? '';
+        if (str_contains($kata, '/') || ctype_digit($kata)) {
+            $query->where('documents.nomor_normalized', 'like', $nomor.'%');
+
+            return;
+        }
 
         // InnoDB (`innodb_ft_min_token_size`, bawaan 3) tidak mengindeks kata
         // di bawah 3 huruf sama sekali — mencarinya lewat FULLTEXT tidak akan
@@ -631,6 +672,7 @@ final class DocumentController extends Controller
                 ->orderBy('parent_id')
                 ->orderBy('nama')
                 ->get(['id', 'nama', 'parent_id']),
+            'pengunggah' => User::query()->active()->orderBy('name')->get(['id', 'name']),
         ];
     }
 

@@ -22,6 +22,7 @@ final class StoreDocumentRequest extends DocumentFormRequest
     protected function aturanTambahan(): array
     {
         return [
+            'replaces_document_id' => ['nullable', 'integer', 'exists:documents,id'],
             // -- Berkas (FR-12) -----------------------------------------------
             'file' => [
                 'required',

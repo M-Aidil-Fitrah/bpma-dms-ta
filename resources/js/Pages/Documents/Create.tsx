@@ -8,9 +8,10 @@ import { ArrowLeft } from 'lucide-react';
 
 interface CreateProps {
     opsi: OpsiFormulirDokumen;
+    pengganti: App.Data.DocumentEditData | null;
 }
 
-export default function Create({ opsi }: CreateProps) {
+export default function Create({ opsi, pengganti }: CreateProps) {
     return (
         <AppLayout
             title="Unggah Dokumen"
@@ -36,21 +37,22 @@ export default function Create({ opsi }: CreateProps) {
                 batal="/documents"
                 opsi={opsi}
                 awal={{
-                    nomor: '',
-                    judul: '',
-                    deskripsi: '',
-                    category_id: '',
-                    origin_unit_id: '',
-                    tanggal: new Date().toISOString().slice(0, 10),
-                    masa_berlaku: '',
-                    edit_scope: 'owner_only',
+                    nomor: pengganti?.nomor ?? '',
+                    judul: pengganti?.judul ?? '',
+                    deskripsi: pengganti?.deskripsi ?? '',
+                    category_id: String(pengganti?.category_id ?? ''),
+                    origin_unit_id: String(pengganti?.origin_unit_id ?? ''),
+                    tanggal: pengganti?.tanggal ?? new Date().toISOString().slice(0, 10),
+                    masa_berlaku: pengganti?.masa_berlaku ?? '',
+                    edit_scope: pengganti?.edit_scope ?? 'owner_only',
                 }}
                 aksesAwal={{
-                    is_shared_to_all: false,
-                    min_tingkat_akses: null,
-                    unit_ids: [],
-                    shared_users: [],
+                    is_shared_to_all: pengganti?.is_shared_to_all ?? false,
+                    min_tingkat_akses: pengganti?.min_tingkat_akses ?? null,
+                    unit_ids: pengganti?.unit_ids ?? [],
+                    shared_users: pengganti?.orang_tertentu ?? [],
                 }}
+                replacesDocumentId={pengganti?.id ?? null}
             />
         </AppLayout>
     );

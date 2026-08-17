@@ -19,7 +19,13 @@ use RuntimeException;
  */
 final class DocumentThumbnailService
 {
-    private const MIME_OFFICE = [
+    /**
+     * Tipe Office yang pratinjau detailnya bergantung pada `preview_path`
+     * (PDF hasil konversi LibreOffice) — dipakai juga oleh `DocumentDetailData`
+     * untuk tahu tipe mana yang wajar menampilkan "pratinjau sedang
+     * disiapkan" alih-alih langsung ke fallback unduh.
+     */
+    public const MIME_OFFICE = [
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'application/vnd.openxmlformats-officedocument.presentationml.presentation',

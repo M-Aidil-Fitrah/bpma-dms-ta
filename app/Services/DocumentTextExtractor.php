@@ -70,7 +70,35 @@ final class DocumentTextExtractor
 
     public function txt(string $path): string
     {
-        return trim((string) file_get_contents($path));
+        $maksBytes = (int) config('dms.ekstraksi.txt_maks_bytes');
+        $isi = (string) file_get_contents($path, false, null, 0, $maksBytes);
+
+        return trim($this->pastikanUtf8($isi));
+    }
+
+    /**
+     * `extracted_text` disimpan dan dikirim sebagai JSON — byte yang bukan
+     * UTF-8 sah (umum pada berkas TXT lama berencoding Windows-1252/Latin-1)
+     * akan merusak seluruh respons halaman detail dokumen tersebut kalau
+     * dibiarkan apa adanya.
+     */
+    private function pastikanUtf8(string $isi): string
+    {
+        // Pemotongan di `txt()` bisa berhenti persis di tengah karakter
+        // UTF-8 multi-byte. Coba buang beberapa byte terakhir dulu sebelum
+        // menyimpulkan berkasnya memang berencoding lain — mencegah berkas
+        // UTF-8 sah dikonversi keliru hanya karena terpotong di batas byte.
+        for ($potong = 0; $potong <= 3 && $potong < strlen($isi); $potong++) {
+            $kandidat = $potong === 0 ? $isi : substr($isi, 0, -$potong);
+
+            if (mb_check_encoding($kandidat, 'UTF-8')) {
+                return $kandidat;
+            }
+        }
+
+        $terdeteksi = mb_detect_encoding($isi, ['Windows-1252', 'ISO-8859-1'], true);
+
+        return mb_convert_encoding($isi, 'UTF-8', $terdeteksi ?: 'Windows-1252');
     }
 
     /**

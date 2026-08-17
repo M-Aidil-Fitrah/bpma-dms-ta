@@ -124,6 +124,15 @@ return [
          */
         'bahasa_ocr' => 'ind+eng',
 
+        /*
+         * Batas berkas TXT yang dibaca ke `extracted_text`, dalam byte.
+         * Batas unggah keseluruhan 1 GB tidak berarti seluruh isinya wajar
+         * dimuat ke memori, disimpan di kolom, lalu dikirim utuh sebagai
+         * respons JSON tiap kali halaman detail dibuka. 2 MB jauh lebih dari
+         * cukup untuk dokumen teks apa pun yang realistis.
+         */
+        'txt_maks_bytes' => 2 * 1024 * 1024,
+
         // PDF tanpa text layer diraster halaman demi halaman. Batas ini
         // mencegah satu unggahan memonopoli worker database queue.
         'pdf_ocr_maks_halaman' => 50,

@@ -488,8 +488,9 @@ final class DocumentController extends Controller
     private function daftar(DocumentIndexRequest $request, PengaturanService $pengaturan): LengthAwarePaginator
     {
         $user = $request->user();
+        $kata = trim($request->string('cari')->toString());
 
-        return Document::query()
+        $query = Document::query()
             ->visibleTo($user)
             ->active()
             // Kolom dibatasi eksplisit. `extracted_text` bertipe longText dan
@@ -507,10 +508,6 @@ final class DocumentController extends Controller
                 'targetUnits:id,nama',
                 'sharedUsers:id',
             ])
-            ->when(
-                $request->string('cari')->toString(),
-                fn ($query, string $kata) => $query->where(fn ($q) => $this->terapkanPencarian($q, $kata)),
-            )
             ->when(
                 $request->integer('kategori'),
                 fn ($query, int $id) => $query->where('documents.category_id', $id),
@@ -543,8 +540,21 @@ final class DocumentController extends Controller
             ->when(
                 $request->string('sampai')->toString(),
                 fn ($query, string $tanggal) => $query->whereDate('documents.tanggal', '<=', $tanggal),
-            )
-            ->orderBy($request->kolomUrutan(), $request->arahUrutan())
+            );
+
+        $pencarianDenganRelevansi = false;
+        if ($kata !== '') {
+            $query->where(fn ($pencarian) => $this->terapkanPencarian($pencarian, $kata));
+            $pencarianDenganRelevansi = $this->tambahkanKonteksPencarian($query, $kata);
+        }
+
+        if ($pencarianDenganRelevansi && ! $request->filled('urut')) {
+            $query->orderByDesc('search_relevance');
+        } else {
+            $query->orderBy($request->kolomUrutan(), $request->arahUrutan());
+        }
+
+        return $query
             // Pengurutan kedua menjaga urutan tetap sama antar halaman. Tanpa
             // ini, baris dengan tanggal kembar dapat berpindah halaman di
             // antara dua permintaan — dokumen yang sama muncul dua kali, atau
@@ -578,7 +588,7 @@ final class DocumentController extends Controller
     {
         $kata = trim($kata);
         $nomor = preg_replace('/[^a-z0-9]+/i', '', strtolower($kata)) ?? '';
-        if (str_contains($kata, '/') || ctype_digit($kata)) {
+        if ($this->adalahPencarianNomor($kata, $nomor)) {
             $query->where('documents.nomor_normalized', 'like', $nomor.'%');
 
             return;
@@ -604,6 +614,93 @@ final class DocumentController extends Controller
             $kata,
             ['mode' => 'boolean'],
         );
+    }
+
+    /**
+     * Menambahkan metadata hasil pencarian tanpa memilih `extracted_text`.
+     *
+     * Projection ini dihitung oleh SQL hanya untuk baris halaman aktif.
+     * Cuplikannya maksimum 220 karakter, sehingga daftar dapat menjelaskan
+     * "ditemukan di mana" tanpa menjadikan endpoint daftar sebagai API isi
+     * dokumen penuh.
+     *
+     * @param  Builder<Document>  $query
+     */
+    private function tambahkanKonteksPencarian(Builder $query, string $kata): bool
+    {
+        $kata = trim($kata);
+        $nomor = preg_replace('/[^a-z0-9]+/i', '', strtolower($kata)) ?? '';
+
+        if ($this->adalahPencarianNomor($kata, $nomor)) {
+            $query->selectRaw('1 AS search_matches_nomor')
+                ->selectRaw('0 AS search_matches_judul')
+                ->selectRaw('0 AS search_matches_deskripsi')
+                ->selectRaw('0 AS search_matches_isi');
+
+            return false;
+        }
+
+        $frasa = mb_strtolower($kata);
+        $pola = '%'.$this->escapeLike($frasa).'%';
+        $query->selectRaw('CASE WHEN LOWER(documents.nomor) LIKE ? THEN 1 ELSE 0 END AS search_matches_nomor', [$pola])
+            ->selectRaw('CASE WHEN LOWER(documents.judul) LIKE ? THEN 1 ELSE 0 END AS search_matches_judul', [$pola])
+            ->selectRaw('CASE WHEN LOWER(COALESCE(documents.deskripsi, \'\')) LIKE ? THEN 1 ELSE 0 END AS search_matches_deskripsi', [$pola]);
+
+        if (mb_strlen($kata) < 3) {
+            $query->selectRaw('0 AS search_matches_isi');
+
+            return false;
+        }
+
+        $kataCuplikan = $this->kataCuplikan($frasa);
+        if ($kataCuplikan === '') {
+            $query->selectRaw('0 AS search_matches_isi');
+
+            return false;
+        }
+
+        $query->selectRaw(
+            'MATCH(documents.nomor, documents.judul, documents.deskripsi, documents.extracted_text) AGAINST (? IN BOOLEAN MODE) AS search_relevance',
+            [$kata],
+        )
+            ->selectRaw(
+                'CASE WHEN LOCATE(?, LOWER(COALESCE(documents.extracted_text, \'\'))) > 0 THEN 1 ELSE 0 END AS search_matches_isi',
+                [$kataCuplikan],
+            )
+            ->selectRaw(
+                'CASE WHEN LOCATE(?, LOWER(COALESCE(documents.extracted_text, \'\'))) > 0 THEN SUBSTRING(documents.extracted_text, GREATEST(1, LOCATE(?, LOWER(COALESCE(documents.extracted_text, \'\'))) - 80), 220) END AS search_excerpt',
+                [$kataCuplikan, $kataCuplikan],
+            )
+            ->selectRaw(
+                'CASE WHEN LOCATE(?, LOWER(COALESCE(documents.extracted_text, \'\'))) > 0 THEN (CHAR_LENGTH(LOWER(documents.extracted_text)) - CHAR_LENGTH(REPLACE(LOWER(documents.extracted_text), ?, \'\'))) / NULLIF(CHAR_LENGTH(?), 0) ELSE 0 END AS search_phrase_count',
+                [$frasa, $frasa, $frasa],
+            );
+
+        return true;
+    }
+
+    private function adalahPencarianNomor(string $kata, string $nomor): bool
+    {
+        return $nomor !== '' && (str_contains($kata, '/') || ctype_digit($kata));
+    }
+
+    private function escapeLike(string $nilai): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $nilai);
+    }
+
+    private function kataCuplikan(string $kata): string
+    {
+        $kataBersih = preg_replace('/[^[:alnum:]]+/u', ' ', $kata) ?? '';
+        $bagian = preg_split('/\\s+/u', trim($kataBersih)) ?: [];
+
+        foreach ($bagian as $bagianKata) {
+            if (mb_strlen($bagianKata) >= 3) {
+                return $bagianKata;
+            }
+        }
+
+        return '';
     }
 
     /**

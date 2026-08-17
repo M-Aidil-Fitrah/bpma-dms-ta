@@ -130,6 +130,24 @@ final class DocumentFulltextSearchTest extends TestCase
                 ->where('dokumen.data.0.judul', 'Dokumen Biasa'));
     }
 
+    public function test_hasil_pencarian_isi_hanya_mengirim_konteks_dan_cuplikan_terbatas(): void
+    {
+        $this->buatDokumen([
+            'judul' => 'Dokumen Biasa',
+            'nomor' => '001/BPMA/X/I/2026',
+            'deskripsi' => 'Deskripsi tidak berkaitan',
+            'extracted_text' => 'Pembahasan mahakam dimulai hari ini. Data mahakam diverifikasi kembali.',
+        ]);
+
+        $this->actingAs($this->anggota)->get('/documents?cari=mahakam')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 1)
+                ->where('dokumen.data.0.kecocokan_pencarian', ['Isi dokumen'])
+                ->where('dokumen.data.0.jumlah_frasa_pencarian', 2)
+                ->where('dokumen.data.0.cuplikan_pencarian', 'Pembahasan mahakam dimulai hari ini. Data mahakam diverifikasi kembali.')
+                ->missing('dokumen.data.0.extracted_text'));
+    }
+
     public function test_pencarian_isi_tunduk_pada_hak_akses(): void
     {
         // FR-35 — kata kuncinya cocok persis di extracted_text, tapi

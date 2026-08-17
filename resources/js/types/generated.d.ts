@@ -115,6 +115,9 @@ jabatan_pengunggah: string | null,
 inisial_pengunggah: string,
 ringkasan_akses: string[] | null,
 alasan_terlihat: string | null,
+kecocokan_pencarian: string[] | null,
+cuplikan_pencarian: string | null,
+jumlah_frasa_pencarian: number | null,
 };
 export type KategoriRingkasData = {
 id: number,

@@ -47,6 +47,12 @@ final class DocumentListData extends Data
         public ?array $ringkasan_akses,
         /** Alasan dokumen ini terlihat bagi pengguna yang sedang membuka daftar (FEAT-12). Null bila sengaja tidak dihitung. */
         public ?string $alasan_terlihat,
+        /** @var list<string>|null Kolom dokumen yang cocok dengan kueri; null bila daftar tidak sedang mencari. */
+        public ?array $kecocokan_pencarian,
+        /** Potongan isi terbatas dari projection pencarian; bukan `extracted_text` penuh. */
+        public ?string $cuplikan_pencarian,
+        /** Jumlah frasa persis dalam isi, null bila frasa tidak ditemukan. */
+        public ?int $jumlah_frasa_pencarian,
     ) {}
 
     /**
@@ -89,6 +95,8 @@ final class DocumentListData extends Data
         ?string $alasanTerlihat,
         ?string $jabatanPengunggah,
     ): self {
+        $konteksPencarian = self::konteksPencarian($document);
+
         return new self(
             id: $document->id,
             nomor: $document->nomor,
@@ -107,6 +115,47 @@ final class DocumentListData extends Data
             inisial_pengunggah: Inisial::dari($document->uploader?->name),
             ringkasan_akses: $ringkasanAkses,
             alasan_terlihat: $alasanTerlihat,
+            kecocokan_pencarian: $konteksPencarian['kecocokan_pencarian'],
+            cuplikan_pencarian: $konteksPencarian['cuplikan_pencarian'],
+            jumlah_frasa_pencarian: $konteksPencarian['jumlah_frasa_pencarian'],
         );
+    }
+
+    /**
+     * Mengubah projection SQL yang kecil menjadi data presentasi. Tidak ada
+     * jalur di sini yang pernah membaca `extracted_text` penuh.
+     *
+     * @return array{kecocokan_pencarian: list<string>|null, cuplikan_pencarian: string|null, jumlah_frasa_pencarian: int|null}
+     */
+    private static function konteksPencarian(Document $document): array
+    {
+        if (! array_key_exists('search_matches_nomor', $document->getAttributes())) {
+            return [
+                'kecocokan_pencarian' => null,
+                'cuplikan_pencarian' => null,
+                'jumlah_frasa_pencarian' => null,
+            ];
+        }
+
+        $kecocokan = [];
+        foreach ([
+            'search_matches_nomor' => 'Nomor',
+            'search_matches_judul' => 'Judul',
+            'search_matches_deskripsi' => 'Deskripsi',
+            'search_matches_isi' => 'Isi dokumen',
+        ] as $atribut => $label) {
+            if ((bool) $document->getAttribute($atribut)) {
+                $kecocokan[] = $label;
+            }
+        }
+
+        $cuplikan = $document->getAttribute('search_excerpt');
+        $jumlahFrasa = (int) ($document->getAttribute('search_phrase_count') ?? 0);
+
+        return [
+            'kecocokan_pencarian' => $kecocokan,
+            'cuplikan_pencarian' => is_string($cuplikan) && $cuplikan !== '' ? $cuplikan : null,
+            'jumlah_frasa_pencarian' => $jumlahFrasa > 0 ? $jumlahFrasa : null,
+        ];
     }
 }

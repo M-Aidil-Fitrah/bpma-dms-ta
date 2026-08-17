@@ -131,8 +131,16 @@ export function DocumentForm({
     const galatAkses = (errors as Partial<Record<string, string>>).akses;
 
     return (
-        <form onSubmit={handleSubmit} className="grid gap-5 xl:grid-cols-3">
-            <div className="space-y-5 xl:col-span-2">
+        // `grid-cols-1` eksplisit (bukan hanya mengandalkan `xl:grid-cols-3`)
+        // penting: tanpa definisi kolom di bawah breakpoint `xl`, track grid
+        // implisit memakai sizing `auto` (berbasis max-content bawaan CSS
+        // Grid) alih-alih `minmax(0,1fr)` milik Tailwind — kolom menolak
+        // menyusut di bawah lebar intrinsik kontennya dan seluruh formulir
+        // meluber horizontal di layar sempit. Pola serupa (grid/flex item
+        // menolak menyusut) pernah ditemukan di pemilih unit, lihat §5.2
+        // Progres-dan-Lanjutan.md.
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+            <div className="min-w-0 space-y-5 xl:col-span-2">
                 {mode === 'buat' && opsi.lingkungan_kurang && (
                     <Alert variant="warning" title="Batas unggahan di bawah semestinya">
                         Aplikasi menetapkan {opsi.batas_dijanjikan_label}, tapi mesin ini

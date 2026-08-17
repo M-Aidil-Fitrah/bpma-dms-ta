@@ -132,11 +132,27 @@ return [
         'pdf_ocr_timeout_detik' => 900,
 
         /*
+         * Timeout proses Tesseract itu sendiri, dalam detik. Berlaku untuk
+         * gambar langsung maupun tiap halaman PDF pindaian — tanpa ini
+         * Tesseract dapat menggantung tanpa batas pada citra tertentu,
+         * berbeda dari timeout render Ghostscript di atas yang hanya
+         * membungkus proses raster, bukan proses OCR-nya.
+         */
+        'ocr_timeout_detik' => 60,
+
+        /*
          * Polling status ekstraksi di antarmuka. Tanpa batas percobaan, tab yang
          * ditinggalkan terbuka akan memanggil server tanpa henti.
+         *
+         * Jumlah percobaan WAJIB menutupi `pdf_ocr_timeout_detik` di atas
+         * (900 detik) plus jeda antre di worker — kalau tidak, badge macet di
+         * "Memproses" walau job backend masih berjalan sungguhan, dan
+         * pengguna terpaksa memuat ulang manual justru pada kasus PDF 50
+         * halaman yang paling didokumentasikan sebagai "sudah selesai".
+         * 320 percobaan x 3 detik = 960 detik, sedikit di atas timeout job.
          */
         'polling_jeda_ms' => 3000,
-        'polling_maks_percobaan' => 40,
+        'polling_maks_percobaan' => 320,
     ],
 
 ];

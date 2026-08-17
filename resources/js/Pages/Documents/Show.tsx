@@ -18,14 +18,15 @@ import { useState, type ReactNode } from 'react';
 interface ShowProps {
     dokumen: App.Data.DocumentDetailData;
     riwayat: App.Data.ActivityLogData[];
+    pollingKonfigurasi: { jedaMs: number; maksPercobaan: number };
 }
 
 type Tab = 'detail' | 'akses' | 'riwayat';
 
-export default function Show({ dokumen, riwayat }: ShowProps) {
+export default function Show({ dokumen, riwayat, pollingKonfigurasi }: ShowProps) {
     const [tab, setTab] = useState<Tab>('detail');
 
-    useExtractionStatusPolling(dokumen.extraction_status);
+    useExtractionStatusPolling(dokumen.extraction_status, pollingKonfigurasi);
 
     return (
         <AppLayout

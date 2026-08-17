@@ -58,6 +58,17 @@ final class ReextractDocumentText extends Command
             return false;
         }
 
+        // Mencegah dua job OCR berjalan bersamaan untuk dokumen yang sama —
+        // hanya dokumen yang benar-benar gagal yang boleh diproses ulang,
+        // bukan yang masih `pending` (job lama sedang jalan) atau `completed`.
+        if ($document->extraction_status !== ExtractionStatus::Failed) {
+            if ($tampilkanPesan) {
+                $this->warn("Dokumen {$document->id} berstatus {$document->extraction_status->value}, bukan gagal — dilewati.");
+            }
+
+            return false;
+        }
+
         $document->update([
             'extracted_text' => null,
             'extraction_status' => ExtractionStatus::Pending,

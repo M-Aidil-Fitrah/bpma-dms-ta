@@ -56,6 +56,6 @@ final class DocumentTextExtractor
     {
         return trim((new TesseractOCR($path))
             ->lang(...explode('+', config('dms.ekstraksi.bahasa_ocr')))
-            ->run());
+            ->run((int) config('dms.ekstraksi.ocr_timeout_detik')));
     }
 }

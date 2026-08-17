@@ -350,6 +350,15 @@ final class DocumentController extends Controller
                 bolehAktifkan: $request->user()->can('restore', $document),
             ),
             'riwayat' => $aktivitas->recentForDocument($document),
+            // Dikirim dari config, bukan di-hardcode di hook React — anggaran
+            // polling harus selalu cukup menutupi durasi OCR terpanjang yang
+            // mungkin terjadi (`pdf_ocr_timeout_detik`), dan satu-satunya cara
+            // menjamin itu tanpa dua angka yang bisa diam-diam menyimpang
+            // adalah membaca sumber yang sama.
+            'pollingKonfigurasi' => [
+                'jedaMs' => (int) config('dms.ekstraksi.polling_jeda_ms'),
+                'maksPercobaan' => (int) config('dms.ekstraksi.polling_maks_percobaan'),
+            ],
         ]);
     }
 

@@ -13,12 +13,15 @@ interface Opsi {
  *
  * Berhenti sendiri begitu status berubah (dependensi efek berganti nilai)
  * dan berhenti setelah `maksPercobaan` supaya tab yang ditinggalkan terbuka
- * tidak memanggil server tanpa henti. Nilai bawaan meniru
- * `config('dms.ekstraksi.polling_jeda_ms')` dan `polling_maks_percobaan`.
+ * tidak memanggil server tanpa henti. Nilai bawaan hanya jaring pengaman —
+ * pemanggil WAJIB mengoper nilai dari `pollingKonfigurasi` (dikirim
+ * controller dari `config('dms.ekstraksi')`) supaya anggaran percobaan
+ * selalu menutupi durasi OCR terpanjang yang mungkin terjadi, bukan angka
+ * yang diam-diam menyimpang dari config.
  */
 export function useExtractionStatusPolling(
     status: App.Enums.ExtractionStatus,
-    { jedaMs = 3000, maksPercobaan = 40 }: Opsi = {},
+    { jedaMs = 3000, maksPercobaan = 320 }: Opsi = {},
 ): void {
     useEffect(() => {
         if (status !== 'pending') {

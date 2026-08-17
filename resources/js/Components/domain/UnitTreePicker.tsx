@@ -1,7 +1,8 @@
 import { Badge } from '@/Components/ui/Badge';
+import { useUnitTree } from '@/hooks/useUnitTree';
 import { cn } from '@/lib/cn';
 import { Check, ChevronRight } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 export interface UnitPilihan {
     id: number;
@@ -25,22 +26,7 @@ export interface UnitTreePickerProps {
  * sebelum ia menyimpan.
  */
 export function UnitTreePicker({ units, terpilih, onChange }: UnitTreePickerProps) {
-    const [terbuka, setTerbuka] = useState<Set<number>>(new Set());
-
-    const { induk, anakDari } = useMemo(() => {
-        const induk = units.filter((u) => u.parent_id === null);
-        const anakDari = new Map<number, UnitPilihan[]>();
-
-        for (const unit of units) {
-            if (unit.parent_id === null) continue;
-            const daftar = anakDari.get(unit.parent_id) ?? [];
-            daftar.push(unit);
-            anakDari.set(unit.parent_id, daftar);
-        }
-
-        return { induk, anakDari };
-    }, [units]);
-
+    const { induk, anakDari, terbuka, toggleTerbuka } = useUnitTree(units);
     const dipilih = useMemo(() => new Set(terpilih), [terpilih]);
 
     function ubah(ids: number[], aktif: boolean) {
@@ -72,14 +58,7 @@ export function UnitTreePicker({ units, terpilih, onChange }: UnitTreePickerProp
                             {anak.length > 0 && (
                                 <button
                                     type="button"
-                                    onClick={() =>
-                                        setTerbuka((s) => {
-                                            const n = new Set(s);
-                                            n.has(unit.id) ? n.delete(unit.id) : n.add(unit.id);
-
-                                            return n;
-                                        })
-                                    }
+                                    onClick={() => toggleTerbuka(unit.id)}
                                     aria-label={`${isTerbuka ? 'Tutup' : 'Buka'} divisi ${unit.nama}`}
                                     aria-expanded={isTerbuka}
                                     className="flex size-6 shrink-0 items-center justify-center rounded text-ink-subtle hover:bg-surface-sunken"

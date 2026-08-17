@@ -108,6 +108,13 @@ final class DocumentTextExtractor
      */
     public function gambar(string $path): OcrResult
     {
+        // Tesseract dapat selesai dengan kode 0 pada byte acak dan hanya
+        // mengembalikan TSV kosong. Itu bukan gambar kosong yang layak
+        // ditinjau, melainkan berkas rusak yang harus mencapai jalur `failed`.
+        if (@getimagesize($path) === false) {
+            throw new UnexpectedValueException('Berkas gambar tidak dapat dibaca.');
+        }
+
         $tsv = (new TesseractOCR($path))
             ->lang(...explode('+', config('dms.ekstraksi.bahasa_ocr')))
             ->tsv()

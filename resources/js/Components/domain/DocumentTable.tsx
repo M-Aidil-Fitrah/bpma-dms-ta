@@ -1,5 +1,6 @@
 import { SortableHeader } from '@/Components/data/SortableHeader';
 import { DocumentActions } from '@/Components/domain/DocumentActions';
+import { DocumentSearchMatch } from '@/Components/domain/DocumentSearchMatch';
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
 import { Avatar } from '@/Components/ui/Avatar';
@@ -96,6 +97,11 @@ const DocumentTableRow = memo(function DocumentTableRow({
                     <p className="mt-0.5 truncate font-mono text-xs text-ink-subtle">
                         {document.nomor}
                     </p>
+                    <DocumentSearchMatch
+                        kecocokan={document.kecocokan_pencarian}
+                        cuplikan={document.cuplikan_pencarian}
+                        jumlahFrasa={document.jumlah_frasa_pencarian}
+                    />
                 </Link>
             </td>
 

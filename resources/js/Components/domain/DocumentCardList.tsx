@@ -1,5 +1,6 @@
 import { AccessSummary } from '@/Components/domain/AccessSummary';
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
+import { DocumentSearchMatch } from '@/Components/domain/DocumentSearchMatch';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
 import { Avatar } from '@/Components/ui/Avatar';
 import { formatTanggal, formatUkuranBerkas } from '@/lib/format';
@@ -50,6 +51,12 @@ const DocumentCard = memo(function DocumentCard({
 
                 <DocumentStatusBadge status={document.status} size="sm" />
             </div>
+
+            <DocumentSearchMatch
+                kecocokan={document.kecocokan_pencarian}
+                cuplikan={document.cuplikan_pencarian}
+                jumlahFrasa={document.jumlah_frasa_pencarian}
+            />
 
             <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-ink-muted">
                 <FileTypeBadge mime={document.tipe_berkas} />

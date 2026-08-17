@@ -57,6 +57,7 @@ export function DocumentHeaderActions({
             <a href={`/documents/${dokumenId}/file`} download>
                 <Button icon={Download} size="sm" variant="secondary">
                     <span className="hidden sm:inline">Unduh</span>
+                    <span className="sr-only sm:hidden">Unduh</span>
                 </Button>
             </a>
 
@@ -64,6 +65,7 @@ export function DocumentHeaderActions({
                 <Link href={`/documents/${dokumenId}/edit`}>
                     <Button icon={Pencil} size="sm">
                         <span className="hidden sm:inline">Ubah</span>
+                        <span className="sr-only sm:hidden">Ubah</span>
                     </Button>
                 </Link>
             )}
@@ -75,7 +77,8 @@ export function DocumentHeaderActions({
                     variant="secondary"
                     onClick={() => setTanyaNonaktif(true)}
                 >
-                    <span className="hidden lg:inline">Nonaktifkan</span>
+                    <span className="hidden sm:inline">Nonaktifkan</span>
+                    <span className="sr-only sm:hidden">Nonaktifkan</span>
                 </Button>
             )}
 
@@ -87,6 +90,7 @@ export function DocumentHeaderActions({
                     onClick={aktifkan}
                 >
                     <span className="hidden sm:inline">Aktifkan Kembali</span>
+                    <span className="sr-only sm:hidden">Aktifkan Kembali</span>
                 </Button>
             )}
 

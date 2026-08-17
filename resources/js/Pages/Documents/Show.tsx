@@ -23,6 +23,20 @@ interface ShowProps {
 
 type Tab = 'detail' | 'akses' | 'riwayat';
 
+const TAB_VALID: readonly Tab[] = ['detail', 'akses', 'riwayat'];
+
+/**
+ * Tab awal mengikuti `location.hash` (mis. tautan menu "Lihat pengaturan
+ * akses" mengarah ke `#akses`) — tanpa ini, tab kontennya dirender kondisional
+ * sehingga `id="akses"` bahkan tidak ada di DOM saat halaman baru dimuat, dan
+ * pengguna selalu mendarat di tab "Detail" berapa pun hash di alamatnya.
+ */
+function tabDariHash(): Tab {
+    const hash = window.location.hash.slice(1);
+
+    return (TAB_VALID as string[]).includes(hash) ? (hash as Tab) : 'detail';
+}
+
 /**
  * Batas atas menunggu konversi pratinjau Office. Melewati ini, kartu
  * berhenti menganggapnya "sedang disiapkan" — kemungkinan besar job gagal
@@ -31,7 +45,7 @@ type Tab = 'detail' | 'akses' | 'riwayat';
 const JENDELA_PRATINJAU_MENIT = 5;
 
 export default function Show({ dokumen, riwayat, pollingKonfigurasi }: ShowProps) {
-    const [tab, setTab] = useState<Tab>('detail');
+    const [tab, setTab] = useState<Tab>(tabDariHash);
 
     const masihMenyiapkanPratinjau =
         dokumen.pratinjau_sedang_disiapkan && dalamJendelaWaktu(dokumen.diunggah_pada, JENDELA_PRATINJAU_MENIT);

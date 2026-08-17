@@ -28,6 +28,7 @@ Thumbs.db
 
 # Dokumen & referensi desain lokal (konteks kerja, bukan kode sumber)
 scripts/
+docs/
 
 # Keluaran sementara Playwright MCP
 .playwright-mcp/

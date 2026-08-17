@@ -77,8 +77,18 @@ final class DocumentDetailData extends Data
         public DocumentEditScope $edit_scope,
         public string $label_edit_scope,
 
+        // -- Rantai versi berkas ---------------------------------------------
+        /** Versi tepat sebelum dokumen ini; versi lama tidak masuk daftar biasa. */
+        public ?int $versi_sebelumnya_id,
+        public ?string $nomor_versi_sebelumnya,
+        public ?string $judul_versi_sebelumnya,
+        /** Versi tepat setelah dokumen ini; berguna ketika membuka arsipnya. */
+        public ?int $versi_berikutnya_id,
+        public ?string $nomor_versi_berikutnya,
+        public ?string $judul_versi_berikutnya,
+
         // -- Keadaan & wewenang pengguna yang sedang membuka ------------------
-        /** Dokumen nonaktif hanya terlihat Superadmin (FR-10). */
+        /** Dokumen nonaktif hanya terlihat lewat riwayat versi atau Superadmin. */
         public bool $aktif,
         public bool $boleh_ubah,
         public bool $boleh_nonaktifkan,
@@ -128,6 +138,13 @@ final class DocumentDetailData extends Data
             orang_tertentu: $document->sharedUsers->pluck('name')->all(),
             edit_scope: $document->edit_scope,
             label_edit_scope: $document->edit_scope->label(),
+
+            versi_sebelumnya_id: $document->replacedDocument?->id,
+            nomor_versi_sebelumnya: $document->replacedDocument?->nomor,
+            judul_versi_sebelumnya: $document->replacedDocument?->judul,
+            versi_berikutnya_id: $document->replacementDocument?->id,
+            nomor_versi_berikutnya: $document->replacementDocument?->nomor,
+            judul_versi_berikutnya: $document->replacementDocument?->judul,
 
             aktif: $document->is_active,
             boleh_ubah: $bolehUbah,

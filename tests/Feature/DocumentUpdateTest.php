@@ -311,6 +311,35 @@ final class DocumentUpdateTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_pemilik_dapat_membuka_versi_lama_dari_dokumen_pengganti_yang_masih_berlaku(): void
+    {
+        $versiBaru = Document::factory()->create([
+            'uploaded_by' => $this->pemilik->id,
+            'category_id' => $this->kategori->id,
+            'origin_unit_id' => $this->divisi->id,
+            'replaces_document_id' => $this->dokumen->id,
+            'is_shared_to_all' => false,
+            'min_tingkat_akses' => null,
+            'is_active' => true,
+        ]);
+        $versiBaru->targetUnits()->attach($this->divisi->id, ['added_by' => $this->pemilik->id]);
+        $this->dokumen->update(['is_active' => false]);
+
+        $this->actingAs($this->pemilik)
+            ->get("/documents/{$this->dokumen->id}")
+            ->assertOk()
+            ->assertInertia(fn ($halaman) => $halaman
+                ->where('dokumen.versi_berikutnya_id', $versiBaru->id)
+                ->where('dokumen.judul_versi_berikutnya', $versiBaru->judul));
+
+        $this->actingAs($this->pemilik)
+            ->get("/documents/{$versiBaru->id}")
+            ->assertOk()
+            ->assertInertia(fn ($halaman) => $halaman
+                ->where('dokumen.versi_sebelumnya_id', $this->dokumen->id)
+                ->where('dokumen.judul_versi_sebelumnya', $this->dokumen->judul));
+    }
+
     public function test_dokumen_nonaktif_tidak_dapat_disunting(): void
     {
         $this->dokumen->update(['is_active' => false]);

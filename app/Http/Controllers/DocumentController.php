@@ -187,6 +187,7 @@ final class DocumentController extends Controller
                 if ($lama !== null) {
                     $lama->update(['is_active' => false]);
                     $aktivitas->record(ActivityLogName::Dokumen, AuditEvent::DocumentReplaced, 'Dokumen digantikan oleh unggahan baru.', $lama, $request->user(), ['replacement_document_id' => $document->id]);
+                    $aktivitas->record(ActivityLogName::Dokumen, AuditEvent::DocumentReplaced, 'Unggahan ini menggantikan versi dokumen sebelumnya.', $document, $request->user(), ['replaces_document_id' => $lama->id]);
                 }
 
                 return $document;
@@ -367,6 +368,10 @@ final class DocumentController extends Controller
             'uploader.unit:id,nama',
             'targetUnits:id,nama',
             'sharedUsers:id,name',
+            'replacedDocument:id,nomor,judul',
+            // Foreign key wajib ikut dipilih pada hasOne; tanpa ini Eloquent
+            // tidak dapat memasangkan versi penerus ke dokumen yang dibuka.
+            'replacementDocument:id,replaces_document_id,nomor,judul',
         ]);
 
         return Inertia::render('Documents/Show', [

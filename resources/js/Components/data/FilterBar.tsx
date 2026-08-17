@@ -110,6 +110,7 @@ export function FilterBar({
 
                                     return (
                                         <UnitTreeSelect
+                                            {...props}
                                             units={filter.treeUnits ?? []}
                                             nilai={nilaiUnit}
                                             onChange={(id) =>

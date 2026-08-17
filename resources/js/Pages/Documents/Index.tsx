@@ -17,6 +17,7 @@ import { useMemo } from 'react';
 interface OpsiFilter {
     kategori: { id: number; nama: string }[];
     unit: { id: number; nama: string }[];
+    unit_pohon: { id: number; nama: string; parent_id: number | null }[];
     pengunggah: { id: number; name: string }[];
 }
 
@@ -58,9 +59,8 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
             {
                 kunci: 'unit',
                 label: 'Unit Asal',
-                tipe: 'select',
-                placeholder: 'Semua unit asal',
-                options: (opsi?.unit ?? []).map((unit) => ({ value: unit.id, label: unit.nama })),
+                tipe: 'tree',
+                treeUnits: opsi?.unit_pohon ?? [],
             },
             { kunci: 'tipe', label: 'Tipe Berkas', tipe: 'select', placeholder: 'Semua tipe', options: TIPE_OPTIONS },
             { kunci: 'status_ekstraksi', label: 'Pencarian Isi', tipe: 'select', placeholder: 'Semua status', options: EKSTRAKSI_OPTIONS },

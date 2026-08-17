@@ -1,80 +1,136 @@
 import type { UnitPilihan } from '@/Components/domain/UnitTreePicker';
 import { useUnitTree } from '@/hooks/useUnitTree';
 import { cn } from '@/lib/cn';
-import { ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface UnitTreeSelectProps {
     units: readonly UnitPilihan[];
     nilai: number | null;
     onChange: (id: number | null) => void;
+    id?: string;
+    'aria-describedby'?: string;
+    'aria-invalid'?: boolean;
 }
 
 /**
- * Penyaring unit asal berbentuk pohon — satu pilihan, bukan cascade seperti
- * `UnitTreePicker` di formulir unggah.
- *
- * Hasil penyaringannya identik dengan dropdown datar (`origin_unit_id`
- * persis satu unit); bedanya murni tampilan — hierarki lewat indentasi dan
- * lipat/buka per cabang, bukan label "Induk — Anak" yang digabung jadi satu
- * baris.
+ * Satu pemilih Unit Asal yang tampak seperti dropdown, tetapi menjaga pohon
+ * Deputi → Divisi di dalam panelnya. Menekan nama Deputi membuka daftar
+ * Divisi; pilihan cakupan seluruh Deputi tetap tersedia di dalam cabangnya.
  */
-export function UnitTreeSelect({ units, nilai, onChange }: UnitTreeSelectProps) {
+export function UnitTreeSelect({
+    units,
+    nilai,
+    onChange,
+    id,
+    'aria-describedby': describedBy,
+    'aria-invalid': invalid = false,
+}: UnitTreeSelectProps) {
     const { induk, anakDari, terbuka, toggleTerbuka } = useUnitTree(units);
+    const [menuTerbuka, setMenuTerbuka] = useState(false);
+    const pembungkus = useRef<HTMLDivElement>(null);
+    const pilihan = units.find((unit) => unit.id === nilai);
+
+    useEffect(() => {
+        function tutupJikaDiLuar(event: PointerEvent) {
+            if (!pembungkus.current?.contains(event.target as Node)) {
+                setMenuTerbuka(false);
+            }
+        }
+
+        document.addEventListener('pointerdown', tutupJikaDiLuar);
+
+        return () => document.removeEventListener('pointerdown', tutupJikaDiLuar);
+    }, []);
+
+    function pilih(id: number | null) {
+        onChange(id);
+        setMenuTerbuka(false);
+    }
 
     return (
-        <div className="max-h-72 space-y-0.5 overflow-y-auto rounded-lg border border-line p-2">
-            <BarisPilih nama="Semua unit" terpilih={nilai === null} onClick={() => onChange(null)} tebal />
+        <div ref={pembungkus} className="relative">
+            <button
+                id={id}
+                type="button"
+                aria-haspopup="tree"
+                aria-expanded={menuTerbuka}
+                aria-describedby={describedBy}
+                aria-invalid={invalid}
+                onClick={() => setMenuTerbuka((terbuka) => !terbuka)}
+                onKeyDown={(event) => {
+                    if (event.key === 'Escape') setMenuTerbuka(false);
+                }}
+                className={cn(
+                    'flex h-10 min-h-touch w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-sm text-ink sm:min-h-0',
+                    'focus:border-brand-700 focus:ring-1 focus:ring-brand-700',
+                    invalid ? 'border-danger focus:border-danger focus:ring-danger' : 'border-line',
+                )}
+            >
+                <span className="truncate">{pilihan?.nama ?? 'Semua unit asal'}</span>
+                <ChevronDown
+                    className={cn('size-4 shrink-0 text-ink-subtle transition-transform', menuTerbuka && 'rotate-180')}
+                    aria-hidden
+                />
+            </button>
 
-            {induk.map((unit) => {
-                const anak = anakDari.get(unit.id) ?? [];
-                const isTerbuka = terbuka.has(unit.id);
+            {menuTerbuka && (
+                <div
+                    role="tree"
+                    aria-label="Pilih unit asal"
+                    className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-line bg-white p-2 shadow-pop"
+                >
+                    <BarisPilih nama="Semua unit asal" terpilih={nilai === null} onClick={() => pilih(null)} tebal />
 
-                return (
-                    <div key={unit.id}>
-                        <div className="flex min-w-0 items-center gap-1">
-                            {anak.length > 0 ? (
-                                <button
-                                    type="button"
-                                    onClick={() => toggleTerbuka(unit.id)}
-                                    aria-label={`${isTerbuka ? 'Tutup' : 'Buka'} divisi ${unit.nama}`}
-                                    aria-expanded={isTerbuka}
-                                    className="flex size-6 shrink-0 items-center justify-center rounded text-ink-subtle hover:bg-surface-sunken"
-                                >
-                                    <ChevronRight
-                                        className={cn(
-                                            'size-4 transition-transform',
-                                            isTerbuka && 'rotate-90',
-                                        )}
-                                        aria-hidden
-                                    />
-                                </button>
-                            ) : (
-                                <span className="size-6 shrink-0" aria-hidden />
-                            )}
+                    {induk.map((unit) => {
+                        const anak = anakDari.get(unit.id) ?? [];
+                        const isTerbuka = terbuka.has(unit.id);
 
-                            <BarisPilih
-                                nama={unit.nama}
-                                terpilih={nilai === unit.id}
-                                onClick={() => onChange(unit.id)}
-                                tebal
-                            />
-                        </div>
+                        return (
+                            <div key={unit.id} role="treeitem" aria-expanded={anak.length > 0 ? isTerbuka : undefined}>
+                                <div className="flex min-w-0 items-center gap-1">
+                                    {anak.length > 0 ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleTerbuka(unit.id)}
+                                            aria-label={`${isTerbuka ? 'Tutup' : 'Buka'} divisi ${unit.nama}`}
+                                            className="flex size-7 shrink-0 items-center justify-center rounded text-ink-subtle hover:bg-surface-sunken"
+                                        >
+                                            <ChevronRight
+                                                className={cn('size-4 transition-transform', isTerbuka && 'rotate-90')}
+                                                aria-hidden
+                                            />
+                                        </button>
+                                    ) : (
+                                        <span className="size-7 shrink-0" aria-hidden />
+                                    )}
 
-                        {isTerbuka && anak.length > 0 && (
-                            <div className="ml-7 space-y-0.5 border-l border-line pl-2">
-                                {anak.map((divisi) => (
-                                    <BarisPilih
-                                        key={divisi.id}
-                                        nama={divisi.nama}
-                                        terpilih={nilai === divisi.id}
-                                        onClick={() => onChange(divisi.id)}
-                                    />
-                                ))}
+                                    {anak.length > 0 ? (
+                                        <BarisPilih nama={unit.nama} terpilih={isTerbuka} onClick={() => toggleTerbuka(unit.id)} tebal />
+                                    ) : (
+                                        <BarisPilih nama={unit.nama} terpilih={nilai === unit.id} onClick={() => pilih(unit.id)} tebal />
+                                    )}
+                                </div>
+
+                                {isTerbuka && anak.length > 0 && (
+                                    <div role="group" className="ml-8 space-y-0.5 border-l border-line pl-2">
+                                        <BarisPilih
+                                            nama={`Semua unit di ${unit.nama}`}
+                                            terpilih={nilai === unit.id}
+                                            onClick={() => pilih(unit.id)}
+                                        />
+                                        {anak.map((divisi) => (
+                                            <div key={divisi.id} role="treeitem">
+                                                <BarisPilih nama={divisi.nama} terpilih={nilai === divisi.id} onClick={() => pilih(divisi.id)} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                );
-            })}
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }
@@ -101,9 +157,6 @@ function BarisPilih({
                 tebal && 'font-medium',
             )}
         >
-            {/* Nama unit dibiarkan membungkus, bukan dipotong — sama seperti
-                `UnitTreePicker`, nama divisi di sini sering hanya berbeda di
-                bagian belakangnya. */}
             <span className="min-w-0 break-words">{nama}</span>
         </button>
     );

@@ -72,9 +72,8 @@ export default function Show({ dokumen, riwayat, pollingKonfigurasi }: ShowProps
         >
             {!dokumen.aktif && (
                 <Alert variant="warning" title="Dokumen ini nonaktif" className="mb-5">
-                    Disembunyikan dari daftar dokumen dan hasil pencarian untuk semua orang.
-                    Anda melihatnya karena berperan Superadmin — gunakan tombol "Aktifkan
-                    Kembali" di atas untuk memunculkannya lagi.
+                    Disembunyikan dari daftar dokumen dan hasil pencarian. Anda membukanya
+                    lewat riwayat versi; hanya Superadmin yang dapat mengaktifkannya kembali.
                 </Alert>
             )}
 
@@ -167,6 +166,33 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
             </Baris>
             <Baris label="Judul">{dokumen.judul}</Baris>
 
+            {(dokumen.versi_sebelumnya_id || dokumen.versi_berikutnya_id) && (
+                <Baris label="Versi Dokumen">
+                    <div className="space-y-2">
+                        {dokumen.versi_sebelumnya_id && (
+                            <Link
+                                href={`/documents/${dokumen.versi_sebelumnya_id}`}
+                                className="block rounded-lg border border-line bg-surface-muted px-3 py-2 text-sm transition-colors hover:border-brand-300 hover:bg-brand-50"
+                            >
+                                <span className="block text-xs font-medium text-ink-muted">Versi sebelumnya</span>
+                                <span className="block truncate font-medium text-ink">{dokumen.judul_versi_sebelumnya}</span>
+                                <span className="block truncate font-mono text-xs text-ink-muted">{dokumen.nomor_versi_sebelumnya}</span>
+                            </Link>
+                        )}
+                        {dokumen.versi_berikutnya_id && (
+                            <Link
+                                href={`/documents/${dokumen.versi_berikutnya_id}`}
+                                className="block rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm transition-colors hover:border-brand-400"
+                            >
+                                <span className="block text-xs font-medium text-brand-700">Versi pengganti</span>
+                                <span className="block truncate font-medium text-ink">{dokumen.judul_versi_berikutnya}</span>
+                                <span className="block truncate font-mono text-xs text-ink-muted">{dokumen.nomor_versi_berikutnya}</span>
+                            </Link>
+                        )}
+                    </div>
+                </Baris>
+            )}
+
             {dokumen.deskripsi && (
                 <Baris label="Deskripsi">
                     <span className="whitespace-pre-wrap">{dokumen.deskripsi}</span>
@@ -192,7 +218,21 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
             <hr className="border-line" />
 
             <Baris label="Nama Berkas" mono>
-                {dokumen.nama_berkas}
+                <div className="space-y-2">
+                    <span className="block break-all">{dokumen.nama_berkas}</span>
+                    {dokumen.aktif && dokumen.boleh_ubah && (
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                            <Link href={`/documents/create?replace=${dokumen.id}`} className="w-full sm:w-auto">
+                                <Button size="sm" variant="secondary" icon={Upload} className="w-full">
+                                    Unggah versi baru
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
+                    <p className="text-xs text-ink-muted">
+                        Berkas tidak ditimpa. Unggah versi baru agar berkas, akses, dan aktivitas versi sebelumnya tetap terlacak.
+                    </p>
+                </div>
             </Baris>
 
             <Baris label="Tipe & Ukuran">
@@ -216,7 +256,6 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                     {dokumen.extraction_status === 'review_required' && dokumen.boleh_ubah && (
                         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <Link href="/documents/create" className="w-full sm:w-auto"><Button size="sm" variant="secondary" icon={Upload} className="w-full">Unggah dokumen lain</Button></Link>
-                            <Link href={`/documents/create?replace=${dokumen.id}`} className="w-full sm:w-auto"><Button size="sm" icon={Upload} className="w-full">Unggah pengganti</Button></Link>
                         </div>
                     )}
                 </div>

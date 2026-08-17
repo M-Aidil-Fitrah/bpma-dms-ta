@@ -41,7 +41,7 @@ export function DocumentTable({
                             kunciAktif={kunciUrut}
                             arah={arahUrut}
                             onSort={onSort}
-                            className="w-[30%]"
+                            className="w-[31%]"
                         />
                         <th scope="col" className="w-[11%] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-subtle">
                             Tipe

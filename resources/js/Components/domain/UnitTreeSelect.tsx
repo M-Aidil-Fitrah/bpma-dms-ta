@@ -59,7 +59,7 @@ export function UnitTreeSelect({ units, nilai, onChange }: UnitTreeSelectProps) 
                                 <button
                                     type="button"
                                     onClick={() => toggle(unit.id)}
-                                    aria-label={isTerbuka ? 'Tutup divisi' : 'Buka divisi'}
+                                    aria-label={`${isTerbuka ? 'Tutup' : 'Buka'} divisi ${unit.nama}`}
                                     aria-expanded={isTerbuka}
                                     className="flex size-6 shrink-0 items-center justify-center rounded text-ink-subtle hover:bg-surface-sunken"
                                 >

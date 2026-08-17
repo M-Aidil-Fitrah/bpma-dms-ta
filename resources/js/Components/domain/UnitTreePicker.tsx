@@ -80,7 +80,7 @@ export function UnitTreePicker({ units, terpilih, onChange }: UnitTreePickerProp
                                             return n;
                                         })
                                     }
-                                    aria-label={isTerbuka ? 'Tutup divisi' : 'Buka divisi'}
+                                    aria-label={`${isTerbuka ? 'Tutup' : 'Buka'} divisi ${unit.nama}`}
                                     aria-expanded={isTerbuka}
                                     className="flex size-6 shrink-0 items-center justify-center rounded text-ink-subtle hover:bg-surface-sunken"
                                 >

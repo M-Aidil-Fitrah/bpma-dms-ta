@@ -14,7 +14,7 @@ interface CreateProps {
 export default function Create({ opsi, pengganti }: CreateProps) {
     return (
         <AppLayout
-            title="Unggah Dokumen"
+            title={pengganti ? 'Unggah Versi Baru' : 'Unggah Dokumen'}
             header={
                 <div className="flex min-w-0 items-center gap-2 text-sm">
                     <Link
@@ -27,14 +27,16 @@ export default function Create({ opsi, pengganti }: CreateProps) {
                     <span className="text-ink-subtle" aria-hidden>
                         /
                     </span>
-                    <span className="truncate font-semibold text-ink">Unggah Dokumen</span>
+                    <span className="truncate font-semibold text-ink">
+                        {pengganti ? 'Unggah Versi Baru' : 'Unggah Dokumen'}
+                    </span>
                 </div>
             }
         >
             <DocumentForm
                 mode="buat"
                 aksi="/documents"
-                batal="/documents"
+                batal={pengganti ? `/documents/${pengganti.id}/edit` : '/documents'}
                 opsi={opsi}
                 awal={{
                     nomor: pengganti?.nomor ?? '',
@@ -54,6 +56,13 @@ export default function Create({ opsi, pengganti }: CreateProps) {
                     shared_users: pengganti?.orang_tertentu ?? [],
                 }}
                 replacesDocumentId={pengganti?.id ?? null}
+                versiTerbaru={pengganti === null ? undefined : {
+                    id: pengganti.id,
+                    nama: pengganti.nama_berkas,
+                    tipe: pengganti.tipe_berkas,
+                    ukuran: pengganti.ukuran_berkas,
+                    thumbnailTersedia: pengganti.thumbnail_tersedia,
+                }}
             />
         </AppLayout>
     );

@@ -38,9 +38,11 @@ export default function Edit({ dokumen, opsi }: EditProps) {
                 batal={`/documents/${dokumen.id}`}
                 opsi={opsi}
                 berkas={{
+                    id: dokumen.id,
                     nama: dokumen.nama_berkas,
                     tipe: dokumen.tipe_berkas,
                     ukuran: dokumen.ukuran_berkas,
+                    thumbnailTersedia: dokumen.thumbnail_tersedia,
                 }}
                 unggahVersiBaru={`/documents/create?replace=${dokumen.id}`}
                 awal={{

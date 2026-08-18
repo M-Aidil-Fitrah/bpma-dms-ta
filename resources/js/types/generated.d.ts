@@ -106,6 +106,7 @@ edit_scope: App.Enums.DocumentEditScope,
 nama_berkas: string,
 tipe_berkas: string,
 ukuran_berkas: number,
+thumbnail_tersedia: boolean,
 };
 export type DocumentListData = {
 id: number,

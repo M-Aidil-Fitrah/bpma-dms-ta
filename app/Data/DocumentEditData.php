@@ -49,6 +49,7 @@ final class DocumentEditData extends Data
         public string $nama_berkas,
         public string $tipe_berkas,
         public int $ukuran_berkas,
+        public bool $thumbnail_tersedia,
     ) {}
 
     public static function fromModel(Document $document): self
@@ -80,6 +81,7 @@ final class DocumentEditData extends Data
             nama_berkas: $document->file_name_original,
             tipe_berkas: $document->file_mime_type,
             ukuran_berkas: $document->file_size,
+            thumbnail_tersedia: $document->thumbnail_path !== null,
         );
     }
 }

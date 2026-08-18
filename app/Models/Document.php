@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\DocumentEditScope;
 use App\Enums\DocumentStatus;
+use App\Enums\DocumentVersionKind;
 use App\Enums\ExtractionStatus;
 use Database\Factories\DocumentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -31,7 +33,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'file_path', 'file_name_original', 'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path',
     'extracted_text', 'extraction_status', 'extraction_pages_total', 'extraction_pages_processed',
     'extraction_estimated_seconds', 'extraction_message', 'extraction_started_at',
-    'nomor_normalized', 'replaces_document_id',
+    'nomor_normalized', 'replaces_document_id', 'version_root_id',
+    'version_major', 'version_minor', 'version_kind', 'version_note',
     'is_shared_to_all', 'min_tingkat_akses', 'edit_scope',
     'uploaded_by', 'is_active',
 ])]
@@ -44,6 +47,15 @@ class Document extends Model
     {
         static::saving(function (self $document): void {
             $document->nomor_normalized = preg_replace('/[^a-z0-9]+/i', '', strtolower($document->nomor)) ?? '';
+        });
+
+        // Baris awal baru belum memiliki ID ketika INSERT berjalan. Sesudahnya
+        // ia menjadi akar untuk dirinya sendiri; revisi selalu mengisi akar
+        // sejak awal melalui DocumentVersionService.
+        static::created(function (self $document): void {
+            if ($document->version_root_id === null) {
+                $document->forceFill(['version_root_id' => $document->id])->saveQuietly();
+            }
         });
     }
 
@@ -73,6 +85,7 @@ class Document extends Model
             'status' => DocumentStatus::class,
             'extraction_status' => ExtractionStatus::class,
             'edit_scope' => DocumentEditScope::class,
+            'version_kind' => DocumentVersionKind::class,
             'is_shared_to_all' => 'boolean',
             'is_active' => 'boolean',
             'min_tingkat_akses' => 'integer',
@@ -123,6 +136,23 @@ class Document extends Model
     public function replacementDocument(): HasOne
     {
         return $this->hasOne(self::class, 'replaces_document_id');
+    }
+
+    /** Versi pertama yang menjadi pemilik rantai dokumen ini. */
+    public function versionRoot(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'version_root_id');
+    }
+
+    /** @return HasMany<Document, $this> */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(self::class, 'version_root_id');
+    }
+
+    public function versionLabel(): string
+    {
+        return "v{$this->version_major}.{$this->version_minor}";
     }
 
     /**

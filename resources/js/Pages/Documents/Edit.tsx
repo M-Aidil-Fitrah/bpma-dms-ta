@@ -54,6 +54,7 @@ export default function Edit({ dokumen, opsi }: EditProps) {
                     tanggal: dokumen.tanggal,
                     masa_berlaku: dokumen.masa_berlaku ?? '',
                     edit_scope: dokumen.edit_scope,
+                    version_note: '',
                 }}
                 aksesAwal={{
                     is_shared_to_all: dokumen.is_shared_to_all,

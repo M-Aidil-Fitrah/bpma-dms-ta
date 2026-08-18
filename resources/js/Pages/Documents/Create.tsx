@@ -45,6 +45,7 @@ export default function Create({ opsi, pengganti }: CreateProps) {
                     tanggal: pengganti?.tanggal ?? new Date().toISOString().slice(0, 10),
                     masa_berlaku: pengganti?.masa_berlaku ?? '',
                     edit_scope: pengganti?.edit_scope ?? 'owner_only',
+                    version_note: '',
                 }}
                 aksesAwal={{
                     is_shared_to_all: pengganti?.is_shared_to_all ?? false,

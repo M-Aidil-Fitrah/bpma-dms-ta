@@ -39,6 +39,7 @@ export interface NilaiAwalDokumen {
     tanggal: string;
     masa_berlaku: string;
     edit_scope: string;
+    version_note: string;
 }
 
 export interface DocumentFormProps {
@@ -307,6 +308,29 @@ export function DocumentForm({
                                 />
                             )}
                         </Field>
+
+                        {(mode === 'ubah' || replacesDocumentId !== null) && (
+                            <Field
+                                label="Catatan Versi"
+                                hint={mode === 'ubah'
+                                    ? 'Jelaskan perubahan metadata atau akses pada revisi ini.'
+                                    : 'Jelaskan perubahan isi pada versi major baru ini.'}
+                                error={errors.version_note}
+                                required
+                                className="sm:col-span-2"
+                            >
+                                {(props) => (
+                                    <Textarea
+                                        {...props}
+                                        rows={3}
+                                        value={data.version_note}
+                                        invalid={Boolean(errors.version_note)}
+                                        onChange={(e) => setData('version_note', e.target.value)}
+                                        placeholder="Contoh: memperbaiki masa berlaku dan akses unit"
+                                    />
+                                )}
+                            </Field>
+                        )}
                     </CardBody>
                 </Card>
             </div>

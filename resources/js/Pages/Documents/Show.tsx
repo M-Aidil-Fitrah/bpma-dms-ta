@@ -2,6 +2,7 @@ import { AccessSummary } from '@/Components/domain/AccessSummary';
 import { ActivityItem } from '@/Components/domain/ActivityItem';
 import { DocumentHeaderActions } from '@/Components/domain/DocumentHeaderActions';
 import { DocumentPreview } from '@/Components/domain/DocumentPreview';
+import { DocumentVersionHistory } from '@/Components/domain/DocumentVersionHistory';
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
 import { ExtractionStatusBadge } from '@/Components/domain/ExtractionStatusBadge';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
@@ -20,6 +21,7 @@ import { useState, type ReactNode } from 'react';
 
 interface ShowProps {
     dokumen: App.Data.DocumentDetailData;
+    versi: App.Data.DocumentVersionData[];
     riwayat: App.Data.ActivityLogData[];
     pollingKonfigurasi: { jedaMs: number; maksPercobaan: number };
 }
@@ -47,7 +49,7 @@ function tabDariHash(): Tab {
  */
 const JENDELA_PRATINJAU_MENIT = 5;
 
-export default function Show({ dokumen, riwayat, pollingKonfigurasi }: ShowProps) {
+export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: ShowProps) {
     const [tab, setTab] = useState<Tab>(tabDariHash);
 
     const masihMenyiapkanPratinjau =
@@ -73,7 +75,8 @@ export default function Show({ dokumen, riwayat, pollingKonfigurasi }: ShowProps
             {!dokumen.aktif && (
                 <Alert variant="warning" title="Dokumen ini nonaktif" className="mb-5">
                     Disembunyikan dari daftar dokumen dan hasil pencarian. Anda membukanya
-                    lewat riwayat versi; hanya Superadmin yang dapat mengaktifkannya kembali.
+                    lewat riwayat versi. Arsip tidak dapat diubah; pemilik rantai dapat
+                    menjadikannya versi terbaru dari panel Riwayat.
                 </Alert>
             )}
 
@@ -102,7 +105,13 @@ export default function Show({ dokumen, riwayat, pollingKonfigurasi }: ShowProps
                     <div className="flex-1 overflow-auto p-5">
                         {tab === 'detail' && <PanelDetail dokumen={dokumen} />}
                         {tab === 'akses' && <PanelAkses dokumen={dokumen} />}
-                        {tab === 'riwayat' && <PanelRiwayat riwayat={riwayat} />}
+                        {tab === 'riwayat' && (
+                            <PanelRiwayat
+                                versi={versi}
+                                riwayat={riwayat}
+                                bolehPulihkan={dokumen.boleh_pulihkan_versi}
+                            />
+                        )}
                     </div>
                 </Card>
             </div>
@@ -165,6 +174,15 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                 {dokumen.nomor}
             </Baris>
             <Baris label="Judul">{dokumen.judul}</Baris>
+
+            <Baris label={dokumen.aktif ? 'Versi Terbaru' : 'Versi Arsip'}>
+                <div className="space-y-1">
+                    <span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 font-mono text-xs font-semibold text-brand-700">
+                        {dokumen.version_label}
+                    </span>
+                    <p className="whitespace-pre-wrap text-sm text-ink-muted">{dokumen.version_note}</p>
+                </div>
+            </Baris>
 
             {(dokumen.versi_sebelumnya_id || dokumen.versi_berikutnya_id) && (
                 <Baris label="Versi Dokumen">
@@ -409,17 +427,50 @@ function MekanismeAkses({
     );
 }
 
-function PanelRiwayat({ riwayat }: { riwayat: App.Data.ActivityLogData[] }) {
-    if (riwayat.length > 0) {
-        return <div className="-mx-5 -my-5 divide-y divide-line"><div className="px-2 py-2">{riwayat.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div></div>;
-    }
+function PanelRiwayat({
+    versi,
+    riwayat,
+    bolehPulihkan,
+}: {
+    versi: App.Data.DocumentVersionData[];
+    riwayat: App.Data.ActivityLogData[];
+    bolehPulihkan: boolean;
+}) {
+    const [bagian, setBagian] = useState<'versi' | 'aktivitas'>('versi');
 
     return (
-        <EmptyState
-            icon={History}
-            title="Belum ada aktivitas"
-            description="Aktivitas yang dapat Anda akses akan muncul di sini."
-        />
+        <div className="space-y-4" id="riwayat">
+            <div className="grid grid-cols-2 rounded-lg bg-surface-sunken p-1">
+                <button
+                    type="button"
+                    onClick={() => setBagian('versi')}
+                    aria-pressed={bagian === 'versi'}
+                    className={cn('rounded-md px-3 py-2 text-sm font-medium', bagian === 'versi' ? 'bg-surface text-brand-700 shadow-sm' : 'text-ink-muted')}
+                >
+                    Versi ({versi.length})
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setBagian('aktivitas')}
+                    aria-pressed={bagian === 'aktivitas'}
+                    className={cn('rounded-md px-3 py-2 text-sm font-medium', bagian === 'aktivitas' ? 'bg-surface text-brand-700 shadow-sm' : 'text-ink-muted')}
+                >
+                    Aktivitas
+                </button>
+            </div>
+
+            {bagian === 'versi' ? (
+                <DocumentVersionHistory versi={versi} bolehPulihkan={bolehPulihkan} />
+            ) : riwayat.length > 0 ? (
+                <div className="-mx-5 divide-y divide-line"><div className="px-2 py-2">{riwayat.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div></div>
+            ) : (
+                <EmptyState
+                    icon={History}
+                    title="Belum ada aktivitas"
+                    description="Aktivitas yang dapat Anda akses akan muncul di sini."
+                />
+            )}
+        </div>
     );
 }
 

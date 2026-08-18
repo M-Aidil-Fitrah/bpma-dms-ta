@@ -62,6 +62,9 @@ unit_pengunggah: string | null,
 inisial_pengunggah: string,
 diunggah_pada: string,
 diperbarui_pada: string,
+version_root_id: number,
+version_label: string,
+version_note: string,
 ringkasan_akses: string[],
 dibagikan_ke_semua: boolean,
 min_tingkat_akses: number | null,
@@ -79,6 +82,7 @@ aktif: boolean,
 boleh_ubah: boolean,
 boleh_nonaktifkan: boolean,
 boleh_aktifkan: boolean,
+boleh_pulihkan_versi: boolean,
 };
 export type DocumentEditData = {
 id: number,
@@ -124,6 +128,19 @@ alasan_terlihat: string | null,
 kecocokan_pencarian: string[] | null,
 cuplikan_pencarian: string | null,
 jumlah_frasa_pencarian: number | null,
+};
+export type DocumentVersionData = {
+id: number,
+label: string,
+jenis: App.Enums.DocumentVersionKind,
+catatan: string,
+nama_berkas: string,
+tipe_berkas: string,
+dipilih: boolean,
+terbaru: boolean,
+pembuat: string | null,
+inisial_pembuat: string,
+dibuat_pada: string,
 };
 export type KategoriRingkasData = {
 id: number,
@@ -179,9 +196,10 @@ inisial: string,
 }
 namespace Enums {
 export type ActivityLogName = 'dokumen' | 'pengguna' | 'unit' | 'jabatan' | 'kategori' | 'document_share' | 'document_unit';
-export type AuditEvent = 'document_uploaded' | 'document_updated' | 'document_downloaded' | 'document_deactivated' | 'document_restored' | 'document_replaced' | 'document_status_changed' | 'access_granted' | 'access_revoked' | 'created' | 'updated' | 'deactivated' | 'restored' | 'password_reset';
+export type AuditEvent = 'document_uploaded' | 'document_updated' | 'document_downloaded' | 'document_deactivated' | 'document_restored' | 'document_replaced' | 'document_version_restored' | 'document_status_changed' | 'access_granted' | 'access_revoked' | 'created' | 'updated' | 'deactivated' | 'restored' | 'password_reset';
 export type DocumentEditScope = 'owner_only' | 'match_visibility';
 export type DocumentStatus = 'berlaku' | 'kadaluarsa';
+export type DocumentVersionKind = 'content' | 'metadata' | 'restoration';
 export type ExtractionStatus = 'not_applicable' | 'pending' | 'completed' | 'review_required' | 'failed';
 }
 }

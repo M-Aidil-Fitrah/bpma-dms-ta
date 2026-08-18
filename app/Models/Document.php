@@ -50,12 +50,26 @@ class Document extends Model
         });
 
         // Baris awal baru belum memiliki ID ketika INSERT berjalan. Sesudahnya
-        // ia menjadi akar untuk dirinya sendiri; revisi selalu mengisi akar
-        // sejak awal melalui DocumentVersionService.
+        // ia menjadi akar untuk dirinya sendiri. Jalur produksi selalu mengisi
+        // garis keturunan lewat DocumentVersionService, tetapi pengaman ini
+        // juga menjaga impor/fixture yang hanya memberi replaces_document_id.
         static::created(function (self $document): void {
-            if ($document->version_root_id === null) {
-                $document->forceFill(['version_root_id' => $document->id])->saveQuietly();
+            if ($document->version_root_id !== null) {
+                return;
             }
+
+            $pendahulu = $document->replaces_document_id === null
+                ? null
+                : self::query()->find($document->replaces_document_id);
+
+            $document->forceFill($pendahulu === null ? [
+                'version_root_id' => $document->id,
+            ] : [
+                'version_root_id' => $pendahulu->version_root_id ?? $pendahulu->id,
+                'version_major' => $pendahulu->version_major + 1,
+                'version_minor' => 0,
+                'version_kind' => DocumentVersionKind::Content,
+            ])->saveQuietly();
         });
     }
 

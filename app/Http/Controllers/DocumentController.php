@@ -25,6 +25,7 @@ use App\Models\User;
 use App\Services\ActivityLogQuery;
 use App\Services\ActivityLogService;
 use App\Services\DocumentAccessWriter;
+use App\Services\DocumentMetadataChanges;
 use App\Services\DocumentThumbnailService;
 use App\Services\DocumentUploadService;
 use App\Services\DocumentVersionService;
@@ -299,10 +300,16 @@ final class DocumentController extends Controller
     public function update(
         UpdateDocumentRequest $request,
         Document $document,
+        DocumentAccessWriter $akses,
+        DocumentMetadataChanges $metadata,
         DocumentVersionService $versi,
         ActivityLogService $aktivitas,
     ): RedirectResponse {
         $this->authorize('update', $document);
+
+        $snapshotDenganPerubahan = clone $document;
+        $snapshotDenganPerubahan->fill($request->kolomDokumen());
+        $perubahanMetadata = $metadata->fromDirty($snapshotDenganPerubahan);
 
         $revisi = $versi->buatMinor(
             $document,
@@ -312,6 +319,7 @@ final class DocumentController extends Controller
             $request->user(),
             $request->catatanVersi(),
         );
+        $perubahanAkses = $akses->perubahanAntar($document, $revisi);
         $aktivitas->record(
             ActivityLogName::Dokumen,
             AuditEvent::DocumentUpdated,
@@ -319,7 +327,10 @@ final class DocumentController extends Controller
             $revisi,
             $request->user(),
             ['replaces_document_id' => $document->id, 'version_note' => $revisi->version_note],
+            $perubahanMetadata['before'],
+            $perubahanMetadata['after'],
         );
+        $this->catatPerubahanAkses($aktivitas, $revisi, $request->user(), $perubahanAkses);
 
         return redirect()
             ->route('documents.show', $revisi)

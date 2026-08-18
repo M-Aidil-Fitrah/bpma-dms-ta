@@ -8,6 +8,7 @@ use App\Data\DocumentAccessChanges;
 use App\Data\DocumentDetailData;
 use App\Data\DocumentEditData;
 use App\Data\DocumentListData;
+use App\Data\DocumentVersionData;
 use App\Enums\ActivityLogName;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentStatus;
@@ -442,13 +443,25 @@ final class DocumentController extends Controller
             // tidak dapat memasangkan versi penerus ke dokumen yang dibuka.
             'replacementDocument:id,replaces_document_id,nomor,judul',
         ]);
+        $akarId = $document->version_root_id ?? $document->id;
+        $versi = Document::query()
+            ->where('version_root_id', $akarId)
+            ->with('uploader:id,name')
+            ->orderByDesc('version_major')
+            ->orderByDesc('version_minor')
+            ->get();
+        $latestId = $versi->first()?->id ?? $document->id;
 
         return Inertia::render('Documents/Show', [
             'dokumen' => DocumentDetailData::fromModel(
                 $document,
                 bolehUbah: $request->user()->can('update', $document),
                 bolehAktifkan: $request->user()->can('restore', $document),
+                bolehPulihkanVersi: $request->user()->can('restoreVersion', $document),
             ),
+            'versi' => $versi
+                ->map(fn (Document $versi): DocumentVersionData => DocumentVersionData::fromModel($versi, $document->id, $latestId))
+                ->all(),
             'riwayat' => $aktivitas->recentForDocument($document),
             // Dikirim dari config, bukan di-hardcode di hook React — anggaran
             // polling harus selalu cukup menutupi durasi OCR terpanjang yang

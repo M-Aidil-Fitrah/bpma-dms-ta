@@ -68,6 +68,11 @@ final class DocumentDetailData extends Data
         public string $diunggah_pada,
         public string $diperbarui_pada,
 
+        // -- Identitas versi -------------------------------------------------
+        public int $version_root_id,
+        public string $version_label,
+        public string $version_note,
+
         // -- Mekanisme akses --------------------------------------------------
         public array $ringkasan_akses,
         public bool $dibagikan_ke_semua,
@@ -93,12 +98,14 @@ final class DocumentDetailData extends Data
         public bool $boleh_ubah,
         public bool $boleh_nonaktifkan,
         public bool $boleh_aktifkan,
+        public bool $boleh_pulihkan_versi,
     ) {}
 
     public static function fromModel(
         Document $document,
         bool $bolehUbah,
         bool $bolehAktifkan = false,
+        bool $bolehPulihkanVersi = false,
     ): self {
         return new self(
             id: $document->id,
@@ -131,6 +138,10 @@ final class DocumentDetailData extends Data
             diunggah_pada: $document->created_at->toIso8601String(),
             diperbarui_pada: $document->updated_at->toIso8601String(),
 
+            version_root_id: $document->version_root_id ?? $document->id,
+            version_label: $document->versionLabel(),
+            version_note: $document->version_note,
+
             ringkasan_akses: $document->accessSummary(),
             dibagikan_ke_semua: $document->is_shared_to_all,
             min_tingkat_akses: $document->min_tingkat_akses,
@@ -150,6 +161,7 @@ final class DocumentDetailData extends Data
             boleh_ubah: $bolehUbah,
             boleh_nonaktifkan: $bolehUbah,
             boleh_aktifkan: $bolehAktifkan,
+            boleh_pulihkan_versi: $bolehPulihkanVersi,
         );
     }
 }

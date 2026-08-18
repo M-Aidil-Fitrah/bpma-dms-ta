@@ -110,6 +110,7 @@ final class DocumentActivityLogTest extends TestCase
                 'file' => UploadedFile::fake()->create('audit-baru.pdf', 100, 'application/pdf'),
                 'is_shared_to_all' => true,
                 'replaces_document_id' => $versiLama->id,
+                'version_note' => 'Memperbarui isi dokumen.',
             ])
             ->assertRedirect();
 
@@ -210,6 +211,7 @@ final class DocumentActivityLogTest extends TestCase
             'is_shared_to_all' => false,
             'unit_ids' => [$this->unitLama->id],
             'shared_user_ids' => [$this->penerimaLama->id],
+            'version_note' => 'Memperbarui metadata dan akses.',
             ...$ubah,
         ];
     }

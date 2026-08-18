@@ -46,6 +46,9 @@ final class UpdateExpiredDocumentStatusTest extends TestCase
         $this->assertSame(DocumentStatus::Berlaku, $masaDepan->fresh()->status);
         $this->assertSame(DocumentStatus::Berlaku, $tanpaBatas->fresh()->status);
         $this->assertSame(DocumentStatus::Kadaluarsa, $sudahKadaluarsa->fresh()->status);
+        $this->assertSame(1, Document::query()
+            ->where('version_root_id', $lewat->version_root_id)
+            ->count(), 'Kadaluarsa otomatis tidak boleh membuat minor version.');
 
         $activity = Activity::query()->sole();
         $this->assertSame(ActivityLogName::Dokumen->value, $activity->log_name);
@@ -71,6 +74,7 @@ final class UpdateExpiredDocumentStatusTest extends TestCase
             ->assertExitCode(0);
 
         $this->assertSame(101, Document::where('status', DocumentStatus::Kadaluarsa)->count());
+        $this->assertSame(101, Document::count(), 'Scheduler hanya memperbarui status, bukan menambah snapshot.');
         $this->assertSame(101, Activity::count());
     }
 }

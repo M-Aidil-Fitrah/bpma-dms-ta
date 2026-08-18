@@ -89,8 +89,18 @@ final class DocumentUpdateTest extends TestCase
             'tanggal' => $this->dokumen->tanggal->toDateString(),
             'edit_scope' => DocumentEditScope::OwnerOnly->value,
             'unit_ids' => [$this->divisi->id],
+            'version_note' => 'Revisi metadata untuk pengujian.',
             ...$ubah,
         ];
+    }
+
+    private function versiTerbaru(): Document
+    {
+        return Document::query()
+            ->where('version_root_id', $this->dokumen->version_root_id)
+            ->orderByDesc('version_major')
+            ->orderByDesc('version_minor')
+            ->firstOrFail();
     }
 
     // -- Akibat perubahan akses ------------------------------------------------
@@ -109,7 +119,7 @@ final class DocumentUpdateTest extends TestCase
             ->assertRedirect();
 
         $this->assertTrue(
-            $orangLuar->fresh()->can('view', $this->dokumen->fresh()),
+            $orangLuar->fresh()->can('view', $this->versiTerbaru()),
             'Orang yang baru ditambahkan belum dapat melihat dokumen.',
         );
     }
@@ -135,7 +145,7 @@ final class DocumentUpdateTest extends TestCase
             ->assertRedirect();
 
         $this->assertFalse(
-            $anggota->fresh()->can('view', $this->dokumen->fresh()),
+            $anggota->fresh()->can('view', $this->versiTerbaru()),
             'Anggota unit yang dibuang masih dapat melihat dokumen.',
         );
     }
@@ -153,12 +163,17 @@ final class DocumentUpdateTest extends TestCase
                 'unit_ids' => [$this->divisi->id, $unitBaru->id],
             ]));
 
-        $terlampir = $this->dokumen->fresh()->targetUnits->keyBy('id');
+        $arsip = $this->dokumen->fresh()->targetUnits->keyBy('id');
+        $terlampir = $this->versiTerbaru()->targetUnits->keyBy('id');
 
         $this->assertSame(
             $this->pemilik->id,
+            $arsip[$this->divisi->id]->pivot->added_by,
+            'Jejak pemberi akses pada arsip ikut tertimpa.',
+        );
+        $this->assertSame(
+            $penyunting->id,
             $terlampir[$this->divisi->id]->pivot->added_by,
-            'Jejak pemberi akses lama ikut tertimpa.',
         );
         $this->assertSame(
             $penyunting->id,
@@ -229,7 +244,7 @@ final class DocumentUpdateTest extends TestCase
             ->assertSessionHasNoErrors()
             ->assertRedirect();
 
-        $this->assertSame('Disunting Rekan Seunit', $this->dokumen->fresh()->judul);
+        $this->assertSame('Disunting Rekan Seunit', $this->versiTerbaru()->judul);
     }
 
     public function test_orang_tanpa_hak_melihat_tidak_dapat_menyunting_match_visibility(): void

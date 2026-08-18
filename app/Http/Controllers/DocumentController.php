@@ -24,9 +24,9 @@ use App\Models\User;
 use App\Services\ActivityLogQuery;
 use App\Services\ActivityLogService;
 use App\Services\DocumentAccessWriter;
-use App\Services\DocumentMetadataChanges;
 use App\Services\DocumentThumbnailService;
 use App\Services\DocumentUploadService;
+use App\Services\DocumentVersionService;
 use App\Services\PengaturanService;
 use App\Support\BatasUnggah;
 use App\Support\JenjangAkses;
@@ -37,6 +37,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -142,56 +143,53 @@ final class DocumentController extends Controller
         StoreDocumentRequest $request,
         DocumentUploadService $uploader,
         DocumentAccessWriter $akses,
+        DocumentVersionService $versi,
         ActivityLogService $aktivitas,
     ): RedirectResponse {
         $this->authorize('create', Document::class);
 
+        $lama = $request->filled('replaces_document_id')
+            ? Document::query()->findOrFail($request->integer('replaces_document_id'))
+            : null;
+        if ($lama !== null) {
+            $this->authorize('update', $lama);
+            abort_unless($lama->is_active && $lama->replacementDocument()->doesntExist(), 422);
+        }
+
         $berkas = $uploader->store($request->file('file'));
 
         try {
-            $document = DB::transaction(function () use ($request, $berkas, $akses, $aktivitas): Document {
-                $lama = $request->filled('replaces_document_id')
-                    ? Document::query()->lockForUpdate()->findOrFail($request->integer('replaces_document_id'))
-                    : null;
-                if ($lama !== null) {
-                    $this->authorize('update', $lama);
-                    abort_unless($lama->is_active && $lama->replacementDocument()->doesntExist(), 422);
-                }
-                $document = Document::create([
-                    ...$request->kolomDokumen(),
-                    ...$berkas,
-                    'status' => DocumentStatus::Berlaku,
-                    'uploaded_by' => $request->user()->id,
-                    'is_active' => true,
-                    'replaces_document_id' => $lama?->id,
-                ]);
+            $document = $lama === null
+                ? DB::transaction(function () use ($request, $berkas, $akses, $aktivitas): Document {
+                    $document = Document::create([
+                        ...$request->kolomDokumen(),
+                        ...$berkas,
+                        'status' => DocumentStatus::Berlaku,
+                        'uploaded_by' => $request->user()->id,
+                        'is_active' => true,
+                    ]);
 
-                $perubahanAkses = $akses->sinkron(
-                    $document,
-                    $request->unitIds(),
-                    $request->penerimaIds(),
-                    $request->user(),
-                );
+                    $perubahanAkses = $akses->sinkron(
+                        $document,
+                        $request->unitIds(),
+                        $request->penerimaIds(),
+                        $request->user(),
+                    );
 
-                $aktivitas->record(
-                    ActivityLogName::Dokumen,
-                    AuditEvent::DocumentUploaded,
-                    'Dokumen diunggah.',
-                    $document,
-                    $request->user(),
-                    [
-                        'mekanisme_akses' => $this->mekanismeAkses($document, $perubahanAkses),
-                    ],
-                );
+                    $aktivitas->record(
+                        ActivityLogName::Dokumen,
+                        AuditEvent::DocumentUploaded,
+                        'Dokumen diunggah.',
+                        $document,
+                        $request->user(),
+                        [
+                            'mekanisme_akses' => $this->mekanismeAkses($document, $perubahanAkses),
+                        ],
+                    );
 
-                if ($lama !== null) {
-                    $lama->update(['is_active' => false]);
-                    $aktivitas->record(ActivityLogName::Dokumen, AuditEvent::DocumentReplaced, 'Dokumen digantikan oleh unggahan baru.', $lama, $request->user(), ['replacement_document_id' => $document->id]);
-                    $aktivitas->record(ActivityLogName::Dokumen, AuditEvent::DocumentReplaced, 'Unggahan ini menggantikan versi dokumen sebelumnya.', $document, $request->user(), ['replaces_document_id' => $lama->id]);
-                }
-
-                return $document;
-            });
+                    return $document;
+                })
+                : $this->simpanVersiMajor($lama, $request, $berkas, $versi, $aktivitas);
         } catch (Throwable $e) {
             // Tanpa pembersihan ini, setiap kegagalan meninggalkan berkas yang
             // tidak dirujuk baris mana pun — tidak terlihat siapa pun sampai
@@ -218,7 +216,7 @@ final class DocumentController extends Controller
 
         return redirect()
             ->route('documents.show', $document)
-            ->with('success', 'Dokumen berhasil diunggah.');
+            ->with('success', $lama === null ? 'Dokumen berhasil diunggah.' : 'Versi baru dokumen berhasil dibuat.');
     }
 
     /**
@@ -247,6 +245,52 @@ final class DocumentController extends Controller
     }
 
     /**
+     * @param  array<string, mixed>  $berkas
+     */
+    private function simpanVersiMajor(
+        Document $lama,
+        StoreDocumentRequest $request,
+        array $berkas,
+        DocumentVersionService $versi,
+        ActivityLogService $aktivitas,
+    ): Document {
+        if ($lama->file_mime_type !== $berkas['file_mime_type']) {
+            throw ValidationException::withMessages([
+                'file' => 'Versi baru wajib memakai format berkas yang sama dengan versi sebelumnya.',
+            ]);
+        }
+
+        $document = $versi->buatMajor(
+            $lama,
+            [...$request->kolomDokumen(), 'status' => DocumentStatus::Berlaku],
+            $berkas,
+            $request->unitIds(),
+            $request->penerimaIds(),
+            $request->user(),
+            $request->catatanVersi(),
+        );
+
+        $aktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentReplaced,
+            'Dokumen digantikan oleh versi major baru.',
+            $lama,
+            $request->user(),
+            ['replacement_document_id' => $document->id],
+        );
+        $aktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentReplaced,
+            'Versi major dokumen dibuat.',
+            $document,
+            $request->user(),
+            ['replaces_document_id' => $lama->id, 'version_note' => $document->version_note],
+        );
+
+        return $document;
+    }
+
+    /**
      * Menyimpan perubahan metadata dan daftar akses (FR-08, FR-42).
      *
      * Berkasnya tidak ikut disentuh sama sekali — lihat `UpdateDocumentRequest`.
@@ -254,42 +298,31 @@ final class DocumentController extends Controller
     public function update(
         UpdateDocumentRequest $request,
         Document $document,
-        DocumentAccessWriter $akses,
-        DocumentMetadataChanges $metadata,
+        DocumentVersionService $versi,
         ActivityLogService $aktivitas,
     ): RedirectResponse {
         $this->authorize('update', $document);
 
-        DB::transaction(function () use ($request, $document, $akses, $metadata, $aktivitas): void {
-            $document->fill($request->kolomDokumen());
-            $perubahanMetadata = $metadata->fromDirty($document);
-            $document->save();
-
-            $perubahanAkses = $akses->sinkron(
-                $document,
-                $request->unitIds(),
-                $request->penerimaIds(),
-                $request->user(),
-            );
-
-            if ($perubahanMetadata['before'] !== []) {
-                $aktivitas->record(
-                    ActivityLogName::Dokumen,
-                    AuditEvent::DocumentUpdated,
-                    'Informasi dokumen diperbarui.',
-                    $document,
-                    $request->user(),
-                    before: $perubahanMetadata['before'],
-                    after: $perubahanMetadata['after'],
-                );
-            }
-
-            $this->catatPerubahanAkses($aktivitas, $document, $request->user(), $perubahanAkses);
-        });
+        $revisi = $versi->buatMinor(
+            $document,
+            $request->kolomDokumen(),
+            $request->unitIds(),
+            $request->penerimaIds(),
+            $request->user(),
+            $request->catatanVersi(),
+        );
+        $aktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentUpdated,
+            'Revisi metadata dokumen dibuat.',
+            $revisi,
+            $request->user(),
+            ['replaces_document_id' => $document->id, 'version_note' => $revisi->version_note],
+        );
 
         return redirect()
-            ->route('documents.show', $document)
-            ->with('success', 'Perubahan dokumen berhasil disimpan.');
+            ->route('documents.show', $revisi)
+            ->with('success', 'Revisi metadata dokumen berhasil dibuat.');
     }
 
     /**

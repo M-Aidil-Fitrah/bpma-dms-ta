@@ -49,6 +49,10 @@ final class StoreDocumentRequest extends DocumentFormRequest
     protected function periksaTambahan(Validator $v): void
     {
         $this->pastikanEkstensiTidakTerlarang($v);
+
+        if ($this->filled('replaces_document_id') && $this->catatanVersi() === '') {
+            $v->errors()->add('version_note', 'Catatan perubahan wajib diisi untuk versi baru.');
+        }
     }
 
     /**

@@ -238,17 +238,10 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
             <Baris label="Nama Berkas" mono>
                 <div className="space-y-2">
                     <span className="block break-all">{dokumen.nama_berkas}</span>
-                    {dokumen.aktif && dokumen.boleh_ubah && (
-                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                            <Link href={`/documents/create?replace=${dokumen.id}`} className="w-full sm:w-auto">
-                                <Button size="sm" variant="secondary" icon={Upload} className="w-full">
-                                    Unggah versi baru
-                                </Button>
-                            </Link>
-                        </div>
-                    )}
                     <p className="text-xs text-ink-muted">
-                        Berkas tidak ditimpa. Unggah versi baru agar berkas, akses, dan aktivitas versi sebelumnya tetap terlacak.
+                        Berkas tidak ditimpa. Untuk mengganti isi, buka Ubah lalu pilih
+                        {' '}Unggah versi baru agar berkas, akses, dan aktivitas versi sebelumnya
+                        {' '}tetap terlacak.
                     </p>
                 </div>
             </Baris>
@@ -272,18 +265,11 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                         pesan={dokumen.pesan_ekstraksi}
                     />
                     {dokumen.extraction_status === 'review_required' && dokumen.boleh_ubah && (
-                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                            <Link href={`/documents/create?replace=${dokumen.id}`} className="w-full sm:w-auto">
-                                <Button size="sm" variant="secondary" icon={Upload} className="w-full">
-                                    Unggah pengganti
-                                </Button>
-                            </Link>
-                            <Link href="/documents/create" className="w-full sm:w-auto">
-                                <Button size="sm" variant="secondary" icon={Upload} className="w-full">
-                                    Unggah dokumen lain
-                                </Button>
-                            </Link>
-                        </div>
+                        <Link href="/documents/create" className="inline-flex">
+                            <Button size="sm" variant="secondary" icon={Upload}>
+                                Unggah dokumen lain
+                            </Button>
+                        </Link>
                     )}
                 </div>
             </Baris>

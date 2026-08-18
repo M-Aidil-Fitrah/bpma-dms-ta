@@ -127,4 +127,21 @@ final class DocumentPolicy
     {
         return $user->isSuperadmin();
     }
+
+    /**
+     * Membuat versi major baru dari arsip, bukan mengaktifkan ulang arsipnya.
+     *
+     * Pemilik rantai adalah pengunggah `v1.0`, bukan orang yang kebetulan
+     * mengunggah revisi terakhir. Ini menjaga wewenang pemulihan stabil saat
+     * `edit_scope = match_visibility` mengizinkan rekan membuat revisi.
+     */
+    public function restoreVersion(User $user, Document $document): bool
+    {
+        $akarId = $document->version_root_id ?? $document->id;
+
+        return Document::query()
+            ->whereKey($akarId)
+            ->where('uploaded_by', $user->id)
+            ->exists();
+    }
 }

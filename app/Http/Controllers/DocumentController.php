@@ -381,6 +381,42 @@ final class DocumentController extends Controller
             ->with('success', 'Dokumen diaktifkan kembali.');
     }
 
+    /** Membuat major terbaru dari snapshot versi lama milik pemilik rantai. */
+    public function restoreVersion(
+        Request $request,
+        Document $document,
+        DocumentVersionService $versi,
+        ActivityLogService $aktivitas,
+    ): RedirectResponse {
+        $this->authorize('restoreVersion', $document);
+
+        $data = $request->validate([
+            'version_note' => ['required', 'string', 'max:500'],
+        ]);
+        $revisi = $versi->pulihkan($document, $request->user(), trim($data['version_note']));
+
+        $aktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentVersionRestored,
+            'Versi arsip dijadikan versi terbaru.',
+            $document,
+            $request->user(),
+            ['restored_as_document_id' => $revisi->id],
+        );
+        $aktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentVersionRestored,
+            'Versi terbaru dibuat dari arsip.',
+            $revisi,
+            $request->user(),
+            ['restores_document_id' => $document->id, 'version_note' => $revisi->version_note],
+        );
+
+        return redirect()
+            ->route('documents.show', $revisi)
+            ->with('success', 'Versi arsip berhasil dijadikan versi terbaru.');
+    }
+
     /**
      * Halaman detail satu dokumen (FR-07).
      *

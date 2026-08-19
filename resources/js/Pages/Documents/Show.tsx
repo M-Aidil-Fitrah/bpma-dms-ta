@@ -244,6 +244,7 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                                 size="sm"
                                 variant="secondary"
                                 icon={FileText}
+                                className="h-auto min-h-0 gap-1 rounded-md px-2 py-1 text-xs"
                                 onClick={() => setTeksEkstraksiTerbuka(true)}
                             >
                                 Lihat teks hasil ekstraksi

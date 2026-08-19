@@ -20,7 +20,7 @@ export function UserMenu({ user }: UserMenuProps) {
                 <Avatar initials={user.initials} size="sm" />
 
                 {/* Bilah atas baru menampilkan nama saat ruangnya memang ada. */}
-                <span className="hidden min-w-0 flex-1 sm:block">
+                <span className="hidden min-w-0 flex-1 md:block">
                     <span className="block truncate text-sm font-medium text-ink">
                         {user.name}
                     </span>

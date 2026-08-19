@@ -15,8 +15,7 @@ import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
 import { dalamJendelaWaktu, formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, History, Info, ShieldCheck, Upload } from 'lucide-react';
-import { Button } from '@/Components/ui/Button';
+import { ArrowLeft, History, Info, ShieldCheck } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 interface ShowProps {
@@ -236,14 +235,7 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
             <hr className="border-line" />
 
             <Baris label="Nama Berkas" mono>
-                <div className="space-y-2">
-                    <span className="block break-all">{dokumen.nama_berkas}</span>
-                    <p className="text-xs text-ink-muted">
-                        Berkas tidak ditimpa. Untuk mengganti isi, buka Ubah lalu pilih
-                        {' '}Unggah versi baru agar berkas, akses, dan aktivitas versi sebelumnya
-                        {' '}tetap terlacak.
-                    </p>
-                </div>
+                <span className="block break-all">{dokumen.nama_berkas}</span>
             </Baris>
 
             <Baris label="Tipe & Ukuran">
@@ -264,13 +256,6 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                         estimasiDetik={dokumen.estimasi_ekstraksi_detik}
                         pesan={dokumen.pesan_ekstraksi}
                     />
-                    {dokumen.extraction_status === 'review_required' && dokumen.boleh_ubah && (
-                        <Link href="/documents/create" className="inline-flex">
-                            <Button size="sm" variant="secondary" icon={Upload}>
-                                Unggah dokumen lain
-                            </Button>
-                        </Link>
-                    )}
                 </div>
             </Baris>
 

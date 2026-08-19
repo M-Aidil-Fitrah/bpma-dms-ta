@@ -437,16 +437,43 @@ final class DocumentController extends Controller
      * berlaku di halaman daftar tidak berlaku di sini karena yang diambil hanya
      * satu baris, bukan dua puluh.
      */
-    public function show(Request $request, Document $document, ActivityLogQuery $aktivitas): Response
-    {
+    public function show(
+        Request $request,
+        Document $document,
+        ActivityLogQuery $aktivitas,
+        ActivityLogService $pencatatAktivitas,
+    ): Response {
         $this->authorize('view', $document);
 
+        $pencatatAktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentViewed,
+            'Halaman detail dokumen dibuka.',
+            $document,
+            $request->user(),
+        );
+
+        // Relasi identitas tunggal ini dibaca sekaligus. Memanggil `load()`
+        // untuk kategori, unit asal, pengunggah, jabatan, dan unit pengunggah
+        // akan berubah menjadi lima query meski halaman hanya membuka satu
+        // dokumen. Relasi koleksi tetap memakai eager load agar modelnya utuh.
+        $document = Document::query()
+            ->select('documents.*')
+            ->addSelect([
+                'document_category.nama as kategori_nama',
+                'origin_unit.nama as unit_asal_nama',
+                'document_uploader.name as pengunggah_nama',
+                'uploader_jabatan.nama as jabatan_pengunggah_nama',
+                'uploader_unit.nama as unit_pengunggah_nama',
+            ])
+            ->leftJoin('categories as document_category', 'document_category.id', '=', 'documents.category_id')
+            ->leftJoin('units as origin_unit', 'origin_unit.id', '=', 'documents.origin_unit_id')
+            ->leftJoin('users as document_uploader', 'document_uploader.id', '=', 'documents.uploaded_by')
+            ->leftJoin('jabatans as uploader_jabatan', 'uploader_jabatan.id', '=', 'document_uploader.jabatan_id')
+            ->leftJoin('units as uploader_unit', 'uploader_unit.id', '=', 'document_uploader.unit_id')
+            ->findOrFail($document->id);
+
         $document->load([
-            'category:id,nama',
-            'originUnit:id,nama',
-            'uploader:id,name,jabatan_id,unit_id',
-            'uploader.jabatan:id,nama',
-            'uploader.unit:id,nama',
             'targetUnits:id,nama',
             'sharedUsers:id,name',
             'replacedDocument:id,nomor,judul',
@@ -473,7 +500,7 @@ final class DocumentController extends Controller
             'versi' => $versi
                 ->map(fn (Document $versi): DocumentVersionData => DocumentVersionData::fromModel($versi, $document->id, $latestId))
                 ->all(),
-            'riwayat' => $aktivitas->recentForDocument($document),
+            'riwayat' => $aktivitas->paginateForDocument($document),
             // Dikirim dari config, bukan di-hardcode di hook React — anggaran
             // polling harus selalu cukup menutupi durasi OCR terpanjang yang
             // mungkin terjadi (`pdf_ocr_timeout_detik`), dan satu-satunya cara

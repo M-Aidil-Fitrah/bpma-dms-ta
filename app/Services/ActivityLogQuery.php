@@ -35,17 +35,23 @@ final class ActivityLogQuery
             ->through(fn (Activity $activity): ActivityLogData => ActivityLogData::fromActivity($activity, $activity->getAttribute('nama_pelaku')));
     }
 
-    /** @return list<ActivityLogData> */
-    public function recentForDocument(Document $document, int $limit = 10): array
+    /** @return LengthAwarePaginator<int, ActivityLogData> */
+    public function paginateForDocument(Document $document): LengthAwarePaginator
     {
+        $akarVersiId = $document->version_root_id ?? $document->id;
+
         return $this->base()
             ->where('activity_log.subject_type', $document->getMorphClass())
-            ->where('activity_log.subject_id', $document->id)
+            // Setiap versi adalah baris dokumen tersendiri. Riwayat pada
+            // halaman detail harus tetap satu jejak audit, bukan terpotong
+            // hanya karena pengguna sedang melihat versi yang terbaru.
+            ->whereIn('activity_log.subject_id', Document::query()
+                ->where('version_root_id', $akarVersiId)
+                ->select('documents.id'))
             ->orderByDesc('activity_log.id')
-            ->limit($limit)
-            ->get()
-            ->map(fn (Activity $activity): ActivityLogData => ActivityLogData::fromActivity($activity, $activity->getAttribute('nama_pelaku')))
-            ->all();
+            ->paginate(25, ['activity_log.*', 'pelaku.name as nama_pelaku'], 'activity_page')
+            ->withQueryString()
+            ->through(fn (Activity $activity): ActivityLogData => ActivityLogData::fromActivity($activity, $activity->getAttribute('nama_pelaku')));
     }
 
     /** @return list<ActivityLogData> */

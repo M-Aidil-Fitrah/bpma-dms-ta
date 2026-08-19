@@ -6,6 +6,7 @@ import { DocumentVersionHistory } from '@/Components/domain/DocumentVersionHisto
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
 import { ExtractionStatusBadge } from '@/Components/domain/ExtractionStatusBadge';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
+import { Pagination } from '@/Components/data/Pagination';
 import { Alert } from '@/Components/ui/Alert';
 import { Avatar } from '@/Components/ui/Avatar';
 import { Button } from '@/Components/ui/Button';
@@ -24,7 +25,7 @@ import { useState, type ReactNode } from 'react';
 interface ShowProps {
     dokumen: App.Data.DocumentDetailData;
     versi: App.Data.DocumentVersionData[];
-    riwayat: App.Data.ActivityLogData[];
+    riwayat: Pagination.Paginated<App.Data.ActivityLogData>;
     pollingKonfigurasi: { jedaMs: number; maksPercobaan: number };
 }
 
@@ -379,7 +380,7 @@ function PanelRiwayat({
     bolehPulihkan,
 }: {
     versi: App.Data.DocumentVersionData[];
-    riwayat: App.Data.ActivityLogData[];
+    riwayat: Pagination.Paginated<App.Data.ActivityLogData>;
     bolehPulihkan: boolean;
 }) {
     const [bagian, setBagian] = useState<'versi' | 'aktivitas'>('versi');
@@ -407,8 +408,13 @@ function PanelRiwayat({
 
             {bagian === 'versi' ? (
                 <DocumentVersionHistory versi={versi} bolehPulihkan={bolehPulihkan} />
-            ) : riwayat.length > 0 ? (
-                <div className="-mx-5 divide-y divide-line"><div className="px-2 py-2">{riwayat.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div></div>
+            ) : riwayat.data.length > 0 ? (
+                <div className="-mx-5 divide-y divide-line">
+                    <div className="px-2 py-2">{riwayat.data.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div>
+                    <div className="px-5 py-3">
+                        <Pagination meta={riwayat} labelItem="aktivitas" pageParameter="activity_page" />
+                    </div>
+                </div>
             ) : (
                 <EmptyState
                     icon={History}

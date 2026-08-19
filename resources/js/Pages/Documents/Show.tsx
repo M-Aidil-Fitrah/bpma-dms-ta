@@ -8,6 +8,7 @@ import { ExtractionStatusBadge } from '@/Components/domain/ExtractionStatusBadge
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
 import { Alert } from '@/Components/ui/Alert';
 import { Avatar } from '@/Components/ui/Avatar';
+import { Button } from '@/Components/ui/Button';
 import { Card } from '@/Components/ui/Card';
 import { EmptyState } from '@/Components/ui/EmptyState';
 import { useDocumentReloadPolling } from '@/hooks/useDocumentReloadPolling';
@@ -15,7 +16,7 @@ import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
 import { dalamJendelaWaktu, formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, History, Info, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, FileText, History, Info, ShieldCheck } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 interface ShowProps {
@@ -167,6 +168,9 @@ function TabButton({
 }
 
 function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
+    const [teksEkstraksiTerbuka, setTeksEkstraksiTerbuka] = useState(false);
+    const teksEkstraksiTersedia = dokumen.extraction_status === 'completed' && dokumen.isi_teks !== null;
+
     return (
         <dl className="space-y-4">
             <Baris label="Nomor Dokumen" mono>
@@ -231,6 +235,37 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                         estimasiDetik={dokumen.estimasi_ekstraksi_detik}
                         pesan={dokumen.pesan_ekstraksi}
                     />
+                    {teksEkstraksiTersedia && (
+                        <>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                icon={FileText}
+                                aria-expanded={teksEkstraksiTerbuka}
+                                aria-controls="teks-hasil-ekstraksi"
+                                onClick={() => setTeksEkstraksiTerbuka((terbuka) => !terbuka)}
+                            >
+                                {teksEkstraksiTerbuka ? 'Sembunyikan teks hasil ekstraksi' : 'Lihat teks hasil ekstraksi'}
+                            </Button>
+
+                            {teksEkstraksiTerbuka && (
+                                <div
+                                    id="teks-hasil-ekstraksi"
+                                    className="max-h-80 overflow-auto rounded-card border border-line bg-surface-sunken p-3"
+                                    role="region"
+                                    aria-label="Teks hasil ekstraksi"
+                                >
+                                    <p className="mb-2 text-xs text-ink-muted">
+                                        Teks ini dipakai untuk pencarian isi dan dapat berbeda dari tata letak berkas asli.
+                                    </p>
+                                    <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-ink">
+                                        {dokumen.isi_teks}
+                                    </pre>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             </Baris>
 

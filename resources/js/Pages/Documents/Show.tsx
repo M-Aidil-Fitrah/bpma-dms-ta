@@ -174,7 +174,7 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
             </Baris>
             <Baris label="Judul">{dokumen.judul}</Baris>
 
-            <Baris label={dokumen.aktif ? 'Versi Terbaru' : 'Versi Arsip'}>
+            <Baris label="Versi Dokumen">
                 <div className="space-y-1">
                     <span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 font-mono text-xs font-semibold text-brand-700">
                         {dokumen.version_label}
@@ -182,33 +182,6 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                     <p className="whitespace-pre-wrap text-sm text-ink-muted">{dokumen.version_note}</p>
                 </div>
             </Baris>
-
-            {(dokumen.versi_sebelumnya_id || dokumen.versi_berikutnya_id) && (
-                <Baris label="Versi Dokumen">
-                    <div className="space-y-2">
-                        {dokumen.versi_sebelumnya_id && (
-                            <Link
-                                href={`/documents/${dokumen.versi_sebelumnya_id}`}
-                                className="block rounded-lg border border-line bg-surface-muted px-3 py-2 text-sm transition-colors hover:border-brand-300 hover:bg-brand-50"
-                            >
-                                <span className="block text-xs font-medium text-ink-muted">Versi sebelumnya</span>
-                                <span className="block truncate font-medium text-ink">{dokumen.judul_versi_sebelumnya}</span>
-                                <span className="block truncate font-mono text-xs text-ink-muted">{dokumen.nomor_versi_sebelumnya}</span>
-                            </Link>
-                        )}
-                        {dokumen.versi_berikutnya_id && (
-                            <Link
-                                href={`/documents/${dokumen.versi_berikutnya_id}`}
-                                className="block rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm transition-colors hover:border-brand-400"
-                            >
-                                <span className="block text-xs font-medium text-brand-700">Versi pengganti</span>
-                                <span className="block truncate font-medium text-ink">{dokumen.judul_versi_berikutnya}</span>
-                                <span className="block truncate font-mono text-xs text-ink-muted">{dokumen.nomor_versi_berikutnya}</span>
-                            </Link>
-                        )}
-                    </div>
-                </Baris>
-            )}
 
             {dokumen.deskripsi && (
                 <Baris label="Deskripsi">

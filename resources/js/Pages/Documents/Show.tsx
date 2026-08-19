@@ -11,12 +11,14 @@ import { Avatar } from '@/Components/ui/Avatar';
 import { Button } from '@/Components/ui/Button';
 import { Card } from '@/Components/ui/Card';
 import { EmptyState } from '@/Components/ui/EmptyState';
+import { IconButton } from '@/Components/ui/IconButton';
 import { useDocumentReloadPolling } from '@/hooks/useDocumentReloadPolling';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { dalamJendelaWaktu, formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, FileText, History, Info, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, FileText, History, Info, ShieldCheck, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 interface ShowProps {
@@ -228,46 +230,62 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
 
             <Baris label="Pencarian Isi">
                 <div className="space-y-2">
-                    <ExtractionStatusBadge
-                        status={dokumen.extraction_status}
-                        halamanTotal={dokumen.halaman_ekstraksi_total}
-                        halamanSelesai={dokumen.halaman_ekstraksi_selesai}
-                        estimasiDetik={dokumen.estimasi_ekstraksi_detik}
-                        pesan={dokumen.pesan_ekstraksi}
-                    />
-                    {teksEkstraksiTersedia && (
-                        <>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <ExtractionStatusBadge
+                            status={dokumen.extraction_status}
+                            halamanTotal={dokumen.halaman_ekstraksi_total}
+                            halamanSelesai={dokumen.halaman_ekstraksi_selesai}
+                            estimasiDetik={dokumen.estimasi_ekstraksi_detik}
+                            pesan={dokumen.pesan_ekstraksi}
+                        />
+                        {teksEkstraksiTersedia && (
                             <Button
                                 type="button"
                                 size="sm"
                                 variant="secondary"
                                 icon={FileText}
-                                aria-expanded={teksEkstraksiTerbuka}
-                                aria-controls="teks-hasil-ekstraksi"
-                                onClick={() => setTeksEkstraksiTerbuka((terbuka) => !terbuka)}
+                                onClick={() => setTeksEkstraksiTerbuka(true)}
                             >
-                                {teksEkstraksiTerbuka ? 'Sembunyikan teks hasil ekstraksi' : 'Lihat teks hasil ekstraksi'}
+                                Lihat teks hasil ekstraksi
                             </Button>
-
-                            {teksEkstraksiTerbuka && (
-                                <div
-                                    id="teks-hasil-ekstraksi"
-                                    className="max-h-80 overflow-auto rounded-card border border-line bg-surface-sunken p-3"
-                                    role="region"
-                                    aria-label="Teks hasil ekstraksi"
-                                >
-                                    <p className="mb-2 text-xs text-ink-muted">
-                                        Teks ini dipakai untuk pencarian isi dan dapat berbeda dari tata letak berkas asli.
-                                    </p>
-                                    <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-ink">
-                                        {dokumen.isi_teks}
-                                    </pre>
-                                </div>
-                            )}
-                        </>
-                    )}
+                        )}
+                    </div>
                 </div>
             </Baris>
+
+            {teksEkstraksiTersedia && (
+                <Dialog open={teksEkstraksiTerbuka} onClose={setTeksEkstraksiTerbuka} className="relative z-[70]">
+                    <div className="fixed inset-0 bg-ink/40" aria-hidden />
+
+                    <div className="fixed inset-0 flex items-end justify-center p-4 sm:items-center">
+                        <DialogPanel className="flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col rounded-card bg-white shadow-pop">
+                            <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+                                <div>
+                                    <DialogTitle className="text-base font-semibold text-ink">
+                                        Teks hasil ekstraksi
+                                    </DialogTitle>
+                                    <p className="mt-1 text-sm text-ink-muted">{dokumen.nama_berkas}</p>
+                                </div>
+                                <IconButton
+                                    icon={X}
+                                    label="Tutup teks hasil ekstraksi"
+                                    variant="ghost"
+                                    onClick={() => setTeksEkstraksiTerbuka(false)}
+                                />
+                            </div>
+
+                            <div className="min-h-0 overflow-auto p-5">
+                                <p className="mb-4 text-sm text-ink-muted">
+                                    Teks ini dipakai untuk pencarian isi dan dapat berbeda dari tata letak berkas asli.
+                                </p>
+                                <pre className="whitespace-pre-wrap break-words font-mono text-sm leading-relaxed text-ink">
+                                    {dokumen.isi_teks}
+                                </pre>
+                            </div>
+                        </DialogPanel>
+                    </div>
+                </Dialog>
+            )}
 
             <hr className="border-line" />
 

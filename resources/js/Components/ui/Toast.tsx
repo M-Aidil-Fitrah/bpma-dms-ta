@@ -332,7 +332,7 @@ function KartuToast({ toast, onTutup }: { toast: Toast; onTutup: () => void }) {
             onFocusCapture={() => setTertahan(true)}
             onBlurCapture={() => setTertahan(false)}
             className={cn(
-                'pointer-events-auto relative flex w-full gap-3 overflow-hidden rounded-card border border-l-4 border-line bg-white p-3 shadow-pop sm:max-w-sm',
+                'pointer-events-auto relative flex w-full gap-3 overflow-hidden rounded-card border border-l-4 border-line bg-surface p-3 shadow-pop sm:max-w-sm',
                 // Sebaris: semuanya rata tengah. Dua baris atau lebih: rata
                 // atas, supaya ikon sejajar dengan baris judul dan tidak
                 // melayang di tengah paragraf.

@@ -129,7 +129,7 @@ export function FileDropzone({
                     {/* Ambil foto langsung dari kamera (FR-06b). Tombolnya hanya
                         muncul di layar kecil karena `capture` tidak berarti apa
                         pun di desktop. */}
-                    <label className="inline-flex min-h-touch cursor-pointer items-center gap-2 rounded-lg border border-line bg-white px-4 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-sunken sm:hidden sm:min-h-10">
+                    <label className="inline-flex min-h-touch cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-4 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-sunken sm:hidden sm:min-h-10">
                         <Camera className="size-4" aria-hidden />
                         Ambil Foto
                         <input

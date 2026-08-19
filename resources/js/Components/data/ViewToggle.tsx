@@ -25,7 +25,7 @@ export function ViewToggle({ nilai, onChange }: ViewToggleProps) {
         <div
             role="group"
             aria-label="Mode tampilan"
-            className="flex shrink-0 rounded-lg border border-line bg-white p-0.5"
+            className="flex shrink-0 rounded-lg border border-line bg-surface p-0.5"
         >
             {PILIHAN.map(({ mode, label, icon: Icon }) => (
                 <button

@@ -64,7 +64,7 @@ export function UnitTreeSelect({
                     if (event.key === 'Escape') setMenuTerbuka(false);
                 }}
                 className={cn(
-                    'flex h-10 min-h-touch w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-sm text-ink sm:min-h-0',
+                    'flex h-10 min-h-touch w-full items-center justify-between rounded-lg border bg-surface px-3 text-left text-sm text-ink sm:min-h-0',
                     'focus:border-brand-700 focus:ring-1 focus:ring-brand-700',
                     invalid ? 'border-danger focus:border-danger focus:ring-danger' : 'border-line',
                 )}
@@ -80,7 +80,7 @@ export function UnitTreeSelect({
                 <div
                     role="tree"
                     aria-label="Pilih unit asal"
-                    className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-line bg-white p-2 shadow-pop"
+                    className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-line bg-surface p-2 shadow-pop"
                 >
                     <BarisPilih nama="Semua unit asal" terpilih={nilai === null} onClick={() => pilih(null)} tebal />
 

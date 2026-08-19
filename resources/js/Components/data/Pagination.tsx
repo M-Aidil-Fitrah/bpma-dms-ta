@@ -73,7 +73,7 @@ export function Pagination({ meta, labelItem = 'data' }: PaginationProps) {
                                 'inline-flex min-h-touch min-w-touch items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors sm:min-h-9 sm:min-w-9',
                                 nomor === meta.current_page
                                     ? 'bg-brand-700 text-white'
-                                    : 'border border-line bg-white text-ink-muted hover:bg-surface-sunken hover:text-ink',
+                                    : 'border border-line bg-surface text-ink-muted hover:bg-surface-sunken hover:text-ink',
                             )}
                         >
                             {nomor}
@@ -117,7 +117,7 @@ function TombolArah({
             preserveScroll
             preserveState
             aria-label={label}
-            className={cn(kelas, 'bg-white text-ink-muted hover:bg-surface-sunken hover:text-ink')}
+            className={cn(kelas, 'bg-surface text-ink-muted hover:bg-surface-sunken hover:text-ink')}
         >
             <Icon className="size-4" aria-hidden />
         </Link>

@@ -3,9 +3,9 @@ import { type LucideIcon } from 'lucide-react';
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 
 const VARIANTS = {
-    default: 'border border-line bg-white text-ink-muted hover:bg-surface-sunken hover:text-ink',
+    default: 'border border-line bg-surface text-ink-muted hover:bg-surface-sunken hover:text-ink',
     ghost: 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
-    danger: 'border border-line bg-white text-ink-muted hover:bg-danger-soft hover:text-danger hover:border-danger/30',
+    danger: 'border border-line bg-surface text-ink-muted hover:bg-danger-soft hover:text-danger hover:border-danger/30',
 } as const;
 
 const SIZES = {

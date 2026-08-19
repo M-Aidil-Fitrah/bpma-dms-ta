@@ -101,7 +101,7 @@ function SambutanBanner({ user }: { user: App.Data.AuthUserData }) {
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
                 <Link
                     href="/documents/create"
-                    className="inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto"
+                    className="inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-lg bg-surface px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto"
                 >
                     <Plus className="size-4" aria-hidden />
                     Unggah Dokumen
@@ -109,7 +109,7 @@ function SambutanBanner({ user }: { user: App.Data.AuthUserData }) {
 
                 <Link
                     href="/documents"
-                    className="inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-lg border border-white/40 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto"
+                    className="inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-lg border border-white/40 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-surface/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto"
                 >
                     <FolderOpen className="size-4" aria-hidden />
                     Jelajahi Dokumen

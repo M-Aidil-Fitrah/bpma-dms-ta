@@ -23,7 +23,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
             <select
                 ref={ref}
                 className={cn(
-                    'block w-full appearance-none rounded-lg border bg-white text-sm text-ink',
+                    'block w-full appearance-none rounded-lg border bg-surface text-sm text-ink',
                     'h-10 min-h-touch pl-3 pr-9 sm:min-h-0',
                     'focus:border-brand-700 focus:ring-1 focus:ring-brand-700',
                     'disabled:cursor-not-allowed disabled:bg-surface-sunken disabled:text-ink-muted',

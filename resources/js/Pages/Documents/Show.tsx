@@ -11,14 +11,14 @@ import { Avatar } from '@/Components/ui/Avatar';
 import { Button } from '@/Components/ui/Button';
 import { Card } from '@/Components/ui/Card';
 import { EmptyState } from '@/Components/ui/EmptyState';
-import { IconButton } from '@/Components/ui/IconButton';
+import { Modal } from '@/Components/ui/Modal';
+import { Tabs, type TabItem } from '@/Components/ui/Tabs';
 import { useDocumentReloadPolling } from '@/hooks/useDocumentReloadPolling';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
-import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { dalamJendelaWaktu, formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, FileText, History, Info, ShieldCheck, X } from 'lucide-react';
+import { ArrowLeft, FileText, History, Info, ShieldCheck } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 interface ShowProps {
@@ -31,6 +31,11 @@ interface ShowProps {
 type Tab = 'detail' | 'akses' | 'riwayat';
 
 const TAB_VALID: readonly Tab[] = ['detail', 'akses', 'riwayat'];
+const TAB_ITEMS: readonly TabItem<Tab>[] = [
+    { value: 'detail', label: 'Detail', icon: Info },
+    { value: 'akses', label: 'Akses', icon: ShieldCheck },
+    { value: 'riwayat', label: 'Riwayat', icon: History },
+];
 
 /**
  * Tab awal mengikuti `location.hash` (mis. tautan menu "Lihat pengaturan
@@ -92,17 +97,7 @@ export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: Sh
                 </Card>
 
                 <Card className="flex flex-col xl:col-span-2">
-                    <div className="flex border-b border-line" role="tablist">
-                        <TabButton aktif={tab === 'detail'} onClick={() => setTab('detail')} icon={Info}>
-                            Detail
-                        </TabButton>
-                        <TabButton aktif={tab === 'akses'} onClick={() => setTab('akses')} icon={ShieldCheck}>
-                            Akses
-                        </TabButton>
-                        <TabButton aktif={tab === 'riwayat'} onClick={() => setTab('riwayat')} icon={History}>
-                            Riwayat
-                        </TabButton>
-                    </div>
+                    <Tabs items={TAB_ITEMS} value={tab} onChange={setTab} label="Bagian dokumen" />
 
                     <div className="flex-1 overflow-auto p-5">
                         {tab === 'detail' && <PanelDetail dokumen={dokumen} />}
@@ -136,36 +131,6 @@ function Remah({ judul }: { judul: string }) {
             </span>
             <span className="truncate font-semibold text-ink">{judul}</span>
         </div>
-    );
-}
-
-function TabButton({
-    aktif,
-    onClick,
-    icon: Icon,
-    children,
-}: {
-    aktif: boolean;
-    onClick: () => void;
-    icon: typeof Info;
-    children: ReactNode;
-}) {
-    return (
-        <button
-            type="button"
-            role="tab"
-            aria-selected={aktif}
-            onClick={onClick}
-            className={cn(
-                'flex min-h-touch flex-1 items-center justify-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors',
-                aktif
-                    ? 'border-brand-700 text-brand-700'
-                    : 'border-transparent text-ink-muted hover:text-ink',
-            )}
-        >
-            <Icon className="size-4" aria-hidden />
-            {children}
-        </button>
     );
 }
 
@@ -241,10 +206,9 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                         {teksEkstraksiTersedia && (
                             <Button
                                 type="button"
-                                size="sm"
+                                size="xs"
                                 variant="secondary"
                                 icon={FileText}
-                                className="h-auto min-h-0 gap-1 rounded-md px-2 py-1 text-xs"
                                 onClick={() => setTeksEkstraksiTerbuka(true)}
                             >
                                 Lihat teks hasil ekstraksi
@@ -255,37 +219,19 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
             </Baris>
 
             {teksEkstraksiTersedia && (
-                <Dialog open={teksEkstraksiTerbuka} onClose={setTeksEkstraksiTerbuka} className="relative z-[70]">
-                    <div className="fixed inset-0 bg-ink/40" aria-hidden />
-
-                    <div className="fixed inset-0 flex items-end justify-center p-4 sm:items-center">
-                        <DialogPanel className="flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col rounded-card bg-white shadow-pop">
-                            <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
-                                <div>
-                                    <DialogTitle className="text-base font-semibold text-ink">
-                                        Teks hasil ekstraksi
-                                    </DialogTitle>
-                                    <p className="mt-1 text-sm text-ink-muted">{dokumen.nama_berkas}</p>
-                                </div>
-                                <IconButton
-                                    icon={X}
-                                    label="Tutup teks hasil ekstraksi"
-                                    variant="ghost"
-                                    onClick={() => setTeksEkstraksiTerbuka(false)}
-                                />
-                            </div>
-
-                            <div className="min-h-0 overflow-auto p-5">
-                                <p className="mb-4 text-sm text-ink-muted">
-                                    Teks ini dipakai untuk pencarian isi dan dapat berbeda dari tata letak berkas asli.
-                                </p>
-                                <pre className="whitespace-pre-wrap break-words font-mono text-sm leading-relaxed text-ink">
-                                    {dokumen.isi_teks}
-                                </pre>
-                            </div>
-                        </DialogPanel>
-                    </div>
-                </Dialog>
+                <Modal
+                    terbuka={teksEkstraksiTerbuka}
+                    onTutup={setTeksEkstraksiTerbuka}
+                    judul="Teks hasil ekstraksi"
+                    keterangan={dokumen.nama_berkas}
+                >
+                    <p className="mb-4 text-sm text-ink-muted">
+                        Teks ini dipakai untuk pencarian isi dan dapat berbeda dari tata letak berkas asli.
+                    </p>
+                    <pre className="whitespace-pre-wrap break-words font-mono text-sm leading-relaxed text-ink">
+                        {dokumen.isi_teks}
+                    </pre>
+                </Modal>
             )}
 
             <hr className="border-line" />

@@ -1,6 +1,6 @@
 import { Button } from '@/Components/ui/Button';
+import { Modal } from '@/Components/ui/Modal';
 import { cn } from '@/lib/cn';
-import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { TriangleAlert, type LucideIcon } from 'lucide-react';
 import { type ReactNode } from 'react';
 
@@ -44,63 +44,50 @@ export function ConfirmDialog({
     memproses = false,
 }: ConfirmDialogProps) {
     return (
-        <Dialog open={terbuka} onClose={onTutup} className="relative z-[70]">
-            <div className="fixed inset-0 bg-ink/40" aria-hidden />
-
-            <div className="fixed inset-0 flex items-end justify-center p-4 sm:items-center">
-                <DialogPanel className="w-full max-w-md rounded-card bg-white p-5 shadow-pop">
-                    <div className="flex gap-3">
-                        <span
-                            aria-hidden
-                            className={cn(
-                                'flex size-10 shrink-0 items-center justify-center rounded-full',
-                                nada === 'danger' ? 'bg-danger-soft' : 'bg-brand-50',
-                            )}
-                        >
-                            <Ikon
-                                className={cn(
-                                    'size-5',
-                                    nada === 'danger' ? 'text-danger' : 'text-brand-700',
-                                )}
-                            />
-                        </span>
-
-                        <div className="min-w-0 flex-1">
-                            <DialogTitle className="text-base font-semibold text-ink">
-                                {judul}
-                            </DialogTitle>
-                            <div className="mt-1.5 space-y-2 text-sm text-ink-muted">
-                                {children}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Di ponsel tombolnya bertumpuk dan melebar penuh; berjajar
-                        di layar sempit membuat keduanya terlalu kecil untuk
-                        disentuh dengan tepat. */}
-                    <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={onTutup}
-                            disabled={memproses}
-                            className="w-full sm:w-auto"
-                        >
-                            {labelBatal}
-                        </Button>
-
-                        <Button
-                            type="button"
-                            variant={nada === 'danger' ? 'danger' : 'primary'}
-                            onClick={onSetuju}
-                            loading={memproses}
-                            className="w-full sm:w-auto"
-                        >
-                            {labelSetuju}
-                        </Button>
-                    </div>
-                </DialogPanel>
+        <Modal
+            terbuka={terbuka}
+            onTutup={onTutup}
+            judul={judul}
+            footer={
+                <>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={onTutup}
+                        disabled={memproses}
+                        className="w-full sm:w-auto"
+                    >
+                        {labelBatal}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={nada === 'danger' ? 'danger' : 'primary'}
+                        onClick={onSetuju}
+                        loading={memproses}
+                        className="w-full sm:w-auto"
+                    >
+                        {labelSetuju}
+                    </Button>
+                </>
+            }
+        >
+            <div className="flex gap-3">
+                <span
+                    aria-hidden
+                    className={cn(
+                        'flex size-10 shrink-0 items-center justify-center rounded-full',
+                        nada === 'danger' ? 'bg-danger-soft' : 'bg-brand-50',
+                    )}
+                >
+                    <Ikon
+                        className={cn(
+                            'size-5',
+                            nada === 'danger' ? 'text-danger' : 'text-brand-700',
+                        )}
+                    />
+                </span>
+                <div className="space-y-2 text-sm text-ink-muted">{children}</div>
             </div>
-        </Dialog>
+        </Modal>
     );
 }

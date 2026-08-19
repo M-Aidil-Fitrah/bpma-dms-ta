@@ -179,7 +179,9 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                     <span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 font-mono text-xs font-semibold text-brand-700">
                         {dokumen.version_label}
                     </span>
-                    <p className="whitespace-pre-wrap text-sm text-ink-muted">{dokumen.version_note}</p>
+                    <p className="whitespace-pre-wrap text-sm text-ink-muted">
+                        Deskripsi perubahan: {dokumen.version_note}
+                    </p>
                 </div>
             </Baris>
 

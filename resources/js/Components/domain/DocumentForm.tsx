@@ -30,6 +30,7 @@ export interface OpsiFormulirDokumen {
     batas_dijanjikan_label: string;
     lingkungan_kurang: boolean;
     unit_akun_id: number | null;
+    unit_akun_nama: string | null;
     unit_kerja_wajib: boolean;
 }
 
@@ -100,9 +101,7 @@ export function DocumentForm({
             replaces_document_id: replacesDocumentId,
         });
     const memakaiUnitAkun = opsi.unit_akun_id !== null;
-    const keteranganUnitKerja = memakaiUnitAkun
-        ? 'Mengikuti unit kerja akun Anda saat dokumen diunggah.'
-        : opsi.unit_kerja_wajib
+    const keteranganUnitKerja = opsi.unit_kerja_wajib
           ? 'Pilih unit kerja yang bertanggung jawab atas dokumen ini.'
           : 'Kosongkan untuk dokumen yang diterbitkan Pimpinan BPMA.';
 
@@ -268,16 +267,22 @@ export function DocumentForm({
 
                         <Field
                             label="Unit Kerja"
-                            hint={keteranganUnitKerja}
+                            hint={memakaiUnitAkun ? undefined : keteranganUnitKerja}
                             error={errors.origin_unit_id}
                             required={opsi.unit_kerja_wajib}
                         >
-                            {(props) => (
+                            {(props) => memakaiUnitAkun ? (
+                                <Input
+                                    {...props}
+                                    value={opsi.unit_akun_nama ?? 'Unit kerja tidak tersedia'}
+                                    readOnly
+                                    aria-readonly="true"
+                                />
+                            ) : (
                                 <Select
                                     {...props}
                                     placeholder="Pilih unit kerja"
                                     value={data.origin_unit_id}
-                                    disabled={memakaiUnitAkun}
                                     invalid={Boolean(errors.origin_unit_id)}
                                     options={opsi.unit.map((u) => ({
                                         value: u.id,
@@ -386,6 +391,12 @@ export function DocumentForm({
                 </Card>
 
                 <div className="grid grid-cols-2 gap-2">
+                    <Link href={batal}>
+                        <Button type="button" variant="secondary" size="lg" className="w-full">
+                            Batal
+                        </Button>
+                    </Link>
+
                     <Button
                         type="submit"
                         icon={mode === 'buat' ? Upload : Save}
@@ -403,12 +414,6 @@ export function DocumentForm({
                               ? 'Menyimpan…'
                               : 'Simpan Perubahan'}
                     </Button>
-
-                    <Link href={batal}>
-                        <Button type="button" variant="secondary" size="lg" className="w-full">
-                            Batal
-                        </Button>
-                    </Link>
                 </div>
             </div>
         </form>

@@ -162,6 +162,7 @@ final class DocumentUploadTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Documents/Create')
                 ->where('opsi.unit_akun_id', $this->divisi->id)
+                ->where('opsi.unit_akun_nama', $this->divisi->nama)
                 ->where('opsi.unit_kerja_wajib', false)
                 ->where('opsi.kategori', fn ($kategori): bool => $kategori->last()['nama'] === 'Lainnya')
                 ->where('opsi.unit', function ($unit) use ($sekretaris, $divisiSekretaris): bool {

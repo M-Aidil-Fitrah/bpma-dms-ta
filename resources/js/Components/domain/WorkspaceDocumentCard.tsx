@@ -70,7 +70,8 @@ export function WorkspaceDocumentCard({
                             icon={Star}
                             label={document.starred ? `Hapus bintang ${document.judul}` : `Beri bintang ${document.judul}`}
                             variant="ghost"
-                            className={document.starred ? 'fill-warning text-warning-strong' : undefined}
+                            className={document.starred ? 'text-warning-strong' : undefined}
+                            iconClassName={document.starred ? 'fill-warning text-warning-strong' : undefined}
                             onClick={toggleStar}
                         />
                     </div>
@@ -112,7 +113,8 @@ export function WorkspaceDocumentCard({
                 icon={Star}
                 label={document.starred ? `Hapus bintang ${document.judul}` : `Beri bintang ${document.judul}`}
                 variant="ghost"
-                className={document.starred ? 'fill-warning text-warning-strong' : undefined}
+                className={document.starred ? 'text-warning-strong' : undefined}
+                iconClassName={document.starred ? 'fill-warning text-warning-strong' : undefined}
                 onClick={toggleStar}
             />
             {folderOptions !== undefined && (

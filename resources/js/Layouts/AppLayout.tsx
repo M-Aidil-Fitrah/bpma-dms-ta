@@ -64,7 +64,7 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
                 <div className="fixed inset-0 flex">
                     <DialogPanel className="flex w-sidebar max-w-[85vw] flex-col bg-surface">
                         <div className="flex h-20 items-center justify-between border-b border-line px-4">
-                            <DmsBrand />
+                            <DmsBrand className="flex-1" />
                             <IconButton
                                 icon={X}
                                 label="Tutup navigasi"
@@ -127,7 +127,7 @@ function SidebarBrand({ className }: { className?: string }) {
     return (
         <div
             className={cn(
-                'flex h-20 shrink-0 items-center border-b border-line px-4',
+                'flex h-20 shrink-0 items-center justify-center border-b border-line px-4',
                 className,
             )}
         >

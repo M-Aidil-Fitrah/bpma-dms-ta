@@ -10,7 +10,7 @@ interface DmsBrandProps {
 /** Identitas aplikasi yang melengkapi wordmark resmi BPMA. */
 export function DmsBrand({ onDark = false, className }: DmsBrandProps) {
     return (
-        <div className={cn('inline-flex flex-col items-start', className)}>
+        <div className={cn('inline-flex flex-col items-center text-center', className)}>
             {onDark ? (
                 <div className="rounded-lg bg-surface px-3 py-2 shadow-sm">
                     <Logo size="lg" />

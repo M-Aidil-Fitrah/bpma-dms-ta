@@ -4,11 +4,25 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Storage;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * Aksi tulis sensitif memerlukan konfirmasi ulang kata sandi. Sebagian
+     * besar tes feature berfokus pada domain masing-masing, sehingga login
+     * test-nya dinyatakan sudah melewati step-up authentication. Tes khusus
+     * password-confirmation memakai `be()` untuk memulai tanpa penanda ini.
+     */
+    public function actingAs(Authenticatable $user, $guard = null): static
+    {
+        $this->withSession(['auth.password_confirmed_at' => time()]);
+
+        return parent::actingAs($user, $guard);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

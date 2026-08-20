@@ -1,4 +1,5 @@
 import { ResetPasswordDialog } from '@/Components/domain/ResetPasswordDialog';
+import { usePasswordConfirmation } from '@/Components/auth/PasswordConfirmationProvider';
 import { ConfirmDialog } from '@/Components/ui/ConfirmDialog';
 import { Dropdown, DropdownItem } from '@/Components/ui/Dropdown';
 import { IconButton } from '@/Components/ui/IconButton';
@@ -26,11 +27,16 @@ export interface UserActionsProps {
  * `UserController::destroy()` (FR-43).
  */
 export function UserActions({ userId, nama, aktif, diriSendiri, className }: UserActionsProps) {
+    const konfirmasikan = usePasswordConfirmation();
     const [tanyaNonaktif, setTanyaNonaktif] = useState(false);
     const [resetSandi, setResetSandi] = useState(false);
     const [memproses, setMemproses] = useState(false);
 
     function nonaktifkan() {
+        konfirmasikan(jalankanNonaktifkan);
+    }
+
+    function jalankanNonaktifkan() {
         setMemproses(true);
         router.delete(`/admin/users/${userId}`, {
             onFinish: () => {
@@ -41,6 +47,10 @@ export function UserActions({ userId, nama, aktif, diriSendiri, className }: Use
     }
 
     function aktifkan() {
+        konfirmasikan(jalankanAktifkan);
+    }
+
+    function jalankanAktifkan() {
         setMemproses(true);
         router.patch(
             `/admin/users/${userId}/restore`,

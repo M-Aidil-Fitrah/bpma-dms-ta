@@ -3,6 +3,7 @@ import './bootstrap';
 
 import { FlashToast } from '@/Components/ui/FlashToast';
 import { ToastProvider } from '@/Components/ui/Toast';
+import { PasswordConfirmationProvider } from '@/Components/auth/PasswordConfirmationProvider';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
@@ -38,8 +39,10 @@ createInertiaApp({
                 <App {...props}>
                     {({ Component, props: propHalaman, key }) => (
                         <>
-                            <FlashToast />
-                            <Component key={key} {...propHalaman} />
+                            <PasswordConfirmationProvider>
+                                <FlashToast />
+                                <Component key={key} {...propHalaman} />
+                            </PasswordConfirmationProvider>
                         </>
                     )}
                 </App>

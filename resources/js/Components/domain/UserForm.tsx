@@ -1,4 +1,5 @@
 import { Button } from '@/Components/ui/Button';
+import { usePasswordConfirmation } from '@/Components/auth/PasswordConfirmationProvider';
 import { Card, CardBody, CardHeader, CardTitle } from '@/Components/ui/Card';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
@@ -41,6 +42,7 @@ export interface UserFormProps {
  * saat menambah, dan sama sekali tidak ada medannya saat menyunting.
  */
 export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
+    const konfirmasikan = usePasswordConfirmation();
     const { data, setData, post, patch, processing, errors } = useForm<
         NilaiAwalPengguna & { password: string; password_confirmation: string }
     >({
@@ -51,7 +53,10 @@ export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
+        konfirmasikan(simpan);
+    }
 
+    function simpan() {
         if (mode === 'buat') {
             post(aksi);
         } else {

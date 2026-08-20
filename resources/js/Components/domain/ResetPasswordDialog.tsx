@@ -1,4 +1,5 @@
 import { Button } from '@/Components/ui/Button';
+import { usePasswordConfirmation } from '@/Components/auth/PasswordConfirmationProvider';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
 import { Modal } from '@/Components/ui/Modal';
@@ -18,6 +19,7 @@ export interface ResetPasswordDialogProps {
  * apa pun.
  */
 export function ResetPasswordDialog({ terbuka, onTutup, userId, nama }: ResetPasswordDialogProps) {
+    const konfirmasikan = usePasswordConfirmation();
     const { data, setData, patch, processing, errors, reset } = useForm({
         password: '',
         password_confirmation: '',
@@ -25,7 +27,10 @@ export function ResetPasswordDialog({ terbuka, onTutup, userId, nama }: ResetPas
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
+        konfirmasikan(kirimReset);
+    }
 
+    function kirimReset() {
         patch(`/admin/users/${userId}/password`, {
             onSuccess: () => {
                 reset();

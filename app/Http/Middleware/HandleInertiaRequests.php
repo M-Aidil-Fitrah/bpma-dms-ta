@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user === null
                     ? null
                     : AuthUserData::fromUser($user->loadMissing(['jabatan', 'unit', 'roles'])),
+                'password_confirmed_until' => fn (): ?string => $this->passwordConfirmedUntil($request),
             ],
 
             // Pesan sekali-tampil setelah sebuah aksi. Dibungkus closure supaya
@@ -66,5 +67,19 @@ class HandleInertiaRequests extends Middleware
                 'info' => fn () => $request->session()->get('info'),
             ],
         ];
+    }
+
+    private function passwordConfirmedUntil(Request $request): ?string
+    {
+        $terkonfirmasiPada = (int) $request->session()->get('auth.password_confirmed_at', 0);
+        if ($terkonfirmasiPada === 0) {
+            return null;
+        }
+
+        $berlakuSampai = $terkonfirmasiPada + (int) config('auth.password_timeout');
+
+        return $berlakuSampai > now()->timestamp
+            ? now()->setTimestamp($berlakuSampai)->toIso8601String()
+            : null;
     }
 }

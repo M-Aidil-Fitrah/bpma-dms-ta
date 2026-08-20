@@ -1,4 +1,5 @@
 import { Button } from '@/Components/ui/Button';
+import { usePasswordConfirmation } from '@/Components/auth/PasswordConfirmationProvider';
 import { ConfirmDialog } from '@/Components/ui/ConfirmDialog';
 import { Link, router } from '@inertiajs/react';
 import { ArchiveRestore, Download, EyeOff, Pencil } from 'lucide-react';
@@ -30,10 +31,15 @@ export function DocumentHeaderActions({
     bolehNonaktifkan,
     bolehAktifkan,
 }: DocumentHeaderActionsProps) {
+    const konfirmasikan = usePasswordConfirmation();
     const [tanyaNonaktif, setTanyaNonaktif] = useState(false);
     const [memproses, setMemproses] = useState(false);
 
     function nonaktifkan() {
+        konfirmasikan(jalankanNonaktifkan);
+    }
+
+    function jalankanNonaktifkan() {
         setMemproses(true);
         router.delete(`/documents/${dokumenId}`, {
             onFinish: () => {
@@ -44,6 +50,10 @@ export function DocumentHeaderActions({
     }
 
     function aktifkan() {
+        konfirmasikan(jalankanAktifkan);
+    }
+
+    function jalankanAktifkan() {
         setMemproses(true);
         router.patch(
             `/documents/${dokumenId}/restore`,

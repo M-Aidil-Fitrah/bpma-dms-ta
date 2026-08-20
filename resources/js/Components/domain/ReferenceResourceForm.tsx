@@ -1,4 +1,5 @@
 import { Button } from '@/Components/ui/Button';
+import { usePasswordConfirmation } from '@/Components/auth/PasswordConfirmationProvider';
 import { Card, CardBody, CardHeader, CardTitle } from '@/Components/ui/Card';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
@@ -29,6 +30,7 @@ interface ReferenceResourceFormProps {
  * pada jenis yang membutuhkannya; aturan CRUD dan tombol tetap satu tempat.
  */
 export function ReferenceResourceForm({ jenis, mode, aksi, batal, awal, induk = [] }: ReferenceResourceFormProps) {
+    const konfirmasikan = usePasswordConfirmation();
     const { data, setData, post, patch, processing, errors } = useForm({
         nama: awal?.nama ?? '',
         tingkat_akses: awal?.tingkat_akses?.toString() ?? '',
@@ -40,6 +42,10 @@ export function ReferenceResourceForm({ jenis, mode, aksi, batal, awal, induk = 
 
     function submit(event: FormEvent) {
         event.preventDefault();
+        konfirmasikan(simpan);
+    }
+
+    function simpan() {
         if (mode === 'buat') post(aksi);
         else patch(aksi);
     }

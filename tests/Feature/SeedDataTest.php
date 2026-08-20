@@ -56,7 +56,7 @@ final class SeedDataTest extends TestCase
 
     public function test_data_referensi_ter_seed_lengkap_dan_aktif(): void
     {
-        $this->assertSame(6, Jabatan::count());
+        $this->assertSame(5, Jabatan::count());
         $this->assertSame(20, Unit::count());
         $this->assertSame(11, Category::count());
 

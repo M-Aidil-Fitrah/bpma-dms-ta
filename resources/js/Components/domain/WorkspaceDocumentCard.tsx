@@ -1,10 +1,16 @@
 import { IconButton } from '@/Components/ui/IconButton';
+import { usePasswordConfirmation } from '@/Components/auth/PasswordConfirmationProvider';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
 import { DocumentThumbnail } from '@/Components/domain/DocumentThumbnail';
 import { Badge } from '@/Components/ui/Badge';
+import { Button } from '@/Components/ui/Button';
+import { ConfirmDialog } from '@/Components/ui/ConfirmDialog';
+import { Field } from '@/Components/ui/Field';
+import { Modal } from '@/Components/ui/Modal';
+import { Select } from '@/Components/ui/Select';
 import { Link, router } from '@inertiajs/react';
-import { Star } from 'lucide-react';
-import { type ChangeEvent } from 'react';
+import { FolderInput, Star, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 export interface WorkspaceDocument {
     id: number;
@@ -41,17 +47,6 @@ export function WorkspaceDocumentCard({
         router.put(`/documents/${document.id}/star`, {}, { preserveScroll: true });
     }
 
-    function move(event: ChangeEvent<HTMLSelectElement>) {
-        const folderId = event.target.value;
-        if (folderId === '') {
-            router.delete(`/documents/${document.id}/folder`, { preserveScroll: true });
-
-            return;
-        }
-
-        router.put(`/documents/${document.id}/folder`, { folder_id: Number(folderId) }, { preserveScroll: true });
-    }
-
     if (mode === 'grid') {
         return (
             <article className="flex h-full min-w-0 flex-col overflow-hidden rounded-card border border-line bg-surface transition-shadow hover:shadow-pop">
@@ -65,15 +60,17 @@ export function WorkspaceDocumentCard({
                 <div className="flex min-w-0 flex-1 flex-col p-4">
                     <div className="flex items-start justify-between gap-2">
                         <FileTypeBadge mime={document.tipe} />
-                        <IconButton
-                            type="button"
-                            icon={Star}
-                            label={document.starred ? `Hapus bintang ${document.judul}` : `Beri bintang ${document.judul}`}
-                            variant="ghost"
-                            className={document.starred ? 'text-warning-strong' : undefined}
-                            iconClassName={document.starred ? 'fill-warning text-warning-strong' : undefined}
-                            onClick={toggleStar}
-                        />
+                        <div className="flex items-center gap-1">
+                            <IconButton
+                                type="button"
+                                icon={Star}
+                                label={document.starred ? `Hapus bintang ${document.judul}` : `Beri bintang ${document.judul}`}
+                                className={document.starred ? 'text-warning-strong' : undefined}
+                                iconClassName={document.starred ? 'fill-warning text-warning-strong' : undefined}
+                                onClick={toggleStar}
+                            />
+                            {folderOptions !== undefined && <TrashDocumentAction document={document} />}
+                        </div>
                     </div>
                     <Link href={`/documents/${document.id}`} className="mt-3 min-w-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">
                         <h3 className="line-clamp-2 text-sm font-medium text-ink">{document.judul}</h3>
@@ -81,17 +78,7 @@ export function WorkspaceDocumentCard({
                     </Link>
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
                         {document.is_private ? <Badge variant="info" size="sm">Hanya saya</Badge> : <span />}
-                        {folderOptions !== undefined && (
-                            <select
-                                aria-label={`Pindahkan ${document.judul} ke folder`}
-                                value={currentFolderId ?? ''}
-                                onChange={move}
-                                className="min-h-touch max-w-40 rounded-lg border border-line bg-surface px-2 text-xs text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-700 sm:min-h-8"
-                            >
-                                <option value="">Akar Dokumen Saya</option>
-                                {folderOptions.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
-                            </select>
-                        )}
+                        {folderOptions !== undefined && <MoveDocumentAction document={document} folderOptions={folderOptions} currentFolderId={currentFolderId} />}
                     </div>
                 </div>
             </article>
@@ -112,22 +99,117 @@ export function WorkspaceDocumentCard({
                 type="button"
                 icon={Star}
                 label={document.starred ? `Hapus bintang ${document.judul}` : `Beri bintang ${document.judul}`}
-                variant="ghost"
                 className={document.starred ? 'text-warning-strong' : undefined}
                 iconClassName={document.starred ? 'fill-warning text-warning-strong' : undefined}
                 onClick={toggleStar}
             />
-            {folderOptions !== undefined && (
-                <select
-                    aria-label={`Pindahkan ${document.judul} ke folder`}
-                    value={currentFolderId ?? ''}
-                    onChange={move}
-                    className="min-h-touch max-w-40 rounded-lg border border-line bg-surface px-2 text-xs text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-700 sm:min-h-8"
-                >
-                    <option value="">Akar Dokumen Saya</option>
-                    {folderOptions.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
-                </select>
-            )}
+            {folderOptions !== undefined && <TrashDocumentAction document={document} />}
+            {folderOptions !== undefined && <MoveDocumentAction document={document} folderOptions={folderOptions} currentFolderId={currentFolderId} compact />}
         </article>
+    );
+}
+
+function TrashDocumentAction({ document }: { document: WorkspaceDocument; }) {
+    const konfirmasikan = usePasswordConfirmation();
+    const [open, setOpen] = useState(false);
+    const [processing, setProcessing] = useState(false);
+
+    function trash() {
+        konfirmasikan(() => {
+            setProcessing(true);
+            router.delete(`/documents/${document.id}`, {
+                preserveScroll: true,
+                onFinish: () => {
+                    setProcessing(false);
+                    setOpen(false);
+                },
+            });
+        });
+    }
+
+    return (
+        <>
+            <IconButton
+                icon={Trash2}
+                label={`Pindahkan ${document.judul} ke Sampah`}
+                variant="danger"
+                onClick={() => setOpen(true)}
+            />
+            <ConfirmDialog
+                terbuka={open}
+                onTutup={() => setOpen(false)}
+                onSetuju={trash}
+                judul="Pindahkan dokumen ke Sampah?"
+                labelSetuju="Pindahkan ke Sampah"
+                ikon={Trash2}
+                memproses={processing}
+            >
+                <p>Dokumen <span className="font-medium text-ink">{document.judul}</span> tidak lagi tampil di Dokumen Saya atau hasil pencarian.</p>
+                <p>Anda masih dapat memulihkannya dari Sampah selama 30 hari.</p>
+            </ConfirmDialog>
+        </>
+    );
+}
+
+function MoveDocumentAction({
+    document,
+    folderOptions,
+    currentFolderId,
+    compact = false,
+}: {
+    document: WorkspaceDocument;
+    folderOptions: WorkspaceFolderOption[];
+    currentFolderId: number | null;
+    compact?: boolean;
+}) {
+    const [open, setOpen] = useState(false);
+    const [targetFolderId, setTargetFolderId] = useState<string>(currentFolderId?.toString() ?? 'root');
+    const [processing, setProcessing] = useState(false);
+    const targetOptions = [
+        { value: 'root', label: 'Tanpa folder — tampil langsung di Dokumen Saya' },
+        ...folderOptions.map((folder) => ({ value: folder.id, label: folder.name })),
+    ];
+
+    function openDialog() {
+        setTargetFolderId(currentFolderId?.toString() ?? 'root');
+        setOpen(true);
+    }
+
+    function move() {
+        setProcessing(true);
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => setOpen(false),
+            onFinish: () => setProcessing(false),
+        };
+
+        if (targetFolderId === 'root') {
+            router.delete(`/documents/${document.id}/folder`, options);
+
+            return;
+        }
+
+        router.put(`/documents/${document.id}/folder`, { folder_id: Number(targetFolderId) }, options);
+    }
+
+    return (
+        <>
+            {compact ? (
+                <IconButton icon={FolderInput} label={`Pindahkan ${document.judul}`} onClick={openDialog} />
+            ) : (
+                <Button type="button" icon={FolderInput} size="xs" variant="secondary" onClick={openDialog}>Pindahkan</Button>
+            )}
+            <Modal
+                terbuka={open}
+                onTutup={setOpen}
+                judul="Pindahkan dokumen"
+                keterangan="Pilih folder penyimpanan, atau tampilkan dokumen langsung di halaman Dokumen Saya."
+                footer={<><Button variant="secondary" onClick={() => setOpen(false)} disabled={processing}>Batal</Button><Button icon={FolderInput} onClick={move} loading={processing}>Pindahkan</Button></>}
+            >
+                <Field label="Folder tujuan">
+                    {(props) => <Select {...props} value={targetFolderId} options={targetOptions} onChange={(event) => setTargetFolderId(event.target.value)} />}
+                </Field>
+            </Modal>
+        </>
     );
 }

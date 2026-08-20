@@ -30,7 +30,13 @@ export function WorkspaceFolderCard({ folder }: Props) {
             </Link>
             <div className="flex shrink-0 items-center gap-1">
                 <IconButton icon={Pencil} label={`Ubah nama folder ${folder.name}`} size="sm" onClick={() => setRenameOpen(true)} />
-                <IconButton icon={Trash2} label={`Pindahkan folder ${folder.name} ke Sampah`} variant="danger" size="sm" onClick={() => setTrashOpen(true)} />
+                <IconButton
+                    icon={Trash2}
+                    label={`Pindahkan folder ${folder.name} ke Sampah`}
+                    variant="danger"
+                    size="sm"
+                    onClick={() => setTrashOpen(true)}
+                />
             </div>
 
             <Modal

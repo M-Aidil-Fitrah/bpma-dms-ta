@@ -82,7 +82,7 @@ export default {
                 ink: {
                     DEFAULT: '#111827',
                     muted: '#6b7280',
-                    subtle: '#9ca3af',
+                    subtle: '#696f7d',
                 },
             },
 

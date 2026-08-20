@@ -22,7 +22,9 @@ final class UpdateDocumentRequest extends DocumentFormRequest
      */
     protected function aturanTambahan(): array
     {
-        return [];
+        return [
+            'version_note' => ['required', 'string', 'max:500'],
+        ];
     }
 
     protected function periksaTambahan(Validator $v): void

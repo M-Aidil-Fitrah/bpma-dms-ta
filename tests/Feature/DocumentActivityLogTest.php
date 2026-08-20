@@ -94,6 +94,41 @@ final class DocumentActivityLogTest extends TestCase
         $this->assertSame('Penerima Lama', $activity->getProperty('mekanisme_akses.orang_tertentu.0.nama'));
     }
 
+    public function test_penggantian_berkas_mencatat_relasi_pada_versi_lama_dan_baru(): void
+    {
+        Queue::fake();
+        $versiLama = $this->buatDokumen();
+
+        $this->actingAs($this->pemilik)
+            ->post('/documents', [
+                'nomor' => '002/BPMA/AUDIT/VIII/2026',
+                'judul' => 'Dokumen Versi Baru',
+                'category_id' => $this->kategori->id,
+                'origin_unit_id' => $this->unitLama->id,
+                'tanggal' => '2026-08-17',
+                'edit_scope' => DocumentEditScope::OwnerOnly->value,
+                'file' => UploadedFile::fake()->create('audit-baru.pdf', 100, 'application/pdf'),
+                'is_shared_to_all' => true,
+                'replaces_document_id' => $versiLama->id,
+                'version_note' => 'Memperbarui isi dokumen.',
+            ])
+            ->assertRedirect();
+
+        $versiBaru = Document::firstWhere('judul', 'Dokumen Versi Baru');
+
+        $this->assertFalse($versiLama->fresh()->is_active);
+        $this->assertTrue($versiBaru->is_active);
+        $this->assertSame($versiLama->id, $versiBaru->replaces_document_id);
+        $this->assertSame([
+            $versiLama->id,
+            $versiBaru->id,
+        ], Activity::query()
+            ->where('event', AuditEvent::DocumentReplaced->value)
+            ->orderBy('subject_id')
+            ->pluck('subject_id')
+            ->all());
+    }
+
     public function test_ubah_metadata_dan_target_akses_mencatat_before_after_serta_setiap_pencabutan(): void
     {
         $document = $this->buatDokumen();
@@ -153,6 +188,17 @@ final class DocumentActivityLogTest extends TestCase
         $this->assertSame($this->superadmin->id, Activity::query()->orderByDesc('id')->first()->causer_id);
     }
 
+    public function test_membuka_halaman_detail_tidak_menambah_riwayat_aktivitas(): void
+    {
+        $document = $this->buatDokumen();
+
+        $this->actingAs($this->pemilik)
+            ->get("/documents/{$document->id}")
+            ->assertOk();
+
+        $this->assertSame(0, Activity::query()->count());
+    }
+
     private function buatDokumen(): Document
     {
         return Document::factory()->create([
@@ -176,6 +222,7 @@ final class DocumentActivityLogTest extends TestCase
             'is_shared_to_all' => false,
             'unit_ids' => [$this->unitLama->id],
             'shared_user_ids' => [$this->penerimaLama->id],
+            'version_note' => 'Memperbarui metadata dan akses.',
             ...$ubah,
         ];
     }

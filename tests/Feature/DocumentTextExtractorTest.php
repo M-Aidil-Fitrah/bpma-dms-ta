@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Services\DocumentTextExtractor;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
+use UnexpectedValueException;
 
 /**
  * Pembacaan teks mentah dari tipe berkas yang didukung FEAT-11.
@@ -56,9 +57,18 @@ final class DocumentTextExtractorTest extends TestCase
 
     public function test_gambar_bernaskah_menghasilkan_teks_ocr(): void
     {
-        $teks = $this->ekstraktor->gambar(base_path('database/seeders/files/nota-dinas-foto.jpg'));
+        $teks = $this->ekstraktor->gambar(base_path('database/seeders/files/nota-dinas-foto.jpg'))->text;
 
         $this->assertNotSame('', $teks);
+    }
+
+    public function test_gambar_byte_rusak_ditolak_sebelum_dikirim_ke_tesseract(): void
+    {
+        $path = Storage::disk('local')->path('gambar-rusak.jpg');
+        file_put_contents($path, 'bukan gambar JPEG yang sah');
+
+        $this->expectException(UnexpectedValueException::class);
+        $this->ekstraktor->gambar($path);
     }
 
     public function test_txt_berencoding_windows_1252_dikonversi_ke_utf8(): void

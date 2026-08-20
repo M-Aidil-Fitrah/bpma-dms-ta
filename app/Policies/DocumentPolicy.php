@@ -49,7 +49,8 @@ final class DocumentPolicy
     }
 
     /**
-     * Dokumen nonaktif hanya dapat dibuka Superadmin.
+     * Dokumen nonaktif hanya dapat dibuka Superadmin, kecuali ia merupakan
+     * versi terdahulu dari dokumen yang masih dapat dibuka pengguna.
      *
      * Menyembunyikannya dari daftar saja tidak cukup: alamatnya tetap dapat
      * diketik langsung, dan tautan lama masih tersimpan di riwayat peramban
@@ -60,7 +61,14 @@ final class DocumentPolicy
     public function view(User $user, Document $document): bool
     {
         if (! $document->is_active && ! $user->isSuperadmin()) {
-            return false;
+            // Versi lama sengaja tidak muncul di daftar maupun hasil pencarian.
+            // Namun, setelah pengguna membuka versi terbaru yang ia berhak
+            // lihat, ia harus dapat membandingkannya dengan versi sebelumnya.
+            // Haknya selalu diturunkan dari versi penerus yang aktif, bukan
+            // dari alamat versi lama yang kebetulan masih tersimpan.
+            $penerus = $document->replacementDocument;
+
+            return $penerus !== null && $this->view($user, $penerus);
         }
 
         return Document::query()
@@ -118,5 +126,22 @@ final class DocumentPolicy
     public function restore(User $user, Document $document): bool
     {
         return $user->isSuperadmin();
+    }
+
+    /**
+     * Membuat versi major baru dari arsip, bukan mengaktifkan ulang arsipnya.
+     *
+     * Pemilik rantai adalah pengunggah `v1.0`, bukan orang yang kebetulan
+     * mengunggah revisi terakhir. Ini menjaga wewenang pemulihan stabil saat
+     * `edit_scope = match_visibility` mengizinkan rekan membuat revisi.
+     */
+    public function restoreVersion(User $user, Document $document): bool
+    {
+        $akarId = $document->version_root_id ?? $document->id;
+
+        return Document::query()
+            ->whereKey($akarId)
+            ->where('uploaded_by', $user->id)
+            ->exists();
     }
 }

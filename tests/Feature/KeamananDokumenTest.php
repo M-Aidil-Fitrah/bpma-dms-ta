@@ -156,6 +156,10 @@ final class KeamananDokumenTest extends TestCase
     {
         // Pengetatan tidak boleh sampai mematikan gunanya pratinjau.
         foreach (['laporan.pdf', 'foto.jpg', 'gambar.png'] as $nama) {
+            // Dokumen baru menunjuk dirinya sendiri sebagai akar versi. Putus
+            // referensi itu sebelum force delete agar MySQL tidak menolak
+            // pembersihan fixture pada iterasi berikutnya.
+            Document::query()->update(['version_root_id' => null]);
             Document::query()->forceDelete();
 
             $dokumen = $this->unggah($nama);

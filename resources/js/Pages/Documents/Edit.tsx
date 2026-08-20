@@ -38,10 +38,13 @@ export default function Edit({ dokumen, opsi }: EditProps) {
                 batal={`/documents/${dokumen.id}`}
                 opsi={opsi}
                 berkas={{
+                    id: dokumen.id,
                     nama: dokumen.nama_berkas,
                     tipe: dokumen.tipe_berkas,
                     ukuran: dokumen.ukuran_berkas,
+                    thumbnailTersedia: dokumen.thumbnail_tersedia,
                 }}
+                unggahVersiBaru={`/documents/create?replace=${dokumen.id}`}
                 awal={{
                     nomor: dokumen.nomor,
                     judul: dokumen.judul,
@@ -53,6 +56,7 @@ export default function Edit({ dokumen, opsi }: EditProps) {
                     tanggal: dokumen.tanggal,
                     masa_berlaku: dokumen.masa_berlaku ?? '',
                     edit_scope: dokumen.edit_scope,
+                    version_note: '',
                 }}
                 aksesAwal={{
                     is_shared_to_all: dokumen.is_shared_to_all,

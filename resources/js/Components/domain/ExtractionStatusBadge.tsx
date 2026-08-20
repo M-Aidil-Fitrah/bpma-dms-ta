@@ -28,6 +28,12 @@ const PETA = {
         icon: CheckCircle2,
         keterangan: 'Isi dokumen sudah terbaca dan dapat ditemukan lewat pencarian.',
     },
+    review_required: {
+        variant: 'warning',
+        label: 'Perlu ditinjau',
+        icon: TriangleAlert,
+        keterangan: 'OCR selesai, tetapi hasilnya tidak cukup meyakinkan untuk pencarian isi.',
+    },
     failed: {
         variant: 'warning',
         label: 'Ekstraksi gagal',

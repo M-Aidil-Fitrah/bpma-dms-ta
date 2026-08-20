@@ -8,6 +8,8 @@ export interface PaginationProps {
     meta: Omit<Pagination.Paginated<unknown>, 'data'>;
     /** Kata benda untuk keterangan jumlah, mis. "dokumen". */
     labelItem?: string;
+    /** Nama parameter halaman bila satu halaman memuat lebih dari satu daftar. */
+    pageParameter?: string;
 }
 
 /**
@@ -17,7 +19,7 @@ export interface PaginationProps {
  * halaman tidak mungkin ditampilkan seluruhnya, dan mencobanya akan merusak
  * tata letak di layar sempit.
  */
-export function Pagination({ meta, labelItem = 'data' }: PaginationProps) {
+export function Pagination({ meta, labelItem = 'data', pageParameter = 'page' }: PaginationProps) {
     if (meta.last_page <= 1) {
         return (
             <p className="w-full text-sm text-ink-muted">
@@ -64,7 +66,7 @@ export function Pagination({ meta, labelItem = 'data' }: PaginationProps) {
                     ) : (
                         <Link
                             key={nomor}
-                            href={urlHalaman(meta.path, nomor)}
+                            href={urlHalaman(meta.path, nomor, pageParameter)}
                             preserveScroll
                             preserveState
                             aria-label={`Halaman ${nomor}`}
@@ -73,7 +75,7 @@ export function Pagination({ meta, labelItem = 'data' }: PaginationProps) {
                                 'inline-flex min-h-touch min-w-touch items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors sm:min-h-9 sm:min-w-9',
                                 nomor === meta.current_page
                                     ? 'bg-brand-700 text-white'
-                                    : 'border border-line bg-white text-ink-muted hover:bg-surface-sunken hover:text-ink',
+                                    : 'border border-line bg-surface text-ink-muted hover:bg-surface-sunken hover:text-ink',
                             )}
                         >
                             {nomor}
@@ -117,21 +119,21 @@ function TombolArah({
             preserveScroll
             preserveState
             aria-label={label}
-            className={cn(kelas, 'bg-white text-ink-muted hover:bg-surface-sunken hover:text-ink')}
+            className={cn(kelas, 'bg-surface text-ink-muted hover:bg-surface-sunken hover:text-ink')}
         >
             <Icon className="size-4" aria-hidden />
         </Link>
     );
 }
 
-function urlHalaman(path: string, halaman: number): string {
+function urlHalaman(path: string, halaman: number, pageParameter: string): string {
     const url = new URL(path, window.location.origin);
     // Penyaring yang sedang aktif ikut dibawa, supaya berpindah halaman tidak
     // diam-diam mengosongkan pencarian yang baru saja diketik pengguna.
     new URLSearchParams(window.location.search).forEach((nilai, kunci) => {
-        if (kunci !== 'page') url.searchParams.set(kunci, nilai);
+        if (kunci !== pageParameter) url.searchParams.set(kunci, nilai);
     });
-    url.searchParams.set('page', String(halaman));
+    url.searchParams.set(pageParameter, String(halaman));
 
     return url.pathname + url.search;
 }

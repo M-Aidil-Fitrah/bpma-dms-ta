@@ -56,16 +56,16 @@ export function DocumentHeaderActions({
         <>
             <a href={`/documents/${dokumenId}/file`} download>
                 <Button icon={Download} size="sm" variant="secondary">
-                    <span className="hidden sm:inline">Unduh</span>
-                    <span className="sr-only sm:hidden">Unduh</span>
+                    <span className="hidden md:inline">Unduh</span>
+                    <span className="sr-only md:hidden">Unduh</span>
                 </Button>
             </a>
 
             {bolehUbah && aktif && (
                 <Link href={`/documents/${dokumenId}/edit`}>
                     <Button icon={Pencil} size="sm">
-                        <span className="hidden sm:inline">Ubah</span>
-                        <span className="sr-only sm:hidden">Ubah</span>
+                    <span className="hidden md:inline">Ubah</span>
+                    <span className="sr-only md:hidden">Ubah</span>
                     </Button>
                 </Link>
             )}
@@ -77,8 +77,8 @@ export function DocumentHeaderActions({
                     variant="secondary"
                     onClick={() => setTanyaNonaktif(true)}
                 >
-                    <span className="hidden sm:inline">Nonaktifkan</span>
-                    <span className="sr-only sm:hidden">Nonaktifkan</span>
+                    <span className="hidden md:inline">Nonaktifkan</span>
+                    <span className="sr-only md:hidden">Nonaktifkan</span>
                 </Button>
             )}
 
@@ -89,8 +89,8 @@ export function DocumentHeaderActions({
                     loading={memproses}
                     onClick={aktifkan}
                 >
-                    <span className="hidden sm:inline">Aktifkan Kembali</span>
-                    <span className="sr-only sm:hidden">Aktifkan Kembali</span>
+                    <span className="hidden md:inline">Aktifkan Kembali</span>
+                    <span className="sr-only md:hidden">Aktifkan Kembali</span>
                 </Button>
             )}
 

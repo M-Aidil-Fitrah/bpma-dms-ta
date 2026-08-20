@@ -15,9 +15,12 @@ enum AuditEvent: string
 {
     case DocumentUploaded = 'document_uploaded';
     case DocumentUpdated = 'document_updated';
+    case DocumentViewed = 'document_viewed';
     case DocumentDownloaded = 'document_downloaded';
     case DocumentDeactivated = 'document_deactivated';
     case DocumentRestored = 'document_restored';
+    case DocumentReplaced = 'document_replaced';
+    case DocumentVersionRestored = 'document_version_restored';
     case DocumentStatusChanged = 'document_status_changed';
     case AccessGranted = 'access_granted';
     case AccessRevoked = 'access_revoked';

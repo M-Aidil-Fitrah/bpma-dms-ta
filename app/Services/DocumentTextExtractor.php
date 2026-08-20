@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Data\OcrResult;
 use PhpOffice\PhpWord\IOFactory;
 use Smalot\PdfParser\Parser;
 use thiagoalessio\TesseractOCR\TesseractOCR;
@@ -105,10 +106,33 @@ final class DocumentTextExtractor
      * Membaca teks dalam gambar langsung. HEIC tidak pernah mencapai metode
      * ini karena ditandai `not_applicable` sebelum job dibuat.
      */
-    public function gambar(string $path): string
+    public function gambar(string $path): OcrResult
     {
-        return trim((new TesseractOCR($path))
+        // Tesseract dapat selesai dengan kode 0 pada byte acak dan hanya
+        // mengembalikan TSV kosong. Itu bukan gambar kosong yang layak
+        // ditinjau, melainkan berkas rusak yang harus mencapai jalur `failed`.
+        if (@getimagesize($path) === false) {
+            throw new UnexpectedValueException('Berkas gambar tidak dapat dibaca.');
+        }
+
+        $tsv = (new TesseractOCR($path))
             ->lang(...explode('+', config('dms.ekstraksi.bahasa_ocr')))
-            ->run((int) config('dms.ekstraksi.ocr_timeout_detik')));
+            ->tsv()
+            ->run((int) config('dms.ekstraksi.ocr_timeout_detik'));
+
+        $kata = [];
+        $confidence = [];
+        foreach (preg_split('/\R/', $tsv) ?: [] as $baris) {
+            $kolom = explode("\t", $baris);
+            if (count($kolom) < 12 || $kolom[0] !== '5' || trim($kolom[11]) === '') {
+                continue;
+            }
+            $kata[] = trim($kolom[11]);
+            if (is_numeric($kolom[10]) && (float) $kolom[10] >= 0) {
+                $confidence[] = (float) $kolom[10];
+            }
+        }
+
+        return new OcrResult(trim(implode(' ', $kata)), $confidence);
     }
 }

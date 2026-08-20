@@ -16,8 +16,7 @@ use Spatie\Activitylog\Models\Activity;
  * Query riwayat yang menjadi sumber kebenaran batas tampil aktivitas.
  *
  * Tidak memakai eager-load morph subject. Label subjek sudah disalin saat
- * aktivitas dibuat, sedangkan nama pelaku diperoleh melalui satu LEFT JOIN;
- * pagination berisi ratusan baris tetap dua query (count dan data), bukan N+1.
+ * aktivitas dibuat, sedangkan nama pelaku diperoleh melalui satu LEFT JOIN.
  */
 final class ActivityLogQuery
 {
@@ -36,14 +35,20 @@ final class ActivityLogQuery
     }
 
     /** @return list<ActivityLogData> */
-    public function recentForDocument(Document $document, int $limit = 10): array
+    public function forDocument(Document $document): array
     {
+        $akarVersiId = $document->version_root_id ?? $document->id;
+
         return $this->base()
             ->where('activity_log.subject_type', $document->getMorphClass())
-            ->where('activity_log.subject_id', $document->id)
+            // Setiap versi adalah baris dokumen tersendiri. Riwayat pada
+            // halaman detail harus tetap satu jejak audit, bukan terpotong
+            // hanya karena pengguna sedang melihat versi yang terbaru.
+            ->whereIn('activity_log.subject_id', Document::query()
+                ->where('version_root_id', $akarVersiId)
+                ->select('documents.id'))
             ->orderByDesc('activity_log.id')
-            ->limit($limit)
-            ->get()
+            ->get(['activity_log.*', 'pelaku.name as nama_pelaku'])
             ->map(fn (Activity $activity): ActivityLogData => ActivityLogData::fromActivity($activity, $activity->getAttribute('nama_pelaku')))
             ->all();
     }

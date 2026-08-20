@@ -22,6 +22,7 @@ final class StoreDocumentRequest extends DocumentFormRequest
     protected function aturanTambahan(): array
     {
         return [
+            'replaces_document_id' => ['nullable', 'integer', 'exists:documents,id'],
             // -- Berkas (FR-12) -----------------------------------------------
             'file' => [
                 'required',
@@ -48,6 +49,10 @@ final class StoreDocumentRequest extends DocumentFormRequest
     protected function periksaTambahan(Validator $v): void
     {
         $this->pastikanEkstensiTidakTerlarang($v);
+
+        if ($this->filled('replaces_document_id') && $this->catatanVersi() === '') {
+            $v->errors()->add('version_note', 'Catatan perubahan wajib diisi untuk versi baru.');
+        }
     }
 
     /**

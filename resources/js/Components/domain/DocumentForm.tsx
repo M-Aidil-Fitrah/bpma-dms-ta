@@ -4,6 +4,7 @@ import {
     type NilaiAkses,
 } from '@/Components/domain/AccessMechanismPicker';
 import { FileDropzone } from '@/Components/domain/FileDropzone';
+import { DocumentThumbnail } from '@/Components/domain/DocumentThumbnail';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
 import type { UnitPilihan } from '@/Components/domain/UnitTreePicker';
 import { UploadProgress } from '@/Components/domain/UploadProgress';
@@ -39,6 +40,7 @@ export interface NilaiAwalDokumen {
     tanggal: string;
     masa_berlaku: string;
     edit_scope: string;
+    version_note: string;
 }
 
 export interface DocumentFormProps {
@@ -55,7 +57,12 @@ export interface DocumentFormProps {
      */
     mode: 'buat' | 'ubah';
     /** Keterangan berkas yang sudah tersimpan — hanya pada mode `ubah`. */
-    berkas?: { nama: string; tipe: string; ukuran: number };
+    berkas?: RingkasanBerkas;
+    /** Versi terbaru tetap tampak saat pengguna memilih berkas pengganti. */
+    versiTerbaru?: RingkasanBerkas;
+    /** Jalur membuat pengganti berkas saat menyunting metadata versi aktif. */
+    unggahVersiBaru?: string;
+    replacesDocumentId?: number | null;
 }
 
 /**
@@ -78,13 +85,17 @@ export function DocumentForm({
     batal,
     mode,
     berkas,
+    versiTerbaru,
+    unggahVersiBaru,
+    replacesDocumentId = null,
 }: DocumentFormProps) {
     const [akses, setAkses] = useState<NilaiAkses>(aksesAwal);
 
     const { data, setData, post, patch, processing, progress, errors, transform } =
-        useForm<NilaiAwalDokumen & { file: File | null }>({
+        useForm<NilaiAwalDokumen & { file: File | null; replaces_document_id: number | null }>({
             ...awal,
             file: null,
+            replaces_document_id: replacesDocumentId,
         });
 
     function handleSubmit(event: FormEvent) {
@@ -131,8 +142,16 @@ export function DocumentForm({
     const galatAkses = (errors as Partial<Record<string, string>>).akses;
 
     return (
-        <form onSubmit={handleSubmit} className="grid gap-5 xl:grid-cols-3">
-            <div className="space-y-5 xl:col-span-2">
+        // `grid-cols-1` eksplisit (bukan hanya mengandalkan `xl:grid-cols-3`)
+        // penting: tanpa definisi kolom di bawah breakpoint `xl`, track grid
+        // implisit memakai sizing `auto` (berbasis max-content bawaan CSS
+        // Grid) alih-alih `minmax(0,1fr)` milik Tailwind — kolom menolak
+        // menyusut di bawah lebar intrinsik kontennya dan seluruh formulir
+        // meluber horizontal di layar sempit. Pola serupa (grid/flex item
+        // menolak menyusut) pernah ditemukan di pemilih unit, lihat §5.2
+        // Progres-dan-Lanjutan.md.
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+            <div className="min-w-0 space-y-5 xl:col-span-2">
                 {mode === 'buat' && opsi.lingkungan_kurang && (
                     <Alert variant="warning" title="Batas unggahan di bawah semestinya">
                         Aplikasi menetapkan {opsi.batas_dijanjikan_label}, tapi mesin ini
@@ -147,7 +166,7 @@ export function DocumentForm({
                     </CardHeader>
                     <CardBody>
                         {mode === 'ubah' && berkas !== undefined ? (
-                            <BerkasTerkunci berkas={berkas} />
+                            <BerkasTerkunci berkas={berkas} unggahVersiBaru={unggahVersiBaru} />
                         ) : sedangMengunggah && progress ? (
                             <UploadProgress
                                 persen={progress.percentage ?? null}
@@ -156,13 +175,24 @@ export function DocumentForm({
                                 namaBerkas={data.file?.name ?? ''}
                             />
                         ) : (
-                            <FileDropzone
-                                berkas={data.file}
-                                onChange={(file) => setData('file', file)}
-                                batasKb={opsi.batas_unggah_kb}
-                                batasLabel={opsi.batas_unggah_label}
-                                error={errors.file}
-                            />
+                            <div className="space-y-4">
+                                {replacesDocumentId !== null && versiTerbaru !== undefined && (
+                                    <>
+                                        <Alert variant="warning" title="Format versi harus sama">
+                                            Versi baru wajib menggunakan format {labelFormat(versiTerbaru.tipe)}
+                                            {' '}seperti versi terbaru saat ini.
+                                        </Alert>
+                                        <VersiTerbaruTersimpan berkas={versiTerbaru} />
+                                    </>
+                                )}
+                                <FileDropzone
+                                    berkas={data.file}
+                                    onChange={(file) => setData('file', file)}
+                                    batasKb={opsi.batas_unggah_kb}
+                                    batasLabel={opsi.batas_unggah_label}
+                                    error={errors.file}
+                                />
+                            </div>
                         )}
                     </CardBody>
                 </Card>
@@ -244,38 +274,39 @@ export function DocumentForm({
                             )}
                         </Field>
 
-                        <Field
-                            label="Masa Berlaku"
-                            hint="Kosongkan bila berlaku tanpa batas waktu."
-                            error={errors.masa_berlaku}
-                        >
-                            {(props) => (
-                                <Input
-                                    {...props}
-                                    type="date"
-                                    value={data.masa_berlaku}
-                                    invalid={Boolean(errors.masa_berlaku)}
-                                    onChange={(e) => setData('masa_berlaku', e.target.value)}
-                                />
-                            )}
-                        </Field>
+                        <div className="space-y-1.5 sm:col-span-2">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <Field label="Masa Berlaku" error={errors.masa_berlaku}>
+                                    {(props) => (
+                                        <Input
+                                            {...props}
+                                            type="date"
+                                            value={data.masa_berlaku}
+                                            invalid={Boolean(errors.masa_berlaku)}
+                                            onChange={(e) => setData('masa_berlaku', e.target.value)}
+                                        />
+                                    )}
+                                </Field>
 
-                        <Field label="Siapa yang Boleh Mengubah" error={errors.edit_scope}>
-                            {(props) => (
-                                <Select
-                                    {...props}
-                                    value={data.edit_scope}
-                                    options={[
-                                        { value: 'owner_only', label: 'Hanya saya' },
-                                        {
-                                            value: 'match_visibility',
-                                            label: 'Sama seperti akses',
-                                        },
-                                    ]}
-                                    onChange={(e) => setData('edit_scope', e.target.value)}
-                                />
-                            )}
-                        </Field>
+                                <Field label="Siapa yang Boleh Mengubah" error={errors.edit_scope}>
+                                    {(props) => (
+                                        <Select
+                                            {...props}
+                                            value={data.edit_scope}
+                                            options={[
+                                                { value: 'owner_only', label: 'Hanya pemilik dokumen' },
+                                                {
+                                                    value: 'match_visibility',
+                                                    label: 'Sama seperti akses',
+                                                },
+                                            ]}
+                                            onChange={(e) => setData('edit_scope', e.target.value)}
+                                        />
+                                    )}
+                                </Field>
+                            </div>
+                            <p className="text-xs text-ink-muted">Kosongkan Masa Berlaku bila dokumen berlaku tanpa batas waktu.</p>
+                        </div>
 
                         <Field
                             label="Deskripsi"
@@ -292,6 +323,29 @@ export function DocumentForm({
                                 />
                             )}
                         </Field>
+
+                        {(mode === 'ubah' || replacesDocumentId !== null) && (
+                            <Field
+                                label="Catatan Versi"
+                                hint={mode === 'ubah'
+                                    ? 'Jelaskan perubahan metadata atau akses pada revisi ini.'
+                                    : 'Jelaskan perubahan isi pada versi major baru ini.'}
+                                error={errors.version_note}
+                                required
+                                className="sm:col-span-2"
+                            >
+                                {(props) => (
+                                    <Textarea
+                                        {...props}
+                                        rows={3}
+                                        value={data.version_note}
+                                        invalid={Boolean(errors.version_note)}
+                                        onChange={(e) => setData('version_note', e.target.value)}
+                                        placeholder="Contoh: memperbaiki masa berlaku dan akses unit"
+                                    />
+                                )}
+                            </Field>
+                        )}
                     </CardBody>
                 </Card>
             </div>
@@ -328,7 +382,9 @@ export function DocumentForm({
                         {mode === 'buat'
                             ? processing
                                 ? 'Mengunggah…'
-                                : 'Unggah Dokumen'
+                                : replacesDocumentId === null
+                                  ? 'Unggah Dokumen'
+                                  : 'Unggah versi baru'
                             : processing
                               ? 'Menyimpan…'
                               : 'Simpan Perubahan'}
@@ -354,8 +410,10 @@ export function DocumentForm({
  */
 function BerkasTerkunci({
     berkas,
+    unggahVersiBaru,
 }: {
-    berkas: { nama: string; tipe: string; ukuran: number };
+    berkas: RingkasanBerkas;
+    unggahVersiBaru?: string;
 }) {
     return (
         <div className="space-y-2">
@@ -373,9 +431,60 @@ function BerkasTerkunci({
             </div>
 
             <p className="text-xs text-ink-muted">
-                Berkas tidak dapat diganti. Bila isinya berubah, unggah sebagai dokumen
-                baru supaya riwayat dokumen ini tetap utuh.
+                Metadata dan akses dapat diubah di halaman ini. Bila isi berkas berubah,
+                buat versi baru agar riwayat dokumen ini tetap utuh.
             </p>
+
+            {unggahVersiBaru && (
+                <Link href={unggahVersiBaru} className="inline-flex">
+                    <Button type="button" variant="secondary" size="sm" icon={Upload}>
+                        Unggah versi baru
+                    </Button>
+                </Link>
+            )}
         </div>
     );
+}
+
+interface RingkasanBerkas {
+    id: number;
+    nama: string;
+    tipe: string;
+    ukuran: number;
+    thumbnailTersedia: boolean;
+}
+
+/** Pembanding yang tidak pernah berubah saat pengguna memilih berkas baru. */
+function VersiTerbaruTersimpan({ berkas }: { berkas: RingkasanBerkas }) {
+    return (
+        <div className="overflow-hidden rounded-card border border-line bg-surface">
+            <p className="border-b border-line bg-surface-sunken px-3 py-2 text-xs font-semibold text-ink-muted">
+                Versi terbaru saat ini
+            </p>
+            <div className="flex min-w-0 items-center gap-3 p-3">
+                <DocumentThumbnail
+                    id={berkas.id}
+                    mime={berkas.tipe}
+                    judul={berkas.nama}
+                    tersedia={berkas.thumbnailTersedia}
+                    className="h-16 w-20 shrink-0 rounded-card"
+                />
+                <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-ink">{berkas.nama}</p>
+                    <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+                        <FileTypeBadge mime={berkas.tipe} />
+                        <span className="font-mono">{formatUkuranBerkas(berkas.ukuran)}</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function labelFormat(mime: string): string {
+    if (mime.startsWith('image/')) return 'gambar';
+    if (mime === 'application/pdf') return 'PDF';
+    if (mime.includes('word')) return 'dokumen Word';
+
+    return mime;
 }

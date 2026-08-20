@@ -4,12 +4,14 @@ import { forwardRef, type ButtonHTMLAttributes } from 'react';
 
 const VARIANTS = {
     primary: 'bg-brand-700 text-white hover:bg-brand-800 focus-visible:outline-brand-700',
-    secondary: 'bg-white text-ink border border-line hover:bg-surface-sunken focus-visible:outline-brand-700',
+    secondary: 'bg-surface text-ink border border-line hover:bg-surface-sunken focus-visible:outline-brand-700',
     danger: 'bg-danger text-white hover:bg-danger-strong focus-visible:outline-danger',
     ghost: 'bg-transparent text-ink-muted hover:bg-surface-sunken hover:text-ink focus-visible:outline-brand-700',
 } as const;
 
 const SIZES = {
+    /** Aksi pendamping berukuran visual setara badge; bukan aksi utama form. */
+    xs: 'h-7 min-h-touch gap-1 rounded-md px-2 text-xs sm:min-h-0',
     // `min-h-touch` menjaga target sentuh tetap 44px di layar sentuh, walau
     // secara visual tombolnya terlihat lebih ramping di desktop.
     sm: 'h-9 min-h-touch px-3 text-sm gap-1.5 sm:min-h-0',

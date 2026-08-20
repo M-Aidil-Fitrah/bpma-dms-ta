@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\DocumentStatus;
+use App\Enums\ExtractionStatus;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\Jabatan;
@@ -80,6 +81,32 @@ final class DocumentIndexTest extends TestCase
                 ->component('Documents/Index')
                 ->has('dokumen.data', 1)
                 ->where('dokumen.data.0.judul', 'Terbuka'));
+    }
+
+    public function test_daftar_hanya_menandai_berkas_yang_bisa_dipratinjau_di_tab_baru(): void
+    {
+        $this->buatDokumen([
+            'file_mime_type' => 'application/zip',
+            'file_name_original' => 'arsip.zip',
+            'tanggal' => '2026-01-01',
+        ]);
+        $this->buatDokumen([
+            'file_mime_type' => 'application/pdf',
+            'file_name_original' => 'laporan.pdf',
+            'tanggal' => '2026-02-01',
+        ]);
+        $this->buatDokumen([
+            'file_mime_type' => 'video/mp4',
+            'file_name_original' => 'rekaman.mp4',
+            'tanggal' => '2026-03-01',
+        ]);
+
+        $this->actingAs($this->anggota)->get('/documents')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 3)
+                ->where('dokumen.data.0.bisa_pratinjau_di_tab_baru', true)
+                ->where('dokumen.data.1.bisa_pratinjau_di_tab_baru', true)
+                ->where('dokumen.data.2.bisa_pratinjau_di_tab_baru', false));
     }
 
     public function test_dokumen_nonaktif_tidak_tampil(): void
@@ -215,6 +242,42 @@ final class DocumentIndexTest extends TestCase
         $this->actingAs($this->anggota)
             ->get('/documents?dari=2026-01-01&sampai=2026-06-30')
             ->assertInertia(fn (AssertableInertia $p) => $p->has('dokumen.data', 1));
+    }
+
+    public function test_penyaring_pengunggah_tipe_dan_status_ekstraksi_bekerja_bersamaan(): void
+    {
+        $pengunggahLain = User::factory()->create([
+            'jabatan_id' => $this->anggota->jabatan_id,
+            'unit_id' => $this->unit->id,
+        ]);
+        $pengunggahLain->assignRole(User::ROLE_PENGGUNA);
+
+        $cocok = $this->buatDokumen([
+            'judul' => 'Gambar Perlu Tinjau',
+            'uploaded_by' => $pengunggahLain->id,
+            'file_mime_type' => 'image/jpeg',
+            'extraction_status' => ExtractionStatus::ReviewRequired,
+        ]);
+        $this->buatDokumen([
+            'judul' => 'PDF Pengunggah Sama',
+            'uploaded_by' => $pengunggahLain->id,
+            'file_mime_type' => 'application/pdf',
+            'extraction_status' => ExtractionStatus::Completed,
+        ]);
+        $this->buatDokumen([
+            'judul' => 'Gambar Pengunggah Lain',
+            'file_mime_type' => 'image/jpeg',
+            'extraction_status' => ExtractionStatus::ReviewRequired,
+        ]);
+
+        $this->actingAs($this->anggota)
+            ->get("/documents?pengunggah={$pengunggahLain->id}&tipe=gambar&status_ekstraksi=review_required")
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 1)
+                ->where('dokumen.data.0.id', $cocok->id)
+                ->where('filter.pengunggah', $pengunggahLain->id)
+                ->where('filter.tipe', 'gambar')
+                ->where('filter.status_ekstraksi', 'review_required'));
     }
 
     public function test_tanggal_akhir_tidak_boleh_mendahului_tanggal_awal(): void

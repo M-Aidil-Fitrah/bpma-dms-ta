@@ -26,6 +26,9 @@ enum ExtractionStatus: string
     /** Ekstraksi selesai. Teksnya bisa saja kosong — mis. PDF hasil pindaian. */
     case Completed = 'completed';
 
+    /** OCR berjalan, tetapi tidak menghasilkan teks yang layak diindeks. */
+    case ReviewRequired = 'review_required';
+
     /** Ekstraksi gagal permanen setelah percobaan ulang habis. */
     case Failed = 'failed';
 
@@ -35,6 +38,7 @@ enum ExtractionStatus: string
             self::NotApplicable => 'Lampiran biasa',
             self::Pending => 'Memproses ekstraksi',
             self::Completed => 'Dapat dicari',
+            self::ReviewRequired => 'Perlu ditinjau',
             self::Failed => 'Ekstraksi gagal',
         };
     }
@@ -45,6 +49,7 @@ enum ExtractionStatus: string
             self::NotApplicable => 'Tipe berkas ini tidak mendukung pencarian isi. Berkas tetap dapat diunduh.',
             self::Pending => 'Isi dokumen sedang dibaca di latar belakang. Perlu beberapa saat.',
             self::Completed => 'Isi dokumen sudah terbaca dan dapat ditemukan lewat pencarian.',
+            self::ReviewRequired => 'Ekstraksi selesai, tetapi hasilnya tidak cukup meyakinkan untuk pencarian isi.',
             self::Failed => 'Isi dokumen tidak dapat dibaca. Berkas tetap dapat diunduh seperti biasa.',
         };
     }

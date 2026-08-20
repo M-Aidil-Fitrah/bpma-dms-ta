@@ -9,7 +9,7 @@ import { type ImgHTMLAttributes } from 'react';
  */
 const LOGO_RATIO = 638 / 168;
 
-const LOGO_SRC = '/images/logo-bpma.jpg';
+const LOGO_SRC = '/images/logo-bpma.png';
 
 const SIZE_HEIGHT = {
     sm: 24,

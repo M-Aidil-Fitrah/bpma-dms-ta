@@ -9,6 +9,7 @@ use App\Models\Document;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Collection;
 
 /**
  * Menulis daftar unit dan orang yang berhak melihat sebuah dokumen (FR-42).
@@ -67,6 +68,29 @@ final class DocumentAccessWriter
             unitDicabut: $this->targetUnits($unitDicabut),
             penggunaDitambahkan: $this->targetPengguna($penggunaDitambahkan),
             penggunaDicabut: $this->targetPengguna($penggunaDicabut),
+        );
+    }
+
+    /**
+     * Menghitung perubahan efektif antara dua snapshot versi yang berurutan.
+     *
+     * Revisi baru selalu diawali relasi kosong, sehingga nilai balik `sinkron()`
+     * pada baris baru akan keliru bila dibaca sebagai audit: seluruh target
+     * tampak "ditambahkan". Audit harus membandingkan snapshot pendahulu dan
+     * penerus agar pencabutan tetap terlihat sebagai pencabutan.
+     */
+    public function perubahanAntar(Document $sebelum, Document $sesudah): DocumentAccessChanges
+    {
+        $unitSebelum = $sebelum->targetUnits()->get(['units.id', 'units.nama'])->keyBy('id');
+        $unitSesudah = $sesudah->targetUnits()->get(['units.id', 'units.nama'])->keyBy('id');
+        $penggunaSebelum = $sebelum->sharedUsers()->get(['users.id', 'users.name'])->keyBy('id');
+        $penggunaSesudah = $sesudah->sharedUsers()->get(['users.id', 'users.name'])->keyBy('id');
+
+        return new DocumentAccessChanges(
+            unitDitambahkan: $this->ringkasTarget($unitSesudah, $unitSebelum, 'nama'),
+            unitDicabut: $this->ringkasTarget($unitSebelum, $unitSesudah, 'nama'),
+            penggunaDitambahkan: $this->ringkasTarget($penggunaSesudah, $penggunaSebelum, 'name'),
+            penggunaDicabut: $this->ringkasTarget($penggunaSebelum, $penggunaSesudah, 'name'),
         );
     }
 
@@ -135,6 +159,21 @@ final class DocumentAccessWriter
             ->orderBy('name')
             ->get(['id', 'name'])
             ->map(fn (User $user): array => ['id' => $user->id, 'nama' => $user->name])
+            ->all();
+    }
+
+    /**
+     * @param  Collection<int, Unit|User>  $utama
+     * @param  Collection<int, Unit|User>  $pembanding
+     * @return list<array{id: int, nama: string}>
+     */
+    private function ringkasTarget($utama, $pembanding, string $kolomNama): array
+    {
+        return $utama
+            ->reject(fn (Unit|User $model): bool => $pembanding->has($model->id))
+            ->sortBy($kolomNama)
+            ->map(fn (Unit|User $model): array => ['id' => $model->id, 'nama' => $model->{$kolomNama}])
+            ->values()
             ->all();
     }
 }

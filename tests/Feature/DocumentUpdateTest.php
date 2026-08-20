@@ -89,8 +89,18 @@ final class DocumentUpdateTest extends TestCase
             'tanggal' => $this->dokumen->tanggal->toDateString(),
             'edit_scope' => DocumentEditScope::OwnerOnly->value,
             'unit_ids' => [$this->divisi->id],
+            'version_note' => 'Revisi metadata untuk pengujian.',
             ...$ubah,
         ];
+    }
+
+    private function versiTerbaru(): Document
+    {
+        return Document::query()
+            ->where('version_root_id', $this->dokumen->version_root_id)
+            ->orderByDesc('version_major')
+            ->orderByDesc('version_minor')
+            ->firstOrFail();
     }
 
     // -- Akibat perubahan akses ------------------------------------------------
@@ -109,7 +119,7 @@ final class DocumentUpdateTest extends TestCase
             ->assertRedirect();
 
         $this->assertTrue(
-            $orangLuar->fresh()->can('view', $this->dokumen->fresh()),
+            $orangLuar->fresh()->can('view', $this->versiTerbaru()),
             'Orang yang baru ditambahkan belum dapat melihat dokumen.',
         );
     }
@@ -135,7 +145,7 @@ final class DocumentUpdateTest extends TestCase
             ->assertRedirect();
 
         $this->assertFalse(
-            $anggota->fresh()->can('view', $this->dokumen->fresh()),
+            $anggota->fresh()->can('view', $this->versiTerbaru()),
             'Anggota unit yang dibuang masih dapat melihat dokumen.',
         );
     }
@@ -153,12 +163,17 @@ final class DocumentUpdateTest extends TestCase
                 'unit_ids' => [$this->divisi->id, $unitBaru->id],
             ]));
 
-        $terlampir = $this->dokumen->fresh()->targetUnits->keyBy('id');
+        $arsip = $this->dokumen->fresh()->targetUnits->keyBy('id');
+        $terlampir = $this->versiTerbaru()->targetUnits->keyBy('id');
 
         $this->assertSame(
             $this->pemilik->id,
+            $arsip[$this->divisi->id]->pivot->added_by,
+            'Jejak pemberi akses pada arsip ikut tertimpa.',
+        );
+        $this->assertSame(
+            $penyunting->id,
             $terlampir[$this->divisi->id]->pivot->added_by,
-            'Jejak pemberi akses lama ikut tertimpa.',
         );
         $this->assertSame(
             $penyunting->id,
@@ -229,7 +244,7 @@ final class DocumentUpdateTest extends TestCase
             ->assertSessionHasNoErrors()
             ->assertRedirect();
 
-        $this->assertSame('Disunting Rekan Seunit', $this->dokumen->fresh()->judul);
+        $this->assertSame('Disunting Rekan Seunit', $this->versiTerbaru()->judul);
     }
 
     public function test_orang_tanpa_hak_melihat_tidak_dapat_menyunting_match_visibility(): void
@@ -309,6 +324,35 @@ final class DocumentUpdateTest extends TestCase
         $this->actingAs($this->pemilik)
             ->get("/documents/{$this->dokumen->id}/preview")
             ->assertForbidden();
+    }
+
+    public function test_pemilik_dapat_membuka_versi_lama_dari_dokumen_pengganti_yang_masih_berlaku(): void
+    {
+        $versiBaru = Document::factory()->create([
+            'uploaded_by' => $this->pemilik->id,
+            'category_id' => $this->kategori->id,
+            'origin_unit_id' => $this->divisi->id,
+            'replaces_document_id' => $this->dokumen->id,
+            'is_shared_to_all' => false,
+            'min_tingkat_akses' => null,
+            'is_active' => true,
+        ]);
+        $versiBaru->targetUnits()->attach($this->divisi->id, ['added_by' => $this->pemilik->id]);
+        $this->dokumen->update(['is_active' => false]);
+
+        $this->actingAs($this->pemilik)
+            ->get("/documents/{$this->dokumen->id}")
+            ->assertOk()
+            ->assertInertia(fn ($halaman) => $halaman
+                ->where('dokumen.versi_berikutnya_id', $versiBaru->id)
+                ->where('dokumen.judul_versi_berikutnya', $versiBaru->judul));
+
+        $this->actingAs($this->pemilik)
+            ->get("/documents/{$versiBaru->id}")
+            ->assertOk()
+            ->assertInertia(fn ($halaman) => $halaman
+                ->where('dokumen.versi_sebelumnya_id', $this->dokumen->id)
+                ->where('dokumen.judul_versi_sebelumnya', $this->dokumen->judul));
     }
 
     public function test_dokumen_nonaktif_tidak_dapat_disunting(): void

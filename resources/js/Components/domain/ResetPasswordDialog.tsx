@@ -1,9 +1,8 @@
 import { Button } from '@/Components/ui/Button';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
-import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
+import { Modal } from '@/Components/ui/Modal';
 import { useForm } from '@inertiajs/react';
-import { KeyRound } from 'lucide-react';
 import { type FormEvent } from 'react';
 
 export interface ResetPasswordDialogProps {
@@ -36,71 +35,46 @@ export function ResetPasswordDialog({ terbuka, onTutup, userId, nama }: ResetPas
     }
 
     return (
-        <Dialog open={terbuka} onClose={onTutup} className="relative z-[70]">
-            <div className="fixed inset-0 bg-ink/40" aria-hidden />
+        <Modal
+            terbuka={terbuka}
+            onTutup={onTutup}
+            judul={`Atur ulang kata sandi ${nama}`}
+            keterangan="Sampaikan kata sandi baru ini langsung kepada pemiliknya — tidak ada tautan surel yang dikirim."
+            footer={
+                <>
+                    <Button type="button" variant="secondary" onClick={onTutup} disabled={processing} className="w-full sm:w-auto">
+                        Batal
+                    </Button>
+                    <Button type="submit" form={`reset-sandi-${userId}`} loading={processing} className="w-full sm:w-auto">
+                        Atur Ulang
+                    </Button>
+                </>
+            }
+        >
+            <form id={`reset-sandi-${userId}`} onSubmit={handleSubmit} className="space-y-3">
+                <Field label="Kata Sandi Baru" error={errors.password} required>
+                    {(props) => (
+                        <Input
+                            {...props}
+                            type="password"
+                            value={data.password}
+                            invalid={Boolean(errors.password)}
+                            onChange={(e) => setData('password', e.target.value)}
+                        />
+                    )}
+                </Field>
 
-            <div className="fixed inset-0 flex items-end justify-center p-4 sm:items-center">
-                <DialogPanel className="w-full max-w-md rounded-card bg-white p-5 shadow-pop">
-                    <div className="flex gap-3">
-                        <span
-                            aria-hidden
-                            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-50"
-                        >
-                            <KeyRound className="size-5 text-brand-700" />
-                        </span>
-
-                        <div className="min-w-0 flex-1">
-                            <DialogTitle className="text-base font-semibold text-ink">
-                                Atur ulang kata sandi {nama}
-                            </DialogTitle>
-                            <p className="mt-1.5 text-sm text-ink-muted">
-                                Sampaikan kata sandi baru ini langsung kepada pemiliknya —
-                                tidak ada tautan surel yang dikirim.
-                            </p>
-                        </div>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-                        <Field label="Kata Sandi Baru" error={errors.password} required>
-                            {(props) => (
-                                <Input
-                                    {...props}
-                                    type="password"
-                                    value={data.password}
-                                    invalid={Boolean(errors.password)}
-                                    onChange={(e) => setData('password', e.target.value)}
-                                />
-                            )}
-                        </Field>
-
-                        <Field label="Konfirmasi Kata Sandi" error={errors.password_confirmation}>
-                            {(props) => (
-                                <Input
-                                    {...props}
-                                    type="password"
-                                    value={data.password_confirmation}
-                                    onChange={(e) => setData('password_confirmation', e.target.value)}
-                                />
-                            )}
-                        </Field>
-
-                        <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={onTutup}
-                                disabled={processing}
-                            >
-                                Batal
-                            </Button>
-
-                            <Button type="submit" loading={processing}>
-                                Atur Ulang
-                            </Button>
-                        </div>
-                    </form>
-                </DialogPanel>
-            </div>
-        </Dialog>
+                <Field label="Konfirmasi Kata Sandi" error={errors.password_confirmation}>
+                    {(props) => (
+                        <Input
+                            {...props}
+                            type="password"
+                            value={data.password_confirmation}
+                            onChange={(e) => setData('password_confirmation', e.target.value)}
+                        />
+                    )}
+                </Field>
+            </form>
+        </Modal>
     );
 }

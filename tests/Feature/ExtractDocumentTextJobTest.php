@@ -192,5 +192,6 @@ final class ExtractDocumentTextJobTest extends TestCase
 
         $document->refresh();
         $this->assertSame(ExtractionStatus::Failed, $document->extraction_status);
+        $this->assertNull($document->extracted_text);
     }
 }

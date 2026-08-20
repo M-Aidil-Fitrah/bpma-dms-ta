@@ -1,7 +1,7 @@
 import { Avatar } from '@/Components/ui/Avatar';
+import { Dropdown, DropdownItem } from '@/Components/ui/Dropdown';
 import { cn } from '@/lib/cn';
 import { Link } from '@inertiajs/react';
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { ChevronDown, LogOut, UserCog } from 'lucide-react';
 
 export interface UserMenuProps {
@@ -10,32 +10,32 @@ export interface UserMenuProps {
 
 export function UserMenu({ user }: UserMenuProps) {
     return (
-        <Menu as="div" className="relative">
-            <MenuButton
+        <Dropdown
+            trigger={
+                <button
+                    type="button"
                 className={cn(
-                    'flex min-h-touch items-center gap-2 rounded-lg border border-line bg-white px-2 py-1.5 text-left transition-colors',
+                    'flex min-h-touch items-center gap-2 rounded-lg border border-line bg-surface px-2 py-1.5 text-left transition-colors',
                     'hover:bg-surface-sunken focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700',
                 )}
-            >
-                <Avatar initials={user.initials} size="sm" />
+                >
+                    <Avatar initials={user.initials} size="sm" />
 
-                {/* Bilah atas baru menampilkan nama saat ruangnya memang ada. */}
-                <span className="hidden min-w-0 flex-1 sm:block">
-                    <span className="block truncate text-sm font-medium text-ink">
-                        {user.name}
+                    {/* Bilah atas baru menampilkan nama saat ruangnya memang ada. */}
+                    <span className="hidden min-w-0 flex-1 md:block">
+                        <span className="block truncate text-sm font-medium text-ink">
+                            {user.name}
+                        </span>
+                        <span className="block truncate text-xs text-ink-muted">
+                            {user.is_superadmin ? 'Superadmin' : (user.jabatan ?? 'Pengguna')}
+                        </span>
                     </span>
-                    <span className="block truncate text-xs text-ink-muted">
-                        {user.is_superadmin ? 'Superadmin' : (user.jabatan ?? 'Pengguna')}
-                    </span>
-                </span>
 
-                <ChevronDown className="size-4 shrink-0 text-ink-subtle" aria-hidden />
-            </MenuButton>
-
-            <MenuItems
-                anchor="bottom end"
-                className="z-50 mt-2 w-60 rounded-card border border-line bg-white p-1 shadow-pop focus:outline-none"
-            >
+                    <ChevronDown className="size-4 shrink-0 text-ink-subtle" aria-hidden />
+                </button>
+            }
+            panelClassName="mt-2 w-60"
+        >
                 <div className="border-b border-line px-3 py-2">
                     <p className="truncate text-sm font-medium text-ink">{user.name}</p>
                     <p className="truncate text-xs text-ink-muted">{user.email}</p>
@@ -44,7 +44,7 @@ export function UserMenu({ user }: UserMenuProps) {
                     )}
                 </div>
 
-                <MenuItem>
+                <DropdownItem>
                     <Link
                         href="/profile"
                         className="flex min-h-touch items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-muted data-[focus]:bg-surface-sunken data-[focus]:text-ink"
@@ -52,9 +52,9 @@ export function UserMenu({ user }: UserMenuProps) {
                         <UserCog className="size-4" aria-hidden />
                         Profil Saya
                     </Link>
-                </MenuItem>
+                </DropdownItem>
 
-                <MenuItem>
+                <DropdownItem>
                     <Link
                         href="/logout"
                         method="post"
@@ -64,8 +64,7 @@ export function UserMenu({ user }: UserMenuProps) {
                         <LogOut className="size-4" aria-hidden />
                         Keluar
                     </Link>
-                </MenuItem>
-            </MenuItems>
-        </Menu>
+                </DropdownItem>
+        </Dropdown>
     );
 }

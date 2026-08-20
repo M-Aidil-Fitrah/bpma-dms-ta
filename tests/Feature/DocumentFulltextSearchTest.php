@@ -130,6 +130,82 @@ final class DocumentFulltextSearchTest extends TestCase
                 ->where('dokumen.data.0.judul', 'Dokumen Biasa'));
     }
 
+    public function test_pencarian_mengutamakan_judul_daripada_teks_isi_dan_tanggal(): void
+    {
+        // Dokumen yang lebih baru hanya cocok di isi. Tanpa ranking lapangan
+        // atau ketika `urut=tanggal` bawaan dianggap urutan manual, ia akan
+        // keliru mengalahkan judul yang cocok persis.
+        $this->buatDokumen([
+            'judul' => 'Notulen Rapat Evaluasi',
+            'tanggal' => '2026-12-09',
+            'extracted_text' => 'Pembahasan kajian pengawasan wilayah ada di lampiran.',
+        ]);
+        $this->buatDokumen([
+            'judul' => 'Kajian Pengawasan Wilayah Kerja Tahun 2026',
+            'tanggal' => '2026-10-25',
+            'extracted_text' => 'Dokumen ringkas.',
+        ]);
+
+        $this->actingAs($this->anggota)->get('/documents?cari=kajian%20pengawasan')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 2)
+                ->where('dokumen.data.0.judul', 'Kajian Pengawasan Wilayah Kerja Tahun 2026'));
+    }
+
+    public function test_pencarian_campuran_judul_dan_nomor_tidak_diperlakukan_sebagai_nomor_saja(): void
+    {
+        $this->buatDokumen([
+            'judul' => 'Notulen Rapat Koordinasi',
+            'nomor' => '002/BPMA/DPR-PPA/XII/2026',
+        ]);
+        $this->buatDokumen([
+            'judul' => 'Notulen Rapat Lain',
+            'nomor' => '003/BPMA/DPR-PPA/XII/2026',
+        ]);
+
+        $this->actingAs($this->anggota)->get('/documents?cari=notulen%20002%2FBPMA')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 1)
+                ->where('dokumen.data.0.nomor', '002/BPMA/DPR-PPA/XII/2026'));
+    }
+
+    public function test_urutan_manual_tetap_mengalahkan_relevansi_pencarian(): void
+    {
+        $this->buatDokumen([
+            'judul' => 'Notulen Rapat Evaluasi',
+            'tanggal' => '2026-12-09',
+            'extracted_text' => 'Pembahasan kajian pengawasan wilayah ada di lampiran.',
+        ]);
+        $this->buatDokumen([
+            'judul' => 'Kajian Pengawasan Wilayah Kerja Tahun 2026',
+            'tanggal' => '2026-10-25',
+        ]);
+
+        $this->actingAs($this->anggota)
+            ->get('/documents?cari=kajian%20pengawasan&urut=tanggal&arah=desc&urut_manual=1')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 2)
+                ->where('dokumen.data.0.judul', 'Notulen Rapat Evaluasi'));
+    }
+
+    public function test_hasil_pencarian_isi_hanya_mengirim_konteks_dan_cuplikan_terbatas(): void
+    {
+        $this->buatDokumen([
+            'judul' => 'Dokumen Biasa',
+            'nomor' => '001/BPMA/X/I/2026',
+            'deskripsi' => 'Deskripsi tidak berkaitan',
+            'extracted_text' => 'Pembahasan mahakam dimulai hari ini. Data mahakam diverifikasi kembali.',
+        ]);
+
+        $this->actingAs($this->anggota)->get('/documents?cari=mahakam')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 1)
+                ->where('dokumen.data.0.kecocokan_pencarian', ['Isi dokumen'])
+                ->where('dokumen.data.0.jumlah_frasa_pencarian', 2)
+                ->where('dokumen.data.0.cuplikan_pencarian', 'Pembahasan mahakam dimulai hari ini. Data mahakam diverifikasi kembali.')
+                ->missing('dokumen.data.0.extracted_text'));
+    }
+
     public function test_pencarian_isi_tunduk_pada_hak_akses(): void
     {
         // FR-35 — kata kuncinya cocok persis di extracted_text, tapi

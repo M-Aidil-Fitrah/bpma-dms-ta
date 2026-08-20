@@ -65,6 +65,8 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('documents.edit');
     Route::patch('/documents/{document}', [DocumentController::class, 'update'])
         ->name('documents.update');
+    Route::post('/documents/{document}/restore-version', [DocumentController::class, 'restoreVersion'])
+        ->name('documents.restore-version');
     // `delete` di sini berarti MENONAKTIFKAN, bukan menghapus baris (FR-10).
     Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])
         ->name('documents.destroy');

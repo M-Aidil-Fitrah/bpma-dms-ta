@@ -5,7 +5,7 @@ import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
 import { Select, type SelectOption } from '@/Components/ui/Select';
 import { cn } from '@/lib/cn';
-import { Filter, X } from 'lucide-react';
+import { Filter, RotateCcw, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 export interface FilterChip {
@@ -72,6 +72,18 @@ export function FilterBar({
                         </span>
                     )}
                 </Button>
+
+                {chips.length > 0 && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={RotateCcw}
+                        onClick={onReset}
+                        className="shrink-0"
+                    >
+                        Reset filter
+                    </Button>
+                )}
             </div>
 
             {terbuka && (
@@ -98,6 +110,7 @@ export function FilterBar({
 
                                     return (
                                         <UnitTreeSelect
+                                            {...props}
                                             units={filter.treeUnits ?? []}
                                             nilai={nilaiUnit}
                                             onChange={(id) =>
@@ -128,7 +141,7 @@ export function FilterBar({
                             key={chip.kunci}
                             type="button"
                             onClick={() => onHapusChip(chip.kunci)}
-                            className="inline-flex min-h-touch items-center gap-1.5 rounded-full border border-line bg-white px-3 text-sm text-ink-muted transition-colors hover:border-danger/30 hover:bg-danger-soft hover:text-danger sm:min-h-8"
+                            className="inline-flex min-h-touch items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-sm text-ink-muted transition-colors hover:border-danger/30 hover:bg-danger-soft hover:text-danger sm:min-h-8"
                         >
                             <span aria-hidden>{chip.label}</span>
                             <X className="size-3.5" aria-hidden />
@@ -136,9 +149,6 @@ export function FilterBar({
                         </button>
                     ))}
 
-                    <Button variant="ghost" size="sm" onClick={onReset}>
-                        Bersihkan semua
-                    </Button>
                 </div>
             )}
         </div>

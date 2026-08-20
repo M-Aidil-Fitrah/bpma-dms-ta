@@ -1,5 +1,6 @@
 import { DocumentActions } from '@/Components/domain/DocumentActions';
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
+import { DocumentSearchMatch } from '@/Components/domain/DocumentSearchMatch';
 import { DocumentThumbnail } from '@/Components/domain/DocumentThumbnail';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
 import { Avatar } from '@/Components/ui/Avatar';
@@ -69,6 +70,12 @@ const DocumentGridCard = memo(function DocumentGridCard({
                 <p className="mt-1 truncate font-mono text-xs text-ink-subtle">
                     {document.nomor}
                 </p>
+
+                <DocumentSearchMatch
+                    kecocokan={document.kecocokan_pencarian}
+                    cuplikan={document.cuplikan_pencarian}
+                    jumlahFrasa={document.jumlah_frasa_pencarian}
+                />
 
                 <dl className="mt-2 space-y-0.5 text-xs text-ink-muted">
                     <div className="truncate">

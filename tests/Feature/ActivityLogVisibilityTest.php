@@ -73,7 +73,8 @@ final class ActivityLogVisibilityTest extends TestCase
                 ->where('aktivitas.data.0.subjek', 'Dokumen Terlihat'));
 
         $this->get("/documents/{$this->terlihat->id}")
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('riwayat', 1));
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('riwayat', 1));
     }
 
     public function test_superadmin_melihat_semua_aktivitas_termasuk_subjek_non_dokumen_dan_filternya(): void
@@ -114,6 +115,46 @@ final class ActivityLogVisibilityTest extends TestCase
         $queryDenganBanyakAktivitas = $this->hitungQueryRiwayat();
 
         $this->assertSame($queryDenganSedikitAktivitas, $queryDenganBanyakAktivitas);
+    }
+
+    public function test_riwayat_dokumen_merangkum_semua_versi_untuk_tampilan_bertahap(): void
+    {
+        $terbaru = Document::factory()->dibagikanKeSemua()->create([
+            'replaces_document_id' => $this->terlihat->id,
+            'version_root_id' => $this->terlihat->version_root_id,
+            'version_major' => 2,
+            'version_minor' => 0,
+            'uploaded_by' => $this->pemilikLain->id,
+        ]);
+        $log = app(ActivityLogService::class);
+
+        foreach (range(1, 25) as $urutan) {
+            $log->record(
+                ActivityLogName::Dokumen,
+                AuditEvent::DocumentUpdated,
+                "Revisi metadata {$urutan}.",
+                $this->terlihat,
+                $this->pemilikLain,
+            );
+        }
+        $log->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentReplaced,
+            'Versi terbaru dibuat.',
+            $terbaru,
+            $this->pemilikLain,
+        );
+
+        $this->actingAs($this->anggota)
+            ->get("/documents/{$terbaru->id}")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('riwayat', 27)
+                ->where('riwayat.0.event', AuditEvent::DocumentReplaced->value)
+                ->where('riwayat.1.event', AuditEvent::DocumentUpdated->value));
+
+        $this->get("/documents/{$terbaru->id}")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('riwayat', 27));
     }
 
     private function hitungQueryRiwayat(): int

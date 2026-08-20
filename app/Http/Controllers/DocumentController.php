@@ -8,6 +8,7 @@ use App\Data\DocumentAccessChanges;
 use App\Data\DocumentDetailData;
 use App\Data\DocumentEditData;
 use App\Data\DocumentListData;
+use App\Data\DocumentVersionData;
 use App\Enums\ActivityLogName;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentStatus;
@@ -19,6 +20,7 @@ use App\Jobs\ExtractDocumentTextJob;
 use App\Jobs\GenerateDocumentThumbnailJob;
 use App\Models\Category;
 use App\Models\Document;
+use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\ActivityLogQuery;
@@ -27,6 +29,7 @@ use App\Services\DocumentAccessWriter;
 use App\Services\DocumentMetadataChanges;
 use App\Services\DocumentThumbnailService;
 use App\Services\DocumentUploadService;
+use App\Services\DocumentVersionService;
 use App\Services\PengaturanService;
 use App\Support\BatasUnggah;
 use App\Support\JenjangAkses;
@@ -37,6 +40,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -114,8 +118,17 @@ final class DocumentController extends Controller
     {
         $this->authorize('create', Document::class);
 
+        $pengganti = null;
+        if (request()->filled('replace')) {
+            $pengganti = Document::with(['targetUnits:id,nama', 'sharedUsers:id,name,jabatan_id,unit_id', 'sharedUsers.jabatan:id,nama', 'sharedUsers.unit:id,nama'])
+                ->findOrFail(request()->integer('replace'));
+            $this->authorize('update', $pengganti);
+            abort_unless($pengganti->is_active && $pengganti->replacementDocument()->doesntExist(), 422);
+        }
+
         return Inertia::render('Documents/Create', [
             'opsi' => $this->opsiFormulir(),
+            'pengganti' => $pengganti === null ? null : DocumentEditData::fromModel($pengganti),
         ]);
     }
 
@@ -133,42 +146,53 @@ final class DocumentController extends Controller
         StoreDocumentRequest $request,
         DocumentUploadService $uploader,
         DocumentAccessWriter $akses,
+        DocumentVersionService $versi,
         ActivityLogService $aktivitas,
     ): RedirectResponse {
         $this->authorize('create', Document::class);
 
+        $lama = $request->filled('replaces_document_id')
+            ? Document::query()->findOrFail($request->integer('replaces_document_id'))
+            : null;
+        if ($lama !== null) {
+            $this->authorize('update', $lama);
+            abort_unless($lama->is_active && $lama->replacementDocument()->doesntExist(), 422);
+        }
+
         $berkas = $uploader->store($request->file('file'));
 
         try {
-            $document = DB::transaction(function () use ($request, $berkas, $akses, $aktivitas): Document {
-                $document = Document::create([
-                    ...$request->kolomDokumen(),
-                    ...$berkas,
-                    'status' => DocumentStatus::Berlaku,
-                    'uploaded_by' => $request->user()->id,
-                    'is_active' => true,
-                ]);
+            $document = $lama === null
+                ? DB::transaction(function () use ($request, $berkas, $akses, $aktivitas): Document {
+                    $document = Document::create([
+                        ...$request->kolomDokumen(),
+                        ...$berkas,
+                        'status' => DocumentStatus::Berlaku,
+                        'uploaded_by' => $request->user()->id,
+                        'is_active' => true,
+                    ]);
 
-                $perubahanAkses = $akses->sinkron(
-                    $document,
-                    $request->unitIds(),
-                    $request->penerimaIds(),
-                    $request->user(),
-                );
+                    $perubahanAkses = $akses->sinkron(
+                        $document,
+                        $request->unitIds(),
+                        $request->penerimaIds(),
+                        $request->user(),
+                    );
 
-                $aktivitas->record(
-                    ActivityLogName::Dokumen,
-                    AuditEvent::DocumentUploaded,
-                    'Dokumen diunggah.',
-                    $document,
-                    $request->user(),
-                    [
-                        'mekanisme_akses' => $this->mekanismeAkses($document, $perubahanAkses),
-                    ],
-                );
+                    $aktivitas->record(
+                        ActivityLogName::Dokumen,
+                        AuditEvent::DocumentUploaded,
+                        'Dokumen diunggah.',
+                        $document,
+                        $request->user(),
+                        [
+                            'mekanisme_akses' => $this->mekanismeAkses($document, $perubahanAkses),
+                        ],
+                    );
 
-                return $document;
-            });
+                    return $document;
+                })
+                : $this->simpanVersiMajor($lama, $request, $berkas, $versi, $aktivitas);
         } catch (Throwable $e) {
             // Tanpa pembersihan ini, setiap kegagalan meninggalkan berkas yang
             // tidak dirujuk baris mana pun — tidak terlihat siapa pun sampai
@@ -195,7 +219,7 @@ final class DocumentController extends Controller
 
         return redirect()
             ->route('documents.show', $document)
-            ->with('success', 'Dokumen berhasil diunggah.');
+            ->with('success', $lama === null ? 'Dokumen berhasil diunggah.' : 'Versi baru dokumen berhasil dibuat.');
     }
 
     /**
@@ -224,6 +248,52 @@ final class DocumentController extends Controller
     }
 
     /**
+     * @param  array<string, mixed>  $berkas
+     */
+    private function simpanVersiMajor(
+        Document $lama,
+        StoreDocumentRequest $request,
+        array $berkas,
+        DocumentVersionService $versi,
+        ActivityLogService $aktivitas,
+    ): Document {
+        if ($lama->file_mime_type !== $berkas['file_mime_type']) {
+            throw ValidationException::withMessages([
+                'file' => 'Versi baru wajib memakai format berkas yang sama dengan versi sebelumnya.',
+            ]);
+        }
+
+        $document = $versi->buatMajor(
+            $lama,
+            [...$request->kolomDokumen(), 'status' => DocumentStatus::Berlaku],
+            $berkas,
+            $request->unitIds(),
+            $request->penerimaIds(),
+            $request->user(),
+            $request->catatanVersi(),
+        );
+
+        $aktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentReplaced,
+            'Dokumen digantikan oleh versi major baru.',
+            $lama,
+            $request->user(),
+            ['replacement_document_id' => $document->id],
+        );
+        $aktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentReplaced,
+            'Versi major dokumen dibuat.',
+            $document,
+            $request->user(),
+            ['replaces_document_id' => $lama->id, 'version_note' => $document->version_note],
+        );
+
+        return $document;
+    }
+
+    /**
      * Menyimpan perubahan metadata dan daftar akses (FR-08, FR-42).
      *
      * Berkasnya tidak ikut disentuh sama sekali — lihat `UpdateDocumentRequest`.
@@ -233,40 +303,39 @@ final class DocumentController extends Controller
         Document $document,
         DocumentAccessWriter $akses,
         DocumentMetadataChanges $metadata,
+        DocumentVersionService $versi,
         ActivityLogService $aktivitas,
     ): RedirectResponse {
         $this->authorize('update', $document);
 
-        DB::transaction(function () use ($request, $document, $akses, $metadata, $aktivitas): void {
-            $document->fill($request->kolomDokumen());
-            $perubahanMetadata = $metadata->fromDirty($document);
-            $document->save();
+        $snapshotDenganPerubahan = clone $document;
+        $snapshotDenganPerubahan->fill($request->kolomDokumen());
+        $perubahanMetadata = $metadata->fromDirty($snapshotDenganPerubahan);
 
-            $perubahanAkses = $akses->sinkron(
-                $document,
-                $request->unitIds(),
-                $request->penerimaIds(),
-                $request->user(),
-            );
-
-            if ($perubahanMetadata['before'] !== []) {
-                $aktivitas->record(
-                    ActivityLogName::Dokumen,
-                    AuditEvent::DocumentUpdated,
-                    'Informasi dokumen diperbarui.',
-                    $document,
-                    $request->user(),
-                    before: $perubahanMetadata['before'],
-                    after: $perubahanMetadata['after'],
-                );
-            }
-
-            $this->catatPerubahanAkses($aktivitas, $document, $request->user(), $perubahanAkses);
-        });
+        $revisi = $versi->buatMinor(
+            $document,
+            $request->kolomDokumen(),
+            $request->unitIds(),
+            $request->penerimaIds(),
+            $request->user(),
+            $request->catatanVersi(),
+        );
+        $perubahanAkses = $akses->perubahanAntar($document, $revisi);
+        $aktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentUpdated,
+            'Revisi metadata dokumen dibuat.',
+            $revisi,
+            $request->user(),
+            ['replaces_document_id' => $document->id, 'version_note' => $revisi->version_note],
+            $perubahanMetadata['before'],
+            $perubahanMetadata['after'],
+        );
+        $this->catatPerubahanAkses($aktivitas, $revisi, $request->user(), $perubahanAkses);
 
         return redirect()
-            ->route('documents.show', $document)
-            ->with('success', 'Perubahan dokumen berhasil disimpan.');
+            ->route('documents.show', $revisi)
+            ->with('success', 'Revisi metadata dokumen berhasil dibuat.');
     }
 
     /**
@@ -325,6 +394,42 @@ final class DocumentController extends Controller
             ->with('success', 'Dokumen diaktifkan kembali.');
     }
 
+    /** Membuat major terbaru dari snapshot versi lama milik pemilik rantai. */
+    public function restoreVersion(
+        Request $request,
+        Document $document,
+        DocumentVersionService $versi,
+        ActivityLogService $aktivitas,
+    ): RedirectResponse {
+        $this->authorize('restoreVersion', $document);
+
+        $data = $request->validate([
+            'version_note' => ['required', 'string', 'max:500'],
+        ]);
+        $revisi = $versi->pulihkan($document, $request->user(), trim($data['version_note']));
+
+        $aktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentVersionRestored,
+            'Versi arsip dijadikan versi terbaru.',
+            $document,
+            $request->user(),
+            ['restored_as_document_id' => $revisi->id],
+        );
+        $aktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentVersionRestored,
+            'Versi terbaru dibuat dari arsip.',
+            $revisi,
+            $request->user(),
+            ['restores_document_id' => $document->id, 'version_note' => $revisi->version_note],
+        );
+
+        return redirect()
+            ->route('documents.show', $revisi)
+            ->with('success', 'Versi arsip berhasil dijadikan versi terbaru.');
+    }
+
     /**
      * Halaman detail satu dokumen (FR-07).
      *
@@ -333,27 +438,72 @@ final class DocumentController extends Controller
      * berlaku di halaman daftar tidak berlaku di sini karena yang diambil hanya
      * satu baris, bukan dua puluh.
      */
-    public function show(Request $request, Document $document, ActivityLogQuery $aktivitas): Response
-    {
+    public function show(
+        Request $request,
+        Document $document,
+        ActivityLogQuery $aktivitas,
+    ): Response {
         $this->authorize('view', $document);
 
+        // Relasi identitas tunggal ini dibaca sekaligus. Memanggil `load()`
+        // untuk kategori, unit asal, pengunggah, jabatan, dan unit pengunggah
+        // akan berubah menjadi lima query meski halaman hanya membuka satu
+        // dokumen. Relasi koleksi tetap memakai eager load agar modelnya utuh.
+        $document = Document::query()
+            ->select('documents.*')
+            ->addSelect([
+                'document_category.nama as kategori_nama',
+                'origin_unit.nama as unit_asal_nama',
+                'document_uploader.name as pengunggah_nama',
+                'uploader_jabatan.nama as jabatan_pengunggah_nama',
+                'uploader_unit.nama as unit_pengunggah_nama',
+            ])
+            ->leftJoin('categories as document_category', 'document_category.id', '=', 'documents.category_id')
+            ->leftJoin('units as origin_unit', 'origin_unit.id', '=', 'documents.origin_unit_id')
+            ->leftJoin('users as document_uploader', 'document_uploader.id', '=', 'documents.uploaded_by')
+            ->leftJoin('jabatans as uploader_jabatan', 'uploader_jabatan.id', '=', 'document_uploader.jabatan_id')
+            ->leftJoin('units as uploader_unit', 'uploader_unit.id', '=', 'document_uploader.unit_id')
+            ->findOrFail($document->id);
+
         $document->load([
-            'category:id,nama',
-            'originUnit:id,nama',
-            'uploader:id,name,jabatan_id,unit_id',
-            'uploader.jabatan:id,nama',
-            'uploader.unit:id,nama',
             'targetUnits:id,nama',
-            'sharedUsers:id,name',
+            'sharedUsers:id,name,unit_id',
+            'sharedUsers.unit:id,nama',
+            'replacedDocument:id,nomor,judul',
+            // Foreign key wajib ikut dipilih pada hasOne; tanpa ini Eloquent
+            // tidak dapat memasangkan versi penerus ke dokumen yang dibuka.
+            'replacementDocument:id,replaces_document_id,nomor,judul',
         ]);
+        $akarId = $document->version_root_id ?? $document->id;
+        $versi = Document::query()
+            ->where('version_root_id', $akarId)
+            ->with('uploader:id,name')
+            ->orderByDesc('version_major')
+            ->orderByDesc('version_minor')
+            ->get();
+        $latestId = $versi->first()?->id ?? $document->id;
+        $jabatanTujuan = $document->min_tingkat_akses === null
+            ? []
+            : Jabatan::query()
+                ->active()
+                ->where('tingkat_akses', '<=', $document->min_tingkat_akses)
+                ->orderBy('tingkat_akses')
+                ->orderBy('nama')
+                ->pluck('nama')
+                ->all();
 
         return Inertia::render('Documents/Show', [
             'dokumen' => DocumentDetailData::fromModel(
                 $document,
                 bolehUbah: $request->user()->can('update', $document),
                 bolehAktifkan: $request->user()->can('restore', $document),
+                bolehPulihkanVersi: $request->user()->can('restoreVersion', $document),
+                jabatanTujuan: $jabatanTujuan,
             ),
-            'riwayat' => $aktivitas->recentForDocument($document),
+            'versi' => $versi
+                ->map(fn (Document $versi): DocumentVersionData => DocumentVersionData::fromModel($versi, $document->id, $latestId))
+                ->all(),
+            'riwayat' => $aktivitas->forDocument($document),
             // Dikirim dari config, bukan di-hardcode di hook React — anggaran
             // polling harus selalu cukup menutupi durasi OCR terpanjang yang
             // mungkin terjadi (`pdf_ocr_timeout_detik`), dan satu-satunya cara
@@ -466,8 +616,9 @@ final class DocumentController extends Controller
     private function daftar(DocumentIndexRequest $request, PengaturanService $pengaturan): LengthAwarePaginator
     {
         $user = $request->user();
+        $kata = trim($request->string('cari')->toString());
 
-        return Document::query()
+        $query = Document::query()
             ->visibleTo($user)
             ->active()
             // Kolom dibatasi eksplisit. `extracted_text` bertipe longText dan
@@ -486,10 +637,6 @@ final class DocumentController extends Controller
                 'sharedUsers:id',
             ])
             ->when(
-                $request->string('cari')->toString(),
-                fn ($query, string $kata) => $query->where(fn ($q) => $this->terapkanPencarian($q, $kata)),
-            )
-            ->when(
                 $request->integer('kategori'),
                 fn ($query, int $id) => $query->where('documents.category_id', $id),
             )
@@ -501,6 +648,19 @@ final class DocumentController extends Controller
                 $request->string('status')->toString(),
                 fn ($query, string $status) => $query->where('documents.status', $status),
             )
+            ->when($request->string('status_ekstraksi')->toString(), fn ($query, string $status) => $query->where('documents.extraction_status', $status))
+            ->when($request->integer('pengunggah'), fn ($query, int $id) => $query->where('documents.uploaded_by', $id))
+            ->when($request->string('tipe')->toString(), function ($query, string $tipe): void {
+                match ($tipe) {
+                    'pdf' => $query->where('documents.file_mime_type', 'application/pdf'),
+                    'gambar' => $query->where('documents.file_mime_type', 'like', 'image/%'),
+                    'word' => $query->where('documents.file_mime_type', 'like', '%wordprocessingml%'),
+                    'teks' => $query->where('documents.file_mime_type', 'text/plain'),
+                    default => $query->whereNotIn('documents.file_mime_type', ['application/pdf', 'text/plain'])
+                        ->where('documents.file_mime_type', 'not like', 'image/%')
+                        ->where('documents.file_mime_type', 'not like', '%wordprocessingml%'),
+                };
+            })
             ->when(
                 $request->string('dari')->toString(),
                 fn ($query, string $tanggal) => $query->whereDate('documents.tanggal', '>=', $tanggal),
@@ -508,8 +668,22 @@ final class DocumentController extends Controller
             ->when(
                 $request->string('sampai')->toString(),
                 fn ($query, string $tanggal) => $query->whereDate('documents.tanggal', '<=', $tanggal),
-            )
-            ->orderBy($request->kolomUrutan(), $request->arahUrutan())
+            );
+
+        $pencarianDenganRelevansi = false;
+        if ($kata !== '') {
+            $query->where(fn ($pencarian) => $this->terapkanPencarian($pencarian, $kata));
+            $pencarianDenganRelevansi = $this->tambahkanKonteksPencarian($query, $kata);
+        }
+
+        if ($pencarianDenganRelevansi && ! $request->boolean('urut_manual')) {
+            $query->orderByDesc('search_field_priority')
+                ->orderByDesc('search_relevance');
+        } else {
+            $query->orderBy($request->kolomUrutan(), $request->arahUrutan());
+        }
+
+        return $query
             // Pengurutan kedua menjaga urutan tetap sama antar halaman. Tanpa
             // ini, baris dengan tanggal kembar dapat berpindah halaman di
             // antara dua permintaan — dokumen yang sama muncul dua kali, atau
@@ -542,6 +716,12 @@ final class DocumentController extends Controller
     private function terapkanPencarian(Builder $query, string $kata): void
     {
         $kata = trim($kata);
+        $nomor = preg_replace('/[^a-z0-9]+/i', '', strtolower($kata)) ?? '';
+        if ($this->adalahPencarianNomor($kata, $nomor)) {
+            $query->where('documents.nomor_normalized', 'like', $nomor.'%');
+
+            return;
+        }
 
         // InnoDB (`innodb_ft_min_token_size`, bawaan 3) tidak mengindeks kata
         // di bawah 3 huruf sama sekali — mencarinya lewat FULLTEXT tidak akan
@@ -560,9 +740,132 @@ final class DocumentController extends Controller
 
         $query->whereFullText(
             ['documents.nomor', 'documents.judul', 'documents.deskripsi', 'documents.extracted_text'],
-            $kata,
+            $this->kueriBoolean($kata),
             ['mode' => 'boolean'],
         );
+    }
+
+    /**
+     * Menambahkan metadata hasil pencarian tanpa memilih `extracted_text`.
+     *
+     * Projection ini dihitung oleh SQL hanya untuk baris halaman aktif.
+     * Cuplikannya maksimum 220 karakter, sehingga daftar dapat menjelaskan
+     * "ditemukan di mana" tanpa menjadikan endpoint daftar sebagai API isi
+     * dokumen penuh.
+     *
+     * @param  Builder<Document>  $query
+     */
+    private function tambahkanKonteksPencarian(Builder $query, string $kata): bool
+    {
+        $kata = trim($kata);
+        $nomor = preg_replace('/[^a-z0-9]+/i', '', strtolower($kata)) ?? '';
+
+        if ($this->adalahPencarianNomor($kata, $nomor)) {
+            $query->selectRaw('1 AS search_matches_nomor')
+                ->selectRaw('0 AS search_matches_judul')
+                ->selectRaw('0 AS search_matches_deskripsi')
+                ->selectRaw('0 AS search_matches_isi');
+
+            return false;
+        }
+
+        $frasa = mb_strtolower($kata);
+        $pola = '%'.$this->escapeLike($frasa).'%';
+        $nomorDalamFrasa = $this->nomorDiDalamFrasa($kata);
+        $query->selectRaw('CASE WHEN LOWER(documents.nomor) LIKE ? THEN 1 ELSE 0 END AS search_matches_nomor', [$pola])
+            ->selectRaw('CASE WHEN LOWER(documents.judul) LIKE ? THEN 1 ELSE 0 END AS search_matches_judul', [$pola])
+            ->selectRaw('CASE WHEN LOWER(COALESCE(documents.deskripsi, \'\')) LIKE ? THEN 1 ELSE 0 END AS search_matches_deskripsi', [$pola]);
+
+        if (mb_strlen($kata) < 3) {
+            $query->selectRaw('0 AS search_matches_isi');
+
+            return false;
+        }
+
+        $kataCuplikan = $this->kataCuplikan($frasa);
+        if ($kataCuplikan === '') {
+            $query->selectRaw('0 AS search_matches_isi');
+
+            return false;
+        }
+
+        $query->selectRaw(
+            'MATCH(documents.nomor, documents.judul, documents.deskripsi, documents.extracted_text) AGAINST (? IN BOOLEAN MODE) AS search_relevance',
+            [$this->kueriBoolean($kata)],
+        )
+            ->selectRaw(
+                'CASE
+                    WHEN LOWER(documents.judul) LIKE ? THEN 600
+                    WHEN LOWER(documents.judul) LIKE ? THEN 500
+                    WHEN ? <> \'\' AND documents.nomor_normalized LIKE ? THEN 400
+                    WHEN LOWER(COALESCE(documents.deskripsi, \'\')) LIKE ? THEN 300
+                    ELSE 0
+                END AS search_field_priority',
+                [
+                    $pola,
+                    '%'.$this->escapeLike($this->kataCuplikan($frasa)).'%',
+                    $nomorDalamFrasa,
+                    '%'.$this->escapeLike($nomorDalamFrasa).'%',
+                    $pola,
+                ],
+            )
+            ->selectRaw(
+                'CASE WHEN LOCATE(?, LOWER(COALESCE(documents.extracted_text, \'\'))) > 0 THEN 1 ELSE 0 END AS search_matches_isi',
+                [$kataCuplikan],
+            )
+            ->selectRaw(
+                'CASE WHEN LOCATE(?, LOWER(COALESCE(documents.extracted_text, \'\'))) > 0 THEN SUBSTRING(documents.extracted_text, GREATEST(1, LOCATE(?, LOWER(COALESCE(documents.extracted_text, \'\'))) - 80), 220) END AS search_excerpt',
+                [$kataCuplikan, $kataCuplikan],
+            )
+            ->selectRaw(
+                'CASE WHEN LOCATE(?, LOWER(COALESCE(documents.extracted_text, \'\'))) > 0 THEN (CHAR_LENGTH(LOWER(documents.extracted_text)) - CHAR_LENGTH(REPLACE(LOWER(documents.extracted_text), ?, \'\'))) / NULLIF(CHAR_LENGTH(?), 0) ELSE 0 END AS search_phrase_count',
+                [$frasa, $frasa, $frasa],
+            );
+
+        return true;
+    }
+
+    private function adalahPencarianNomor(string $kata, string $nomor): bool
+    {
+        // Hanya nomor dokumen MURNI yang memakai jalur prefix terindeks.
+        // "notulen 002/BPMA" adalah pencarian campuran, bukan nomor, dan
+        // wajib tetap mencari judul + nomor melalui FULLTEXT.
+        return $nomor !== ''
+            && preg_match('/^(?=.*\\d)[a-z0-9]+(?:[\\/-][a-z0-9]+)+$/i', $kata) === 1;
+    }
+
+    private function kueriBoolean(string $kata): string
+    {
+        $istilah = $this->istilahPencarian($kata);
+
+        return $istilah === [] ? $kata : implode(' ', array_map(fn (string $istilah): string => "+{$istilah}", $istilah));
+    }
+
+    /** @return list<string> */
+    private function istilahPencarian(string $kata): array
+    {
+        preg_match_all('/[\\p{L}\\p{N}]{3,}/u', mb_strtolower($kata), $hasil);
+
+        return array_values(array_unique($hasil[0]));
+    }
+
+    private function nomorDiDalamFrasa(string $kata): string
+    {
+        if (preg_match('/\\b\\d{2,}(?:[\\/-][[:alnum:]]+)+/iu', $kata, $hasil) !== 1) {
+            return '';
+        }
+
+        return preg_replace('/[^a-z0-9]+/i', '', strtolower($hasil[0])) ?? '';
+    }
+
+    private function escapeLike(string $nilai): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $nilai);
+    }
+
+    private function kataCuplikan(string $kata): string
+    {
+        return $this->istilahPencarian($kata)[0] ?? '';
     }
 
     /**
@@ -631,6 +934,7 @@ final class DocumentController extends Controller
                 ->orderBy('parent_id')
                 ->orderBy('nama')
                 ->get(['id', 'nama', 'parent_id']),
+            'pengunggah' => User::query()->active()->orderBy('name')->get(['id', 'name']),
         ];
     }
 

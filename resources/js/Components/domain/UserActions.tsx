@@ -1,8 +1,8 @@
 import { ResetPasswordDialog } from '@/Components/domain/ResetPasswordDialog';
 import { ConfirmDialog } from '@/Components/ui/ConfirmDialog';
+import { Dropdown, DropdownItem } from '@/Components/ui/Dropdown';
 import { IconButton } from '@/Components/ui/IconButton';
 import { cn } from '@/lib/cn';
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Link, router } from '@inertiajs/react';
 import { KeyRound, MoreHorizontal, Pencil, UserCheck, UserX } from 'lucide-react';
 import { useState } from 'react';
@@ -55,19 +55,11 @@ export function UserActions({ userId, nama, aktif, diriSendiri, className }: Use
                 <IconButton icon={Pencil} label="Ubah pengguna" size="sm" />
             </Link>
 
-            <Menu as="div" className="relative">
-                <MenuButton
-                    aria-label="Aksi lainnya"
-                    className="inline-flex size-8 min-h-touch min-w-touch items-center justify-center rounded-lg border border-line bg-white text-ink-muted transition-colors hover:bg-surface-sunken hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 sm:min-h-0 sm:min-w-0"
-                >
-                    <MoreHorizontal className="size-4" aria-hidden />
-                </MenuButton>
-
-                <MenuItems
-                    anchor="bottom end"
-                    className="z-50 mt-1 w-56 rounded-card border border-line bg-white p-1 shadow-pop focus:outline-none"
-                >
-                    <MenuItem>
+            <Dropdown
+                trigger={<IconButton icon={MoreHorizontal} label="Aksi lainnya" size="sm" />}
+                panelClassName="w-56"
+            >
+                    <DropdownItem>
                         <button
                             type="button"
                             onClick={() => setResetSandi(true)}
@@ -76,11 +68,11 @@ export function UserActions({ userId, nama, aktif, diriSendiri, className }: Use
                             <KeyRound className="size-4" aria-hidden />
                             Atur ulang kata sandi
                         </button>
-                    </MenuItem>
+                    </DropdownItem>
 
                     {aktif ? (
                         !diriSendiri && (
-                            <MenuItem>
+                            <DropdownItem>
                                 <button
                                     type="button"
                                     onClick={() => setTanyaNonaktif(true)}
@@ -89,10 +81,10 @@ export function UserActions({ userId, nama, aktif, diriSendiri, className }: Use
                                     <UserX className="size-4" aria-hidden />
                                     Nonaktifkan
                                 </button>
-                            </MenuItem>
+                            </DropdownItem>
                         )
                     ) : (
-                        <MenuItem>
+                        <DropdownItem>
                             <button
                                 type="button"
                                 onClick={aktifkan}
@@ -101,10 +93,9 @@ export function UserActions({ userId, nama, aktif, diriSendiri, className }: Use
                                 <UserCheck className="size-4" aria-hidden />
                                 Aktifkan kembali
                             </button>
-                        </MenuItem>
+                        </DropdownItem>
                     )}
-                </MenuItems>
-            </Menu>
+            </Dropdown>
 
             <ConfirmDialog
                 terbuka={tanyaNonaktif}

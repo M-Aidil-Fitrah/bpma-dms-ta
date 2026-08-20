@@ -8,12 +8,13 @@ import { ArrowLeft } from 'lucide-react';
 
 interface CreateProps {
     opsi: OpsiFormulirDokumen;
+    pengganti: App.Data.DocumentEditData | null;
 }
 
-export default function Create({ opsi }: CreateProps) {
+export default function Create({ opsi, pengganti }: CreateProps) {
     return (
         <AppLayout
-            title="Unggah Dokumen"
+            title={pengganti ? 'Unggah Versi Baru' : 'Unggah Dokumen'}
             header={
                 <div className="flex min-w-0 items-center gap-2 text-sm">
                     <Link
@@ -26,30 +27,41 @@ export default function Create({ opsi }: CreateProps) {
                     <span className="text-ink-subtle" aria-hidden>
                         /
                     </span>
-                    <span className="truncate font-semibold text-ink">Unggah Dokumen</span>
+                    <span className="truncate font-semibold text-ink">
+                        {pengganti ? 'Unggah Versi Baru' : 'Unggah Dokumen'}
+                    </span>
                 </div>
             }
         >
             <DocumentForm
                 mode="buat"
                 aksi="/documents"
-                batal="/documents"
+                batal={pengganti ? `/documents/${pengganti.id}/edit` : '/documents'}
                 opsi={opsi}
                 awal={{
-                    nomor: '',
-                    judul: '',
-                    deskripsi: '',
-                    category_id: '',
-                    origin_unit_id: '',
-                    tanggal: new Date().toISOString().slice(0, 10),
-                    masa_berlaku: '',
-                    edit_scope: 'owner_only',
+                    nomor: pengganti?.nomor ?? '',
+                    judul: pengganti?.judul ?? '',
+                    deskripsi: pengganti?.deskripsi ?? '',
+                    category_id: String(pengganti?.category_id ?? ''),
+                    origin_unit_id: String(pengganti?.origin_unit_id ?? ''),
+                    tanggal: pengganti?.tanggal ?? new Date().toISOString().slice(0, 10),
+                    masa_berlaku: pengganti?.masa_berlaku ?? '',
+                    edit_scope: pengganti?.edit_scope ?? 'owner_only',
+                    version_note: '',
                 }}
                 aksesAwal={{
-                    is_shared_to_all: false,
-                    min_tingkat_akses: null,
-                    unit_ids: [],
-                    shared_users: [],
+                    is_shared_to_all: pengganti?.is_shared_to_all ?? false,
+                    min_tingkat_akses: pengganti?.min_tingkat_akses ?? null,
+                    unit_ids: pengganti?.unit_ids ?? [],
+                    shared_users: pengganti?.orang_tertentu ?? [],
+                }}
+                replacesDocumentId={pengganti?.id ?? null}
+                versiTerbaru={pengganti === null ? undefined : {
+                    id: pengganti.id,
+                    nama: pengganti.nama_berkas,
+                    tipe: pengganti.tipe_berkas,
+                    ukuran: pengganti.ukuran_berkas,
+                    thumbnailTersedia: pengganti.thumbnail_tersedia,
                 }}
             />
         </AppLayout>

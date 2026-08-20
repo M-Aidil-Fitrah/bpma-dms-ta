@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\DocumentEditScope;
 use App\Enums\DocumentStatus;
+use App\Enums\DocumentVersionKind;
 use App\Enums\ExtractionStatus;
 use Database\Factories\DocumentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Entitas utama sistem.
@@ -30,6 +33,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'file_path', 'file_name_original', 'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path',
     'extracted_text', 'extraction_status', 'extraction_pages_total', 'extraction_pages_processed',
     'extraction_estimated_seconds', 'extraction_message', 'extraction_started_at',
+    'nomor_normalized', 'replaces_document_id', 'version_root_id',
+    'version_major', 'version_minor', 'version_kind', 'version_note',
     'is_shared_to_all', 'min_tingkat_akses', 'edit_scope',
     'uploaded_by', 'is_active',
 ])]
@@ -37,6 +42,36 @@ class Document extends Model
 {
     /** @use HasFactory<DocumentFactory> */
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $document): void {
+            $document->nomor_normalized = preg_replace('/[^a-z0-9]+/i', '', strtolower($document->nomor)) ?? '';
+        });
+
+        // Baris awal baru belum memiliki ID ketika INSERT berjalan. Sesudahnya
+        // ia menjadi akar untuk dirinya sendiri. Jalur produksi selalu mengisi
+        // garis keturunan lewat DocumentVersionService, tetapi pengaman ini
+        // juga menjaga impor/fixture yang hanya memberi replaces_document_id.
+        static::created(function (self $document): void {
+            if ($document->version_root_id !== null) {
+                return;
+            }
+
+            $pendahulu = $document->replaces_document_id === null
+                ? null
+                : self::query()->find($document->replaces_document_id);
+
+            $document->forceFill($pendahulu === null ? [
+                'version_root_id' => $document->id,
+            ] : [
+                'version_root_id' => $pendahulu->version_root_id ?? $pendahulu->id,
+                'version_major' => $pendahulu->version_major + 1,
+                'version_minor' => 0,
+                'version_kind' => DocumentVersionKind::Content,
+            ])->saveQuietly();
+        });
+    }
 
     /**
      * Kolom yang aman dimuat pada halaman daftar dan hasil pencarian.
@@ -51,7 +86,7 @@ class Document extends Model
     public const KOLOM_DAFTAR = [
         'id', 'nomor', 'judul', 'category_id', 'origin_unit_id',
         'tanggal', 'masa_berlaku', 'status', 'extraction_status',
-        'file_mime_type', 'file_size', 'thumbnail_path',
+        'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path',
         'is_shared_to_all', 'min_tingkat_akses',
         'uploaded_by', 'is_active', 'created_at',
     ];
@@ -64,6 +99,7 @@ class Document extends Model
             'status' => DocumentStatus::class,
             'extraction_status' => ExtractionStatus::class,
             'edit_scope' => DocumentEditScope::class,
+            'version_kind' => DocumentVersionKind::class,
             'is_shared_to_all' => 'boolean',
             'is_active' => 'boolean',
             'min_tingkat_akses' => 'integer',
@@ -102,6 +138,35 @@ class Document extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    /** Dokumen lama yang digantikan oleh unggahan ini. */
+    public function replacedDocument(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'replaces_document_id');
+    }
+
+    /** Dokumen baru yang menggantikan dokumen ini. */
+    public function replacementDocument(): HasOne
+    {
+        return $this->hasOne(self::class, 'replaces_document_id');
+    }
+
+    /** Versi pertama yang menjadi pemilik rantai dokumen ini. */
+    public function versionRoot(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'version_root_id');
+    }
+
+    /** @return HasMany<Document, $this> */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(self::class, 'version_root_id');
+    }
+
+    public function versionLabel(): string
+    {
+        return "v{$this->version_major}.{$this->version_minor}";
     }
 
     /**

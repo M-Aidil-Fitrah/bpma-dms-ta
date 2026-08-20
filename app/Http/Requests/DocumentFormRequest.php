@@ -86,6 +86,10 @@ abstract class DocumentFormRequest extends FormRequest
 
             'edit_scope' => ['required', Rule::enum(DocumentEditScope::class)],
 
+            // Catatan hanya diwajibkan oleh jalur yang benar-benar membuat
+            // revisi (UpdateDocumentRequest atau unggahan pengganti).
+            'version_note' => ['nullable', 'string', 'max:500'],
+
             ...$this->aturanTambahan(),
         ];
     }
@@ -166,6 +170,11 @@ abstract class DocumentFormRequest extends FormRequest
     public function penerimaIds(): array
     {
         return array_map(intval(...), $this->input('shared_user_ids', []));
+    }
+
+    public function catatanVersi(): string
+    {
+        return trim((string) $this->input('version_note'));
     }
 
     /**

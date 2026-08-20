@@ -1,24 +1,29 @@
-import { AccessSummary } from '@/Components/domain/AccessSummary';
+import { DocumentAccessPanel } from '@/Components/domain/DocumentAccessPanel';
 import { ActivityItem } from '@/Components/domain/ActivityItem';
 import { DocumentHeaderActions } from '@/Components/domain/DocumentHeaderActions';
 import { DocumentPreview } from '@/Components/domain/DocumentPreview';
+import { DocumentVersionHistory, KontrolTampilkanLebihBanyak } from '@/Components/domain/DocumentVersionHistory';
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
 import { ExtractionStatusBadge } from '@/Components/domain/ExtractionStatusBadge';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
 import { Alert } from '@/Components/ui/Alert';
 import { Avatar } from '@/Components/ui/Avatar';
+import { Button } from '@/Components/ui/Button';
 import { Card } from '@/Components/ui/Card';
 import { EmptyState } from '@/Components/ui/EmptyState';
+import { Modal } from '@/Components/ui/Modal';
+import { Tabs, type TabItem } from '@/Components/ui/Tabs';
 import { useDocumentReloadPolling } from '@/hooks/useDocumentReloadPolling';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
 import { dalamJendelaWaktu, formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, History, Info, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, FileText, History, Info, ShieldCheck } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 interface ShowProps {
     dokumen: App.Data.DocumentDetailData;
+    versi: App.Data.DocumentVersionData[];
     riwayat: App.Data.ActivityLogData[];
     pollingKonfigurasi: { jedaMs: number; maksPercobaan: number };
 }
@@ -26,6 +31,11 @@ interface ShowProps {
 type Tab = 'detail' | 'akses' | 'riwayat';
 
 const TAB_VALID: readonly Tab[] = ['detail', 'akses', 'riwayat'];
+const TAB_ITEMS: readonly TabItem<Tab>[] = [
+    { value: 'detail', label: 'Detail', icon: Info },
+    { value: 'akses', label: 'Akses', icon: ShieldCheck },
+    { value: 'riwayat', label: 'Riwayat', icon: History },
+];
 
 /**
  * Tab awal mengikuti `location.hash` (mis. tautan menu "Lihat pengaturan
@@ -46,7 +56,7 @@ function tabDariHash(): Tab {
  */
 const JENDELA_PRATINJAU_MENIT = 5;
 
-export default function Show({ dokumen, riwayat, pollingKonfigurasi }: ShowProps) {
+export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: ShowProps) {
     const [tab, setTab] = useState<Tab>(tabDariHash);
 
     const masihMenyiapkanPratinjau =
@@ -71,38 +81,34 @@ export default function Show({ dokumen, riwayat, pollingKonfigurasi }: ShowProps
         >
             {!dokumen.aktif && (
                 <Alert variant="warning" title="Dokumen ini nonaktif" className="mb-5">
-                    Disembunyikan dari daftar dokumen dan hasil pencarian untuk semua orang.
-                    Anda melihatnya karena berperan Superadmin — gunakan tombol "Aktifkan
-                    Kembali" di atas untuk memunculkannya lagi.
+                    Disembunyikan dari daftar dokumen dan hasil pencarian. Anda membukanya
+                    lewat riwayat versi. Arsip tidak dapat diubah; pemilik rantai dapat
+                    menjadikannya versi terbaru dari panel Riwayat.
                 </Alert>
             )}
 
-            <div className="grid gap-5 xl:grid-cols-5">
+            <div className="grid gap-5 xl:h-[calc(100dvh-6.5rem)] xl:grid-cols-5">
                 {/* Pratinjau mendapat porsi terbesar: itu yang dicari orang saat
                     membuka halaman ini, bukan daftar metadatanya. */}
-                <Card className="overflow-hidden xl:col-span-3">
-                    <div className="h-[28rem] xl:h-[38rem]">
+                <Card className="min-h-0 overflow-hidden xl:col-span-3">
+                    <div className="h-[28rem] xl:h-full">
                         <DocumentPreview dokumen={dokumen} sedangMenyiapkanPratinjau={masihMenyiapkanPratinjau} />
                     </div>
                 </Card>
 
-                <Card className="flex flex-col xl:col-span-2">
-                    <div className="flex border-b border-line" role="tablist">
-                        <TabButton aktif={tab === 'detail'} onClick={() => setTab('detail')} icon={Info}>
-                            Detail
-                        </TabButton>
-                        <TabButton aktif={tab === 'akses'} onClick={() => setTab('akses')} icon={ShieldCheck}>
-                            Akses
-                        </TabButton>
-                        <TabButton aktif={tab === 'riwayat'} onClick={() => setTab('riwayat')} icon={History}>
-                            Riwayat
-                        </TabButton>
-                    </div>
+                <Card className="flex min-h-0 flex-col xl:col-span-2 xl:h-full">
+                    <Tabs items={TAB_ITEMS} value={tab} onChange={setTab} label="Bagian dokumen" />
 
-                    <div className="flex-1 overflow-auto p-5">
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5">
                         {tab === 'detail' && <PanelDetail dokumen={dokumen} />}
-                        {tab === 'akses' && <PanelAkses dokumen={dokumen} />}
-                        {tab === 'riwayat' && <PanelRiwayat riwayat={riwayat} />}
+                        {tab === 'akses' && <DocumentAccessPanel dokumen={dokumen} />}
+                        {tab === 'riwayat' && (
+                            <PanelRiwayat
+                                versi={versi}
+                                riwayat={riwayat}
+                                bolehPulihkan={dokumen.boleh_pulihkan_versi}
+                            />
+                        )}
                     </div>
                 </Card>
             </div>
@@ -128,43 +134,27 @@ function Remah({ judul }: { judul: string }) {
     );
 }
 
-function TabButton({
-    aktif,
-    onClick,
-    icon: Icon,
-    children,
-}: {
-    aktif: boolean;
-    onClick: () => void;
-    icon: typeof Info;
-    children: ReactNode;
-}) {
-    return (
-        <button
-            type="button"
-            role="tab"
-            aria-selected={aktif}
-            onClick={onClick}
-            className={cn(
-                'flex min-h-touch flex-1 items-center justify-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors',
-                aktif
-                    ? 'border-brand-700 text-brand-700'
-                    : 'border-transparent text-ink-muted hover:text-ink',
-            )}
-        >
-            <Icon className="size-4" aria-hidden />
-            {children}
-        </button>
-    );
-}
-
 function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
+    const [teksEkstraksiTerbuka, setTeksEkstraksiTerbuka] = useState(false);
+    const teksEkstraksiTersedia = dokumen.extraction_status === 'completed' && dokumen.isi_teks !== null;
+
     return (
         <dl className="space-y-4">
             <Baris label="Nomor Dokumen" mono>
                 {dokumen.nomor}
             </Baris>
             <Baris label="Judul">{dokumen.judul}</Baris>
+
+            <Baris label="Versi Dokumen">
+                <div className="space-y-1">
+                    <span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 font-mono text-xs font-semibold text-brand-700">
+                        {dokumen.version_label}
+                    </span>
+                    <p className="whitespace-pre-wrap text-sm text-ink-muted">
+                        Deskripsi perubahan: {dokumen.version_note}
+                    </p>
+                </div>
+            </Baris>
 
             {dokumen.deskripsi && (
                 <Baris label="Deskripsi">
@@ -191,7 +181,7 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
             <hr className="border-line" />
 
             <Baris label="Nama Berkas" mono>
-                {dokumen.nama_berkas}
+                <span className="block break-all">{dokumen.nama_berkas}</span>
             </Baris>
 
             <Baris label="Tipe & Ukuran">
@@ -204,14 +194,45 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
             </Baris>
 
             <Baris label="Pencarian Isi">
-                <ExtractionStatusBadge
-                    status={dokumen.extraction_status}
-                    halamanTotal={dokumen.halaman_ekstraksi_total}
-                    halamanSelesai={dokumen.halaman_ekstraksi_selesai}
-                    estimasiDetik={dokumen.estimasi_ekstraksi_detik}
-                    pesan={dokumen.pesan_ekstraksi}
-                />
+                <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <ExtractionStatusBadge
+                            status={dokumen.extraction_status}
+                            halamanTotal={dokumen.halaman_ekstraksi_total}
+                            halamanSelesai={dokumen.halaman_ekstraksi_selesai}
+                            estimasiDetik={dokumen.estimasi_ekstraksi_detik}
+                            pesan={dokumen.pesan_ekstraksi}
+                        />
+                        {teksEkstraksiTersedia && (
+                            <Button
+                                type="button"
+                                size="xs"
+                                variant="secondary"
+                                icon={FileText}
+                                onClick={() => setTeksEkstraksiTerbuka(true)}
+                            >
+                                Lihat teks hasil ekstraksi
+                            </Button>
+                        )}
+                    </div>
+                </div>
             </Baris>
+
+            {teksEkstraksiTersedia && (
+                <Modal
+                    terbuka={teksEkstraksiTerbuka}
+                    onTutup={setTeksEkstraksiTerbuka}
+                    judul="Teks hasil ekstraksi"
+                    keterangan={dokumen.nama_berkas}
+                >
+                    <p className="mb-4 text-sm text-ink-muted">
+                        Teks ini dipakai untuk pencarian isi dan dapat berbeda dari tata letak berkas asli.
+                    </p>
+                    <pre className="whitespace-pre-wrap break-words font-mono text-sm leading-relaxed text-ink">
+                        {dokumen.isi_teks}
+                    </pre>
+                </Modal>
+            )}
 
             <hr className="border-line" />
 
@@ -246,123 +267,62 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
     );
 }
 
-function PanelAkses({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
-    return (
-        <div className="space-y-5" id="akses">
-            <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-subtle">
-                    Mekanisme Aktif
-                </p>
-                <AccessSummary ringkasan={dokumen.ringkasan_akses} />
-            </div>
-
-            {/* Keempat mekanisme ditampilkan seluruhnya, termasuk yang tidak
-                aktif. Menyembunyikan yang mati membuat pengguna tidak dapat
-                memastikan apakah sebuah jalur akses memang tidak aktif atau
-                sekadar tidak ikut ditampilkan. */}
-            <div className="space-y-3">
-                <MekanismeAkses
-                    aktif={dokumen.dibagikan_ke_semua}
-                    judul="Bagikan ke semua"
-                    keterangan="Seluruh pengguna internal dapat melihat dokumen ini."
-                />
-
-                <MekanismeAkses
-                    aktif={dokumen.min_tingkat_akses !== null}
-                    judul="Bagikan ke jenjang jabatan"
-                    keterangan={
-                        dokumen.min_tingkat_akses !== null
-                            ? `Jabatan tingkat ${dokumen.min_tingkat_akses} ke atas, lintas unit.`
-                            : 'Tidak dibatasi ke jenjang jabatan tertentu.'
-                    }
-                />
-
-                <MekanismeAkses
-                    aktif={dokumen.unit_tujuan.length > 0}
-                    judul="Bagikan ke unit"
-                    keterangan={
-                        dokumen.unit_tujuan.length > 0
-                            ? dokumen.unit_tujuan.join(' · ')
-                            : 'Belum ada unit yang dituju.'
-                    }
-                />
-
-                <MekanismeAkses
-                    aktif={dokumen.orang_tertentu.length > 0}
-                    judul="Bagikan ke orang tertentu"
-                    keterangan={
-                        dokumen.orang_tertentu.length > 0
-                            ? dokumen.orang_tertentu.join(' · ')
-                            : 'Belum ada orang yang ditunjuk.'
-                    }
-                />
-            </div>
-
-            <div className="rounded-lg bg-surface-sunken p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-ink-subtle">
-                    Wewenang Mengubah
-                </p>
-                <p className="mt-1 text-sm text-ink">{dokumen.label_edit_scope}</p>
-                <p className="mt-0.5 text-xs text-ink-muted">
-                    {dokumen.edit_scope === 'owner_only'
-                        ? 'Hanya pengunggah yang dapat mengubah dokumen ini.'
-                        : 'Siapa pun yang dapat melihat dokumen ini juga dapat mengubahnya.'}
-                </p>
-            </div>
-        </div>
-    );
-}
-
-function MekanismeAkses({
-    aktif,
-    judul,
-    keterangan,
+function PanelRiwayat({
+    versi,
+    riwayat,
+    bolehPulihkan,
 }: {
-    aktif: boolean;
-    judul: string;
-    keterangan: string;
+    versi: App.Data.DocumentVersionData[];
+    riwayat: App.Data.ActivityLogData[];
+    bolehPulihkan: boolean;
 }) {
+    const [bagian, setBagian] = useState<'versi' | 'aktivitas'>('versi');
+    const [batasAktivitas, setBatasAktivitas] = useState(5);
+    const aktivitasDitampilkan = riwayat.slice(0, batasAktivitas);
+
     return (
-        <div
-            className={cn(
-                'rounded-lg border p-3',
-                aktif ? 'border-brand-200 bg-brand-50' : 'border-line bg-surface',
-            )}
-        >
-            <div className="flex items-center justify-between gap-2">
-                <p
-                    className={cn(
-                        'text-sm font-medium',
-                        aktif ? 'text-brand-700' : 'text-ink-subtle',
-                    )}
+        <div className="space-y-4" id="riwayat">
+            <div className="grid grid-cols-2 rounded-lg bg-surface-sunken p-1">
+                <button
+                    type="button"
+                    onClick={() => setBagian('versi')}
+                    aria-pressed={bagian === 'versi'}
+                    className={cn('rounded-md px-3 py-2 text-sm font-medium', bagian === 'versi' ? 'bg-surface text-brand-700 shadow-sm' : 'text-ink-muted')}
                 >
-                    {judul}
-                </p>
-                <span
-                    className={cn(
-                        'shrink-0 text-xs font-medium',
-                        aktif ? 'text-brand-700' : 'text-ink-subtle',
-                    )}
+                    Versi ({versi.length})
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setBagian('aktivitas')}
+                    aria-pressed={bagian === 'aktivitas'}
+                    className={cn('rounded-md px-3 py-2 text-sm font-medium', bagian === 'aktivitas' ? 'bg-surface text-brand-700 shadow-sm' : 'text-ink-muted')}
                 >
-                    {aktif ? 'Aktif' : 'Nonaktif'}
-                </span>
+                    Aktivitas
+                </button>
             </div>
-            <p className="mt-1 text-xs text-ink-muted">{keterangan}</p>
+
+            {bagian === 'versi' ? (
+                <DocumentVersionHistory versi={versi} bolehPulihkan={bolehPulihkan} />
+            ) : riwayat.length > 0 ? (
+                <div className="-mx-5 divide-y divide-line">
+                    <div className="px-2 py-2">{aktivitasDitampilkan.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div>
+                    <div className="px-5 py-3">
+                        <KontrolTampilkanLebihBanyak
+                            jumlahTampil={batasAktivitas}
+                            jumlahTotal={riwayat.length}
+                            onTampilkanLagi={() => setBatasAktivitas((batas) => batas + 5)}
+                            onTampilkanSemua={() => setBatasAktivitas(riwayat.length)}
+                        />
+                    </div>
+                </div>
+            ) : (
+                <EmptyState
+                    icon={History}
+                    title="Belum ada aktivitas"
+                    description="Aktivitas yang dapat Anda akses akan muncul di sini."
+                />
+            )}
         </div>
-    );
-}
-
-function PanelRiwayat({ riwayat }: { riwayat: App.Data.ActivityLogData[] }) {
-    if (riwayat.length > 0) {
-        return <div className="-mx-5 -my-5 divide-y divide-line"><div className="px-2 py-2">{riwayat.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div></div>;
-    }
-
-    return (
-        <EmptyState
-            icon={History}
-            title="Belum ada aktivitas"
-            description="Aktivitas yang dapat Anda akses akan muncul di sini."
-        />
     );
 }
 

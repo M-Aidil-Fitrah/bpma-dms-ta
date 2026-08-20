@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Data\OcrResult;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -24,29 +25,31 @@ final class ScannedPdfOcr
     /**
      * @param  callable(int, int): void  $laporkanProgres
      */
-    public function extract(string $path, int $jumlahHalaman, callable $laporkanProgres): string
+    public function extract(string $path, int $jumlahHalaman, callable $laporkanProgres): OcrResult
     {
         $ruangKerja = storage_path('app/dms-pdf-ocr/'.Str::uuid());
         mkdir($ruangKerja, 0700, true);
 
         try {
             $bagian = [];
+            $confidence = [];
 
             for ($halaman = 1; $halaman <= $jumlahHalaman; $halaman++) {
                 $raster = "{$ruangKerja}/halaman-{$halaman}.png";
                 $this->renderHalaman($path, $halaman, $raster);
 
-                $teks = $this->ekstraktor->gambar($raster);
+                $hasil = $this->ekstraktor->gambar($raster);
 
-                if ($teks !== '') {
-                    $bagian[] = $teks;
+                if ($hasil->text !== '') {
+                    $bagian[] = $hasil->text;
                 }
+                $confidence = [...$confidence, ...$hasil->confidence];
 
                 $laporkanProgres($halaman, $jumlahHalaman);
                 unlink($raster);
             }
 
-            return trim(implode("\n\n", $bagian));
+            return new OcrResult(trim(implode("\n\n", $bagian)), $confidence);
         } finally {
             $this->hapusRuangKerja($ruangKerja);
         }

@@ -24,7 +24,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             <input
                 ref={ref}
                 className={cn(
-                    'block w-full rounded-lg border bg-white text-sm text-ink shadow-none',
+                    'block w-full rounded-lg border bg-surface text-sm text-ink shadow-none',
                     'h-10 min-h-touch px-3 sm:min-h-0',
                     'placeholder:text-ink-subtle',
                     'focus:border-brand-700 focus:ring-1 focus:ring-brand-700',

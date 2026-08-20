@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Data\OcrResult;
 use App\Enums\ExtractionStatus;
 use App\Models\Document;
 use App\Services\DocumentTextExtractor;
@@ -66,7 +67,7 @@ final class ExtractDocumentTextJob implements ShouldQueue
             'extraction_started_at' => $mulai,
         ]);
 
-        $teks = match (true) {
+        $hasil = match (true) {
             $mime === 'application/pdf' => $this->ekstrakPdf($path, $ekstraktor, $pdfOcr, $mulai),
             $mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => $ekstraktor->docx($path),
             $mime === 'text/plain' => $ekstraktor->txt($path),
@@ -76,14 +77,26 @@ final class ExtractDocumentTextJob implements ShouldQueue
 
         // PDF melebihi 50 halaman diberi kegagalan yang dapat dipahami
         // pengguna, tanpa melemparkannya lagi ke percobaan queue berikutnya.
-        if ($teks === null) {
+        if ($hasil === null) {
+            return;
+        }
+
+        $teks = $hasil instanceof OcrResult ? $hasil->text : $hasil;
+        if (($hasil instanceof OcrResult && ! $hasil->isLayak()) || $teks === '') {
+            $this->document->update([
+                'extracted_text' => null,
+                'extraction_status' => ExtractionStatus::ReviewRequired,
+                'extraction_estimated_seconds' => null,
+                'extraction_message' => $teks === ''
+                    ? 'Teks tidak terdeteksi. Dokumen tetap dapat digunakan tanpa pencarian isi.'
+                    : 'Hasil OCR tidak cukup meyakinkan untuk pencarian isi.',
+            ]);
+
             return;
         }
 
         $this->document->update([
-            // PDF pindaian maupun foto tanpa naskah berhasil dibaca dengan
-            // hasil kosong. Itu `completed`, bukan kegagalan ekstraksi.
-            'extracted_text' => $teks === '' ? null : $teks,
+            'extracted_text' => $teks,
             'extraction_status' => ExtractionStatus::Completed,
             'extraction_estimated_seconds' => null,
             'extraction_message' => null,
@@ -95,7 +108,7 @@ final class ExtractDocumentTextJob implements ShouldQueue
         DocumentTextExtractor $ekstraktor,
         ScannedPdfOcr $pdfOcr,
         CarbonInterface $mulai,
-    ): ?string {
+    ): string|OcrResult|null {
         ['teks' => $teksDigital, 'halaman' => $jumlahHalaman] = $ekstraktor->pdfTeksDanHalaman($path);
 
         if ($teksDigital !== '') {

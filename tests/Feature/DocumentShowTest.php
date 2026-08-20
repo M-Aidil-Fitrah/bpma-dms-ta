@@ -120,7 +120,9 @@ final class DocumentShowTest extends TestCase
 
         $this->actingAs($this->pengunggah)
             ->get("/documents/{$document->id}")
-            ->assertInertia(fn (AssertableInertia $p) => $p->where('dokumen.boleh_ubah', true));
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->where('dokumen.boleh_ubah', true)
+                ->where('dokumen.label_edit_scope', 'Hanya pemilik dokumen'));
 
         $this->actingAs($this->berhak)
             ->get("/documents/{$document->id}")
@@ -130,6 +132,9 @@ final class DocumentShowTest extends TestCase
     public function test_seluruh_mekanisme_akses_dikirim_ke_antarmuka(): void
     {
         $unit = Unit::factory()->create();
+        Jabatan::factory()->tingkat(1)->create(['nama' => 'Kepala Badan']);
+        Jabatan::factory()->tingkat(2)->create(['nama' => 'Deputi']);
+        Jabatan::factory()->tingkat(2)->create(['nama' => 'Jabatan Lama', 'is_active' => false]);
         $document = $this->buatDokumen([
             'is_shared_to_all' => false,
             'min_tingkat_akses' => 2,
@@ -143,7 +148,9 @@ final class DocumentShowTest extends TestCase
                 ->where('dokumen.dibagikan_ke_semua', false)
                 ->where('dokumen.min_tingkat_akses', 2)
                 ->has('dokumen.unit_tujuan', 1)
-                ->has('dokumen.orang_tertentu', 1));
+                ->where('dokumen.jabatan_tujuan', ['Kepala Badan', 'Deputi'])
+                ->where('dokumen.orang_tertentu.0.nama', $this->berhak->name)
+                ->where('dokumen.orang_tertentu.0.unit', $this->berhak->unit?->nama));
     }
 
     public function test_halaman_detail_tidak_boros_query(): void
@@ -225,6 +232,20 @@ final class DocumentShowTest extends TestCase
             ->get("/documents/{$document->id}/preview")
             ->assertOk()
             ->assertHeader('content-disposition', 'inline; filename=laporan.pdf');
+    }
+
+    public function test_pratinjau_video_dapat_dibuka_di_tab_baru(): void
+    {
+        $document = $this->buatDokumen([
+            'file_name_original' => 'rekaman.mp4',
+            'file_mime_type' => 'video/mp4',
+        ]);
+
+        $this->actingAs($this->berhak)
+            ->get("/documents/{$document->id}/preview")
+            ->assertOk()
+            ->assertHeader('content-disposition', 'inline; filename=rekaman.mp4')
+            ->assertHeader('content-type', 'video/mp4');
     }
 
     public function test_pratinjau_memakai_proteksi_yang_sama_dengan_unduhan(): void

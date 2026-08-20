@@ -83,6 +83,26 @@ final class DocumentIndexTest extends TestCase
                 ->where('dokumen.data.0.judul', 'Terbuka'));
     }
 
+    public function test_daftar_hanya_menandai_berkas_yang_bisa_dipratinjau_di_tab_baru(): void
+    {
+        $this->buatDokumen([
+            'file_mime_type' => 'application/zip',
+            'file_name_original' => 'arsip.zip',
+            'tanggal' => '2026-01-01',
+        ]);
+        $this->buatDokumen([
+            'file_mime_type' => 'application/pdf',
+            'file_name_original' => 'laporan.pdf',
+            'tanggal' => '2026-02-01',
+        ]);
+
+        $this->actingAs($this->anggota)->get('/documents')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 2)
+                ->where('dokumen.data.0.bisa_pratinjau_di_tab_baru', true)
+                ->where('dokumen.data.1.bisa_pratinjau_di_tab_baru', false));
+    }
+
     public function test_dokumen_nonaktif_tidak_tampil(): void
     {
         $this->buatDokumen(['judul' => 'Aktif']);

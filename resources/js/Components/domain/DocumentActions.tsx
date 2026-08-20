@@ -2,7 +2,7 @@ import { Dropdown, DropdownItem } from '@/Components/ui/Dropdown';
 import { IconButton } from '@/Components/ui/IconButton';
 import { cn } from '@/lib/cn';
 import { Link } from '@inertiajs/react';
-import { Download, Eye, Info, MoreHorizontal, Share2 } from 'lucide-react';
+import { Download, Eye, MoreHorizontal, Share2 } from 'lucide-react';
 
 export interface DocumentActionsProps {
     document: App.Data.DocumentListData;
@@ -31,7 +31,7 @@ export function DocumentActions({ document, className }: DocumentActionsProps) {
                 trigger={<IconButton icon={MoreHorizontal} label="Aksi lainnya" size="sm" />}
                 panelClassName="w-52"
             >
-                    <DropdownItem>
+                    {document.bisa_pratinjau_di_tab_baru && <DropdownItem>
                         <a
                             href={`/documents/${document.id}/preview`}
                             target="_blank"
@@ -41,7 +41,7 @@ export function DocumentActions({ document, className }: DocumentActionsProps) {
                             <Eye className="size-4" aria-hidden />
                             Pratinjau di tab baru
                         </a>
-                    </DropdownItem>
+                    </DropdownItem>}
 
                     <DropdownItem>
                         <Link
@@ -50,16 +50,6 @@ export function DocumentActions({ document, className }: DocumentActionsProps) {
                         >
                             <Share2 className="size-4" aria-hidden />
                             Lihat pengaturan akses
-                        </Link>
-                    </DropdownItem>
-
-                    <DropdownItem>
-                        <Link
-                            href={`/documents/${document.id}`}
-                            className="flex min-h-touch items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-muted data-[focus]:bg-surface-sunken data-[focus]:text-ink sm:min-h-0"
-                        >
-                            <Info className="size-4" aria-hidden />
-                            Informasi lengkap
                         </Link>
                     </DropdownItem>
             </Dropdown>

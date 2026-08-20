@@ -9,6 +9,7 @@ use App\Enums\ExtractionStatus;
 use App\Models\Document;
 use App\Models\User;
 use App\Support\Inisial;
+use App\Support\PenyajianBerkas;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -41,6 +42,8 @@ final class DocumentListData extends Data
         public string $tipe_berkas,
         public int $ukuran_berkas,
         public bool $thumbnail_tersedia,
+        /** Hanya ditampilkan bila rute pratinjau dapat menyajikan berkas inline dengan aman. */
+        public bool $bisa_pratinjau_di_tab_baru,
         public ?string $pengunggah,
         public ?string $jabatan_pengunggah,
         public string $inisial_pengunggah,
@@ -110,6 +113,8 @@ final class DocumentListData extends Data
             tipe_berkas: $document->file_mime_type,
             ukuran_berkas: $document->file_size,
             thumbnail_tersedia: $document->thumbnail_path !== null,
+            bisa_pratinjau_di_tab_baru: $document->preview_path !== null
+                || PenyajianBerkas::bolehInline($document->file_mime_type),
             pengunggah: $document->uploader?->name,
             jabatan_pengunggah: $jabatanPengunggah,
             inisial_pengunggah: Inisial::dari($document->uploader?->name),

@@ -86,7 +86,7 @@ class Document extends Model
     public const KOLOM_DAFTAR = [
         'id', 'nomor', 'judul', 'category_id', 'origin_unit_id',
         'tanggal', 'masa_berlaku', 'status', 'extraction_status',
-        'file_mime_type', 'file_size', 'thumbnail_path',
+        'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path',
         'is_shared_to_all', 'min_tingkat_akses',
         'uploaded_by', 'is_active', 'created_at',
     ];

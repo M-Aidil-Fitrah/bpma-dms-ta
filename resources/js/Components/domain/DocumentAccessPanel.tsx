@@ -87,21 +87,26 @@ export function DocumentAccessPanel({ dokumen }: { dokumen: DokumenAkses }) {
                 </ul>
             </section>
 
-            <section className="rounded-card border border-line bg-surface-sunken p-4" aria-labelledby="wewenang-ubah">
-                <div className="flex items-start gap-3">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-muted shadow-sm">
-                        {dokumen.edit_scope === 'owner_only' ? <LockKeyhole className="size-4" aria-hidden /> : <PenLine className="size-4" aria-hidden />}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                            <h2 id="wewenang-ubah" className="text-sm font-semibold text-ink">Wewenang mengubah</h2>
-                            <Badge variant="neutral" size="sm">{dokumen.label_edit_scope}</Badge>
+            <section aria-labelledby="jalur-wewenang-ubah">
+                <h2 id="jalur-wewenang-ubah" className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-subtle">
+                    Wewenang mengubah
+                </h2>
+                <div className="rounded-card border border-line bg-surface-sunken p-4">
+                    <div className="flex items-start gap-3">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-muted shadow-sm">
+                            {dokumen.edit_scope === 'owner_only' ? <LockKeyhole className="size-4" aria-hidden /> : <PenLine className="size-4" aria-hidden />}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-sm font-semibold text-ink">Siapa yang dapat mengubah</p>
+                                <Badge variant="neutral" size="sm">{dokumen.label_edit_scope}</Badge>
+                            </div>
+                            <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+                                {dokumen.edit_scope === 'owner_only'
+                                    ? 'Hanya pengunggah yang dapat mengubah dokumen ini.'
+                                    : 'Pengguna yang dapat melihat dokumen ini juga dapat mengubahnya.'}
+                            </p>
                         </div>
-                        <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-                            {dokumen.edit_scope === 'owner_only'
-                                ? 'Hanya pengunggah yang dapat mengubah dokumen ini.'
-                                : 'Pengguna yang dapat melihat dokumen ini juga dapat mengubahnya.'}
-                        </p>
                     </div>
                 </div>
             </section>

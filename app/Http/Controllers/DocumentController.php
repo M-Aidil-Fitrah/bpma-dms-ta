@@ -441,17 +441,8 @@ final class DocumentController extends Controller
         Request $request,
         Document $document,
         ActivityLogQuery $aktivitas,
-        ActivityLogService $pencatatAktivitas,
     ): Response {
         $this->authorize('view', $document);
-
-        $pencatatAktivitas->record(
-            ActivityLogName::Dokumen,
-            AuditEvent::DocumentViewed,
-            'Halaman detail dokumen dibuka.',
-            $document,
-            $request->user(),
-        );
 
         // Relasi identitas tunggal ini dibaca sekaligus. Memanggil `load()`
         // untuk kategori, unit asal, pengunggah, jabatan, dan unit pengunggah

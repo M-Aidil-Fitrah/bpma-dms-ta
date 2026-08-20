@@ -188,7 +188,7 @@ final class DocumentActivityLogTest extends TestCase
         $this->assertSame($this->superadmin->id, Activity::query()->orderByDesc('id')->first()->causer_id);
     }
 
-    public function test_membuka_halaman_detail_dicatat_dengan_pelaku_sebenarnya(): void
+    public function test_membuka_halaman_detail_tidak_menambah_riwayat_aktivitas(): void
     {
         $document = $this->buatDokumen();
 
@@ -196,12 +196,7 @@ final class DocumentActivityLogTest extends TestCase
             ->get("/documents/{$document->id}")
             ->assertOk();
 
-        $activity = Activity::query()->sole();
-
-        $this->assertSame(AuditEvent::DocumentViewed->value, $activity->event);
-        $this->assertSame('Halaman detail dokumen dibuka.', $activity->description);
-        $this->assertSame($document->id, $activity->subject_id);
-        $this->assertSame($this->pemilik->id, $activity->causer_id);
+        $this->assertSame(0, Activity::query()->count());
     }
 
     private function buatDokumen(): Document

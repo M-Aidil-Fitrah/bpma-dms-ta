@@ -74,7 +74,7 @@ final class ActivityLogVisibilityTest extends TestCase
 
         $this->get("/documents/{$this->terlihat->id}")
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('riwayat', 2));
+                ->has('riwayat', 1));
     }
 
     public function test_superadmin_melihat_semua_aktivitas_termasuk_subjek_non_dokumen_dan_filternya(): void
@@ -148,13 +148,13 @@ final class ActivityLogVisibilityTest extends TestCase
         $this->actingAs($this->anggota)
             ->get("/documents/{$terbaru->id}")
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('riwayat', 28)
-                ->where('riwayat.0.event', AuditEvent::DocumentViewed->value)
-                ->where('riwayat.1.event', AuditEvent::DocumentReplaced->value));
+                ->has('riwayat', 27)
+                ->where('riwayat.0.event', AuditEvent::DocumentReplaced->value)
+                ->where('riwayat.1.event', AuditEvent::DocumentUpdated->value));
 
         $this->get("/documents/{$terbaru->id}")
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('riwayat', 29));
+                ->has('riwayat', 27));
     }
 
     private function hitungQueryRiwayat(): int

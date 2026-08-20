@@ -1,5 +1,5 @@
 import { IconButton } from '@/Components/ui/IconButton';
-import { Logo } from '@/Components/ui/Logo';
+import { DmsBrand } from '@/Components/ui/DmsBrand';
 import { UserMenu } from '@/Layouts/Partials/UserMenu';
 import { SidebarNav } from '@/Layouts/Partials/SidebarNav';
 import { cn } from '@/lib/cn';
@@ -66,7 +66,7 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
                 <div className="fixed inset-0 flex">
                     <DialogPanel className="flex w-sidebar max-w-[85vw] flex-col bg-surface">
                         <div className="flex items-center justify-between border-b border-line px-4 py-3">
-                            <Logo size="md" />
+                            <DmsBrand />
                             <IconButton
                                 icon={X}
                                 label="Tutup navigasi"
@@ -129,11 +129,11 @@ function SidebarBrand({ className }: { className?: string }) {
     return (
         <div
             className={cn(
-                'flex h-16 shrink-0 items-center border-b border-line px-4',
+                'flex shrink-0 items-center border-b border-line px-4 py-3',
                 className,
             )}
         >
-            <Logo size="md" />
+            <DmsBrand />
         </div>
     );
 }

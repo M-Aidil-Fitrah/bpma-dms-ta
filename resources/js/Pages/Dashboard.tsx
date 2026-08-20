@@ -3,6 +3,7 @@ import { StatCard } from '@/Components/data/StatCard';
 import { ActivityItem } from '@/Components/domain/ActivityItem';
 import { DocumentRow } from '@/Components/domain/DocumentRow';
 import { Card, CardBody, CardHeader, CardTitle } from '@/Components/ui/Card';
+import { DmsBrand } from '@/Components/ui/DmsBrand';
 import { EmptyState } from '@/Components/ui/EmptyState';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
@@ -90,13 +91,19 @@ function SambutanBanner({ user }: { user: App.Data.AuthUserData }) {
 
     return (
         <div className="overflow-hidden rounded-card bg-brand-700 px-5 py-6 text-white sm:px-7 sm:py-8">
-            <p className="text-sm text-brand-100">Selamat datang kembali,</p>
-            <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">{user.name}</h1>
-            <p className="mt-1 text-sm text-brand-100">
-                {hariIni}
-                {user.jabatan && ` · ${user.jabatan}`}
-                {user.unit && ` · ${user.unit}`}
-            </p>
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <p className="text-sm text-brand-100">Selamat datang kembali,</p>
+                    <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">{user.name}</h1>
+                    <p className="mt-1 text-sm text-brand-100">
+                        {hariIni}
+                        {user.jabatan && ` · ${user.jabatan}`}
+                        {user.unit && ` · ${user.unit}`}
+                    </p>
+                </div>
+
+                <DmsBrand onDark className="self-start" />
+            </div>
 
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
                 <Link

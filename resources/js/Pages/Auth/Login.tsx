@@ -36,7 +36,6 @@ export default function Login({ status }: LoginProps) {
             status: galatPembatasan ? 'warning' : 'error',
             judul: galatPembatasan ? 'Percobaan masuk dibatasi' : 'Masuk belum berhasil',
             keterangan: pesanAutentikasi,
-            durasi: null,
         });
     }, [galatPembatasan, pesanAutentikasi, tampilkan]);
 

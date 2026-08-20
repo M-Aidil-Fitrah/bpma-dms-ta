@@ -2,7 +2,7 @@ import { Button } from '@/Components/ui/Button';
 import { IconButton } from '@/Components/ui/IconButton';
 import { formatUkuranBerkas } from '@/lib/format';
 import { Download, FileQuestion, Loader2, Maximize, Minimize, ZoomIn, ZoomOut } from 'lucide-react';
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 
 /**
  * pdf.js dimuat hanya saat berkasnya memang PDF.
@@ -52,7 +52,7 @@ export function DocumentPreview({ dokumen, sedangMenyiapkanPratinjau = false }: 
                 }
 
                 if (mime.startsWith('video/')) {
-                    return <PratinjauVideo url={url} layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />;
+                    return <PratinjauVideo url={url} />;
                 }
 
                 if (mime.startsWith('audio/')) {
@@ -120,6 +120,49 @@ function MenyiapkanPratinjau() {
 function PratinjauGambar({ url, dokumen, layarPenuh, onUbahLayarPenuh }: { url: string; dokumen: App.Data.DocumentDetailData } & KendaliLayarPenuh) {
     const [gagal, setGagal] = useState(false);
     const [skala, setSkala] = useState(1);
+    const areaGambar = useRef<HTMLDivElement>(null);
+    const geser = useRef<{ pointerId: number; x: number; y: number; kiri: number; atas: number } | null>(null);
+
+    function ubahSkala(nilai: number) {
+        setSkala(nilai);
+
+        if (nilai <= 1) {
+            requestAnimationFrame(() => areaGambar.current?.scrollTo({ left: 0, top: 0 }));
+        }
+    }
+
+    function mulaiGeser(event: ReactPointerEvent<HTMLDivElement>) {
+        if (skala <= 1) return;
+
+        const area = event.currentTarget;
+        area.setPointerCapture(event.pointerId);
+        geser.current = {
+            pointerId: event.pointerId,
+            x: event.clientX,
+            y: event.clientY,
+            kiri: area.scrollLeft,
+            atas: area.scrollTop,
+        };
+    }
+
+    function geserGambar(event: ReactPointerEvent<HTMLDivElement>) {
+        const mulai = geser.current;
+        if (!mulai || mulai.pointerId !== event.pointerId) return;
+
+        event.currentTarget.scrollTo({
+            left: mulai.kiri - (event.clientX - mulai.x),
+            top: mulai.atas - (event.clientY - mulai.y),
+        });
+    }
+
+    function selesaiGeser(event: ReactPointerEvent<HTMLDivElement>) {
+        if (geser.current?.pointerId !== event.pointerId) return;
+
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        geser.current = null;
+    }
 
     if (gagal) {
         return <TanpaPratinjau dokumen={dokumen} />;
@@ -127,21 +170,25 @@ function PratinjauGambar({ url, dokumen, layarPenuh, onUbahLayarPenuh }: { url: 
 
     return (
         <div className="flex h-full min-h-0 flex-col">
-            <KendaliPratinjau skala={skala} onUbahSkala={setSkala} layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />
-            <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-surface-sunken p-4">
-                <img src={url} alt={dokumen.judul} className="max-w-none rounded shadow-card" style={{ width: `${skala * 100}%` }} onError={() => setGagal(true)} />
+            <KendaliPratinjau skala={skala} onUbahSkala={ubahSkala} layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />
+            <div
+                ref={areaGambar}
+                className={`flex min-h-0 flex-1 items-center justify-center overflow-auto bg-surface-sunken p-4 ${skala > 1 ? 'cursor-grab touch-none active:cursor-grabbing' : ''}`}
+                onPointerDown={mulaiGeser}
+                onPointerMove={geserGambar}
+                onPointerUp={selesaiGeser}
+                onPointerCancel={selesaiGeser}
+            >
+                <img src={url} alt={dokumen.judul} draggable={false} className="max-w-none rounded shadow-card" style={{ width: `${skala * 100}%` }} onError={() => setGagal(true)} />
             </div>
         </div>
     );
 }
 
-function PratinjauVideo({ url, layarPenuh, onUbahLayarPenuh }: { url: string } & KendaliLayarPenuh) {
+function PratinjauVideo({ url }: { url: string }) {
     return (
-        <div className="flex h-full min-h-0 flex-col bg-ink">
-            <KendaliPratinjau layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />
-            <div className="flex min-h-0 flex-1 items-center justify-center p-4">
-                <video src={url} controls className="max-h-full w-full rounded">Peramban Anda tidak mendukung pemutaran video.</video>
-            </div>
+        <div className="flex h-full min-h-0 items-center justify-center bg-ink p-4">
+            <video src={url} controls className="max-h-full w-full rounded">Peramban Anda tidak mendukung pemutaran video.</video>
         </div>
     );
 }

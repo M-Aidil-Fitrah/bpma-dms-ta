@@ -81,7 +81,7 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
             {/* -- Area konten ---------------------------------------------- */}
             <div className="lg:pl-sidebar">
                 <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
-                    <div className="flex min-h-20 items-center gap-3 px-4 py-3 sm:px-6">
+                    <div className="flex min-h-20 items-center gap-2 px-3 py-3 sm:gap-3 sm:px-6">
                         <IconButton
                             icon={Menu}
                             label="Buka navigasi"

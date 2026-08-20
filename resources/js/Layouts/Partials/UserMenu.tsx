@@ -31,7 +31,7 @@ export function UserMenu({ user }: UserMenuProps) {
                         </span>
                     </span>
 
-                    <ChevronDown className="size-4 shrink-0 text-ink-subtle" aria-hidden />
+                    <ChevronDown className="hidden size-4 shrink-0 text-ink-subtle sm:block" aria-hidden />
                 </button>
             }
             panelClassName="mt-2 w-60"

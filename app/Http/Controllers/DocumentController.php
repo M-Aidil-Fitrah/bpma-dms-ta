@@ -927,7 +927,8 @@ final class DocumentController extends Controller
             // dapat menerbitkan sebagai Pimpinan BPMA, sedangkan Superadmin
             // wajib menyebut unit yang benar-benar menerbitkan dokumen.
             'unit_akun_id' => $user->unit_id,
-            'unit_akun_nama' => $user->unit?->nama,
+            'unit_akun_nama' => $user->unit?->nama
+                ?? ($user->isPimpinanTertinggi() ? 'Pimpinan BPMA' : null),
             'unit_kerja_wajib' => $user->isSuperadmin(),
 
             // Bukan sekadar daftar angka: tiap tingkat dikirim beserta nama

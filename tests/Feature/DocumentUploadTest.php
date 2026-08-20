@@ -125,6 +125,12 @@ final class DocumentUploadTest extends TestCase
         ]);
         $pimpinan->assignRole(User::ROLE_PENGGUNA);
 
+        $this->actingAs($pimpinan)->get('/documents/create')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('opsi.unit_akun_id', null)
+                ->where('opsi.unit_akun_nama', 'Pimpinan BPMA')
+                ->where('opsi.unit_kerja_wajib', false));
+
         $this->actingAs($pimpinan)
             ->post('/documents', $this->formulir(['origin_unit_id' => null]))
             ->assertRedirect();

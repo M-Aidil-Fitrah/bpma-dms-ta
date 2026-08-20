@@ -192,6 +192,7 @@ final class DocumentWorkspaceController extends Controller
         return Inertia::render('Workspace/Index', [
             'title' => $title,
             'folder' => $folder === null ? null : ['id' => $folder->id, 'name' => $folder->name, 'parent_id' => $folder->parent_id],
+            'breadcrumbs' => $this->breadcrumbs($folder),
             'folders' => $folders->map(fn (DocumentFolder $item): array => ['id' => $item->id, 'name' => $item->name])->all(),
             'folder_options' => DocumentFolder::query()
                 ->where('owner_id', $userId)
@@ -202,6 +203,22 @@ final class DocumentWorkspaceController extends Controller
                 ->all(),
             'documents' => $this->documents($documents, $userId),
         ]);
+    }
+
+    /** @return list<array{label: string, href: string}> */
+    private function breadcrumbs(?DocumentFolder $folder): array
+    {
+        $ancestors = [];
+
+        while ($folder !== null) {
+            $ancestors[] = ['label' => $folder->name, 'href' => route('folders.show', $folder)];
+            $folder = $folder->parent;
+        }
+
+        return [
+            ['label' => 'Dokumen Saya', 'href' => route('documents.mine')],
+            ...array_reverse($ancestors),
+        ];
     }
 
     /** @param Collection<int, Document> $documents */

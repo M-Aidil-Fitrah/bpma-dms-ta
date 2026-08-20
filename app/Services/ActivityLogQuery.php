@@ -16,8 +16,7 @@ use Spatie\Activitylog\Models\Activity;
  * Query riwayat yang menjadi sumber kebenaran batas tampil aktivitas.
  *
  * Tidak memakai eager-load morph subject. Label subjek sudah disalin saat
- * aktivitas dibuat, sedangkan nama pelaku diperoleh melalui satu LEFT JOIN;
- * pagination berisi ratusan baris tetap dua query (count dan data), bukan N+1.
+ * aktivitas dibuat, sedangkan nama pelaku diperoleh melalui satu LEFT JOIN.
  */
 final class ActivityLogQuery
 {
@@ -35,8 +34,8 @@ final class ActivityLogQuery
             ->through(fn (Activity $activity): ActivityLogData => ActivityLogData::fromActivity($activity, $activity->getAttribute('nama_pelaku')));
     }
 
-    /** @return LengthAwarePaginator<int, ActivityLogData> */
-    public function paginateForDocument(Document $document): LengthAwarePaginator
+    /** @return list<ActivityLogData> */
+    public function forDocument(Document $document): array
     {
         $akarVersiId = $document->version_root_id ?? $document->id;
 
@@ -49,9 +48,9 @@ final class ActivityLogQuery
                 ->where('version_root_id', $akarVersiId)
                 ->select('documents.id'))
             ->orderByDesc('activity_log.id')
-            ->paginate(25, ['activity_log.*', 'pelaku.name as nama_pelaku'], 'activity_page')
-            ->withQueryString()
-            ->through(fn (Activity $activity): ActivityLogData => ActivityLogData::fromActivity($activity, $activity->getAttribute('nama_pelaku')));
+            ->get(['activity_log.*', 'pelaku.name as nama_pelaku'])
+            ->map(fn (Activity $activity): ActivityLogData => ActivityLogData::fromActivity($activity, $activity->getAttribute('nama_pelaku')))
+            ->all();
     }
 
     /** @return list<ActivityLogData> */

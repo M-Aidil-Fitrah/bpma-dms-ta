@@ -176,6 +176,30 @@ final class DocumentVersionHistoryTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_riwayat_versi_mengirim_semua_entri_untuk_tampilan_bertahap(): void
+    {
+        $this->awal->update(['is_active' => false]);
+
+        foreach (range(2, 6) as $major) {
+            $terbaru = Document::factory()->create([
+                'category_id' => $this->kategori->id,
+                'origin_unit_id' => $this->unit->id,
+                'uploaded_by' => $this->pemilik->id,
+                'version_root_id' => $this->awal->version_root_id,
+                'version_major' => $major,
+                'version_minor' => 0,
+                'is_active' => $major === 6,
+            ]);
+        }
+
+        $this->actingAs($this->pemilik)
+            ->get("/documents/{$terbaru->id}")
+            ->assertInertia(fn ($halaman) => $halaman
+                ->has('versi', 6)
+                ->where('versi.0.label', 'v6.0')
+                ->where('versi.0.terbaru', true));
+    }
+
     public function test_editor_bukan_pemilik_rantai_tidak_dapat_memulihkan_versi(): void
     {
         $editor = $this->buatPengguna($this->unit, 'Editor Rantai');

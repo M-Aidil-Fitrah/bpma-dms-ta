@@ -74,8 +74,7 @@ final class ActivityLogVisibilityTest extends TestCase
 
         $this->get("/documents/{$this->terlihat->id}")
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('riwayat.data', 2)
-                ->where('riwayat.total', 2));
+                ->has('riwayat', 2));
     }
 
     public function test_superadmin_melihat_semua_aktivitas_termasuk_subjek_non_dokumen_dan_filternya(): void
@@ -118,7 +117,7 @@ final class ActivityLogVisibilityTest extends TestCase
         $this->assertSame($queryDenganSedikitAktivitas, $queryDenganBanyakAktivitas);
     }
 
-    public function test_riwayat_dokumen_merangkum_semua_versi_dan_memaginasi_jejak_yang_panjang(): void
+    public function test_riwayat_dokumen_merangkum_semua_versi_untuk_tampilan_bertahap(): void
     {
         $terbaru = Document::factory()->dibagikanKeSemua()->create([
             'replaces_document_id' => $this->terlihat->id,
@@ -149,17 +148,13 @@ final class ActivityLogVisibilityTest extends TestCase
         $this->actingAs($this->anggota)
             ->get("/documents/{$terbaru->id}")
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('riwayat.total', 28)
-                ->has('riwayat.data', 25)
-                ->where('riwayat.data.0.event', AuditEvent::DocumentViewed->value)
-                ->where('riwayat.data.1.event', AuditEvent::DocumentReplaced->value)
-                ->where('riwayat.current_page', 1));
+                ->has('riwayat', 28)
+                ->where('riwayat.0.event', AuditEvent::DocumentViewed->value)
+                ->where('riwayat.1.event', AuditEvent::DocumentReplaced->value));
 
-        $this->get("/documents/{$terbaru->id}?activity_page=2")
+        $this->get("/documents/{$terbaru->id}")
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('riwayat.total', 29)
-                ->has('riwayat.data', 4)
-                ->where('riwayat.current_page', 2));
+                ->has('riwayat', 29));
     }
 
     private function hitungQueryRiwayat(): int

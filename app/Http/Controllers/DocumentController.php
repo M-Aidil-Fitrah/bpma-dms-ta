@@ -500,7 +500,7 @@ final class DocumentController extends Controller
             'versi' => $versi
                 ->map(fn (Document $versi): DocumentVersionData => DocumentVersionData::fromModel($versi, $document->id, $latestId))
                 ->all(),
-            'riwayat' => $aktivitas->paginateForDocument($document),
+            'riwayat' => $aktivitas->forDocument($document),
             // Dikirim dari config, bukan di-hardcode di hook React — anggaran
             // polling harus selalu cukup menutupi durasi OCR terpanjang yang
             // mungkin terjadi (`pdf_ocr_timeout_detik`), dan satu-satunya cara

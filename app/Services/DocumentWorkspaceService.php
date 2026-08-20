@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\ActivityLogName;
+use App\Enums\AuditEvent;
 use App\Models\Document;
 use App\Models\DocumentFolder;
 use App\Models\DocumentPlacement;
@@ -20,6 +22,8 @@ final class DocumentWorkspaceService
 
     private const KEDALAMAN_MAKSIMAL = 5;
 
+    public function __construct(private readonly ActivityLogService $aktivitas) {}
+
     public function createFolder(User $owner, ?DocumentFolder $parent, string $name): DocumentFolder
     {
         if ($parent !== null) {
@@ -30,12 +34,23 @@ final class DocumentWorkspaceService
         $name = $this->namaBersih($name);
         $this->pastikanNamaTersedia($owner, $parent?->id, $name);
 
-        return DocumentFolder::create([
+        $folder = DocumentFolder::create([
             'owner_id' => $owner->id,
             'parent_id' => $parent?->id,
             'name' => $name,
             'name_normalized' => $this->namaNormal($name),
         ]);
+
+        $this->aktivitas->record(
+            ActivityLogName::DocumentWorkspace,
+            AuditEvent::FolderCreated,
+            "Folder \"{$folder->name}\" dibuat.",
+            $folder,
+            $owner,
+            ['folder_induk' => $parent?->name ?? 'Dokumen Saya'],
+        );
+
+        return $folder;
     }
 
     public function renameFolder(DocumentFolder $folder, User $owner, string $name): void
@@ -43,7 +58,19 @@ final class DocumentWorkspaceService
         $this->pastikanFolderAktifMilik($folder, $owner);
         $name = $this->namaBersih($name);
         $this->pastikanNamaTersedia($owner, $folder->parent_id, $name, $folder->id);
+        $namaSebelumnya = $folder->name;
         $folder->update(['name' => $name, 'name_normalized' => $this->namaNormal($name)]);
+
+        $this->aktivitas->record(
+            ActivityLogName::DocumentWorkspace,
+            AuditEvent::FolderRenamed,
+            "Nama folder diubah dari \"{$namaSebelumnya}\" menjadi \"{$folder->name}\".",
+            $folder,
+            $owner,
+            [],
+            ['nama' => $namaSebelumnya],
+            ['nama' => $folder->name],
+        );
     }
 
     public function placeDocument(Document $document, DocumentFolder $folder, User $owner): void
@@ -56,10 +83,23 @@ final class DocumentWorkspaceService
             ]);
         }
 
+        $placement = DocumentPlacement::query()
+            ->with('folder:id,name')
+            ->where('owner_id', $owner->id)
+            ->where('document_id', $document->id)
+            ->first();
+        $asal = $placement?->folder?->name ?? 'Dokumen Saya (tanpa folder)';
+
+        if ($placement?->folder_id === $folder->id) {
+            return;
+        }
+
         DocumentPlacement::query()->updateOrCreate(
             ['owner_id' => $owner->id, 'document_id' => $document->id],
             ['folder_id' => $folder->id],
         );
+
+        $this->catatPerpindahanDokumen($document, $owner, $asal, $folder->name);
     }
 
     public function moveToRoot(Document $document, User $owner): void
@@ -70,20 +110,53 @@ final class DocumentWorkspaceService
             ]);
         }
 
-        DocumentPlacement::query()
+        $placement = DocumentPlacement::query()
+            ->with('folder:id,name')
             ->where('owner_id', $owner->id)
             ->where('document_id', $document->id)
-            ->delete();
+            ->first();
+
+        if ($placement === null) {
+            return;
+        }
+
+        $asal = $placement->folder?->name ?? 'Folder Dokumen Saya';
+        $placement->delete();
+        $this->catatPerpindahanDokumen($document, $owner, $asal, 'Dokumen Saya (tanpa folder)');
     }
 
     public function star(Document $document, User $user): void
     {
-        DocumentStar::query()->firstOrCreate(['user_id' => $user->id, 'document_id' => $document->id]);
+        $star = DocumentStar::query()->firstOrCreate(['user_id' => $user->id, 'document_id' => $document->id]);
+
+        if (! $star->wasRecentlyCreated) {
+            return;
+        }
+
+        $this->aktivitas->record(
+            ActivityLogName::DocumentWorkspace,
+            AuditEvent::DocumentStarred,
+            'Dokumen ditandai berbintang.',
+            $document,
+            $user,
+        );
     }
 
     public function unstar(Document $document, User $user): void
     {
-        DocumentStar::query()->where('user_id', $user->id)->where('document_id', $document->id)->delete();
+        $dihapus = DocumentStar::query()->where('user_id', $user->id)->where('document_id', $document->id)->delete();
+
+        if ($dihapus === 0) {
+            return;
+        }
+
+        $this->aktivitas->record(
+            ActivityLogName::DocumentWorkspace,
+            AuditEvent::DocumentUnstarred,
+            'Tanda bintang pada dokumen dihapus.',
+            $document,
+            $user,
+        );
     }
 
     public function recordRecent(Document $document, User $user): void
@@ -137,6 +210,15 @@ final class DocumentWorkspaceService
                 'purge_after' => now()->addDays(self::RETENSI_HARI),
                 'trash_token' => $token,
             ]);
+
+        $this->aktivitas->record(
+            ActivityLogName::DocumentWorkspace,
+            AuditEvent::FolderTrashed,
+            "Folder \"{$folder->name}\" dipindahkan ke Sampah.",
+            $folder,
+            $owner,
+            ['jumlah_folder' => count($folderIds), 'retensi_hari' => self::RETENSI_HARI],
+        );
     }
 
     public function restoreFolder(DocumentFolder $folder, User $owner): void
@@ -149,6 +231,14 @@ final class DocumentWorkspaceService
             ->where('trash_token', $folder->trash_token)
             ->where('owner_id', $owner->id)
             ->update(['trashed_at' => null, 'trashed_by' => null, 'purge_after' => null, 'trash_token' => null]);
+
+        $this->aktivitas->record(
+            ActivityLogName::DocumentWorkspace,
+            AuditEvent::FolderTrashRestored,
+            "Folder \"{$folder->name}\" dipulihkan dari Sampah.",
+            $folder,
+            $owner,
+        );
     }
 
     private function pastikanFolderAktifMilik(DocumentFolder $folder, User $owner): void
@@ -156,6 +246,18 @@ final class DocumentWorkspaceService
         if ($folder->owner_id !== $owner->id || $folder->trashed_at !== null) {
             throw ValidationException::withMessages(['folder' => 'Folder tidak tersedia.']);
         }
+    }
+
+    private function catatPerpindahanDokumen(Document $document, User $owner, string $asal, string $tujuan): void
+    {
+        $this->aktivitas->record(
+            ActivityLogName::DocumentWorkspace,
+            AuditEvent::DocumentMoved,
+            "Dokumen dipindahkan dari \"{$asal}\" ke \"{$tujuan}\".",
+            $document,
+            $owner,
+            ['lokasi_asal' => $asal, 'lokasi_tujuan' => $tujuan],
+        );
     }
 
     /** @return list<int> */

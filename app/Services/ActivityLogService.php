@@ -8,6 +8,7 @@ use App\Enums\ActivityLogName;
 use App\Enums\AuditEvent;
 use App\Models\Category;
 use App\Models\Document;
+use App\Models\DocumentFolder;
 use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
@@ -84,6 +85,11 @@ final class ActivityLogService
                 'tipe' => 'Dokumen',
                 'id' => $subject->id,
                 'label' => $subject->judul,
+            ],
+            $subject instanceof DocumentFolder => [
+                'tipe' => 'Folder',
+                'id' => $subject->id,
+                'label' => $subject->name,
             ],
             $subject instanceof User => [
                 'tipe' => 'Pengguna',

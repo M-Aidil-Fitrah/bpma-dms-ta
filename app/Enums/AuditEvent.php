@@ -21,6 +21,13 @@ enum AuditEvent: string
     case DocumentRestored = 'document_restored';
     case DocumentTrashed = 'document_trashed';
     case DocumentTrashRestored = 'document_trash_restored';
+    case DocumentMoved = 'document_moved';
+    case DocumentStarred = 'document_starred';
+    case DocumentUnstarred = 'document_unstarred';
+    case FolderCreated = 'folder_created';
+    case FolderRenamed = 'folder_renamed';
+    case FolderTrashed = 'folder_trashed';
+    case FolderTrashRestored = 'folder_trash_restored';
     case DocumentPurged = 'document_purged';
     case DocumentReplaced = 'document_replaced';
     case DocumentVersionRestored = 'document_version_restored';

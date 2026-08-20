@@ -11,6 +11,7 @@ import { Avatar } from '@/Components/ui/Avatar';
 import { Button } from '@/Components/ui/Button';
 import { Card } from '@/Components/ui/Card';
 import { EmptyState } from '@/Components/ui/EmptyState';
+import { IconButton } from '@/Components/ui/IconButton';
 import { Modal } from '@/Components/ui/Modal';
 import { Tabs, type TabItem } from '@/Components/ui/Tabs';
 import { useDocumentReloadPolling } from '@/hooks/useDocumentReloadPolling';
@@ -18,7 +19,7 @@ import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
 import { dalamJendelaWaktu, formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, FileText, History, Info, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Check, Copy, FileText, History, Info, ShieldCheck } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 interface ShowProps {
@@ -136,7 +137,32 @@ function Remah({ judul }: { judul: string }) {
 
 function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
     const [teksEkstraksiTerbuka, setTeksEkstraksiTerbuka] = useState(false);
+    const [teksTersalin, setTeksTersalin] = useState(false);
     const teksEkstraksiTersedia = dokumen.extraction_status === 'completed' && dokumen.isi_teks !== null;
+
+    async function salinTeksEkstraksi() {
+        const teks = dokumen.isi_teks;
+        if (teks === null) return;
+
+        try {
+            await navigator.clipboard?.writeText(teks);
+
+            if (!navigator.clipboard) throw new Error('Clipboard API tidak tersedia.');
+
+            setTeksTersalin(true);
+        } catch {
+            const bidang = document.createElement('textarea');
+            bidang.value = teks;
+            bidang.setAttribute('readonly', '');
+            bidang.style.position = 'fixed';
+            bidang.style.opacity = '0';
+            document.body.appendChild(bidang);
+            bidang.select();
+            const berhasil = document.execCommand('copy');
+            bidang.remove();
+            setTeksTersalin(berhasil);
+        }
+    }
 
     return (
         <dl className="space-y-4">
@@ -224,11 +250,21 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                     onTutup={setTeksEkstraksiTerbuka}
                     judul="Teks hasil ekstraksi"
                     keterangan={dokumen.nama_berkas}
+                    aksiHeader={
+                        <IconButton
+                            icon={teksTersalin ? Check : Copy}
+                            label={teksTersalin ? 'Teks hasil ekstraksi sudah disalin' : 'Salin teks hasil ekstraksi'}
+                            variant="ghost"
+                            onClick={() => void salinTeksEkstraksi()}
+                        />
+                    }
+                    className="h-[min(42rem,calc(100dvh-2rem))]"
+                    contentClassName="p-0"
                 >
-                    <p className="mb-4 text-sm text-ink-muted">
+                    <p className="border-b border-line bg-surface-raised px-5 py-3 text-sm text-ink-muted">
                         Teks ini dipakai untuk pencarian isi dan dapat berbeda dari tata letak berkas asli.
                     </p>
-                    <pre className="whitespace-pre-wrap break-words font-mono text-sm leading-relaxed text-ink">
+                    <pre className="whitespace-pre-wrap break-words p-5 font-mono text-sm leading-relaxed text-ink">
                         {dokumen.isi_teks}
                     </pre>
                 </Modal>

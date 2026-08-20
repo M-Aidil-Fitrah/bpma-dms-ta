@@ -1,7 +1,8 @@
 import { Button } from '@/Components/ui/Button';
+import { IconButton } from '@/Components/ui/IconButton';
 import { formatUkuranBerkas } from '@/lib/format';
-import { Download, FileQuestion, Loader2 } from 'lucide-react';
-import { lazy, Suspense, useState } from 'react';
+import { Download, FileQuestion, Loader2, Maximize, Minimize, ZoomIn, ZoomOut } from 'lucide-react';
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 
 /**
  * pdf.js dimuat hanya saat berkasnya memang PDF.
@@ -35,56 +36,69 @@ export function DocumentPreview({ dokumen, sedangMenyiapkanPratinjau = false }: 
     const url = `/documents/${dokumen.id}/preview`;
     const mime = dokumen.tipe_berkas;
 
-    if (dokumen.preview_tersedia) {
-        return (
-            <Suspense fallback={<Memuat />}>
-                <PdfViewer url={url} judul={dokumen.judul} />
-            </Suspense>
-        );
-    }
+    return (
+        <BingkaiPratinjau>
+            {({ layarPenuh, onUbahLayarPenuh }) => {
+                if (dokumen.preview_tersedia || mime === 'application/pdf') {
+                    return (
+                        <Suspense fallback={<Memuat />}>
+                            <PdfViewer url={url} judul={dokumen.judul} layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />
+                        </Suspense>
+                    );
+                }
 
-    if (mime.startsWith('image/')) {
-        return <PratinjauGambar url={url} dokumen={dokumen} />;
-    }
+                if (mime.startsWith('image/')) {
+                    return <PratinjauGambar url={url} dokumen={dokumen} layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />;
+                }
 
-    if (mime === 'application/pdf') {
-        return (
-            <Suspense fallback={<Memuat />}>
-                <PdfViewer url={url} judul={dokumen.judul} />
-            </Suspense>
-        );
-    }
+                if (mime.startsWith('video/')) {
+                    return <PratinjauVideo url={url} layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />;
+                }
 
-    if (mime.startsWith('video/')) {
-        return (
-            <div className="flex h-full items-center justify-center bg-ink p-4">
-                <video src={url} controls className="max-h-full w-full rounded">
-                    Peramban Anda tidak mendukung pemutaran video.
-                </video>
-            </div>
-        );
-    }
+                if (mime.startsWith('audio/')) {
+                    return <PratinjauAudio url={url} layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />;
+                }
 
-    if (mime.startsWith('audio/')) {
-        return (
-            <div className="flex h-full items-center justify-center p-8">
-                <audio src={url} controls className="w-full max-w-md">
-                    Peramban Anda tidak mendukung pemutaran audio.
-                </audio>
-            </div>
-        );
-    }
+                if (sedangMenyiapkanPratinjau) return <MenyiapkanPratinjau />;
+                if (dokumen.isi_teks) return <PanelTeks teks={dokumen.isi_teks} mime={mime} layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />;
 
-    if (sedangMenyiapkanPratinjau) {
-        return <MenyiapkanPratinjau />;
-    }
-
-    if (dokumen.isi_teks) {
-        return <PanelTeks teks={dokumen.isi_teks} mime={mime} />;
-    }
-
-    return <TanpaPratinjau dokumen={dokumen} />;
+                return <TanpaPratinjau dokumen={dokumen} />;
+            }}
+        </BingkaiPratinjau>
+    );
 }
+
+function BingkaiPratinjau({ children }: { children: (opsi: KendaliLayarPenuh) => ReactNode }) {
+    const bingkaiRef = useRef<HTMLDivElement>(null);
+    const [layarPenuh, setLayarPenuh] = useState(false);
+
+    useEffect(() => {
+        function perbarui() {
+            setLayarPenuh(document.fullscreenElement === bingkaiRef.current);
+        }
+
+        document.addEventListener('fullscreenchange', perbarui);
+
+        return () => document.removeEventListener('fullscreenchange', perbarui);
+    }, []);
+
+    async function ubahLayarPenuh() {
+        try {
+            if (document.fullscreenElement === bingkaiRef.current) {
+                await document.exitFullscreen();
+            } else {
+                await bingkaiRef.current?.requestFullscreen();
+            }
+        } catch {
+            // Browser dapat menolak layar penuh, misalnya saat iframe atau
+            // kebijakan perangkat tidak mengizinkannya.
+        }
+    }
+
+    return <div ref={bingkaiRef} className="h-full bg-surface">{children({ layarPenuh, onUbahLayarPenuh: () => void ubahLayarPenuh() })}</div>;
+}
+
+type KendaliLayarPenuh = { layarPenuh: boolean; onUbahLayarPenuh: () => void };
 
 function MenyiapkanPratinjau() {
     return (
@@ -103,30 +117,52 @@ function MenyiapkanPratinjau() {
  * diam selamanya, bukan fallback "Unduh Berkas" yang sudah ada untuk tipe
  * tak-terdukung lain.
  */
-function PratinjauGambar({ url, dokumen }: { url: string; dokumen: App.Data.DocumentDetailData }) {
+function PratinjauGambar({ url, dokumen, layarPenuh, onUbahLayarPenuh }: { url: string; dokumen: App.Data.DocumentDetailData } & KendaliLayarPenuh) {
     const [gagal, setGagal] = useState(false);
+    const [skala, setSkala] = useState(1);
 
     if (gagal) {
         return <TanpaPratinjau dokumen={dokumen} />;
     }
 
     return (
-        <div className="flex h-full items-center justify-center overflow-auto bg-surface-sunken p-4">
-            <img
-                src={url}
-                alt={dokumen.judul}
-                className="max-h-full rounded shadow-card"
-                onError={() => setGagal(true)}
-            />
+        <div className="flex h-full min-h-0 flex-col">
+            <KendaliPratinjau skala={skala} onUbahSkala={setSkala} layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />
+            <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-surface-sunken p-4">
+                <img src={url} alt={dokumen.judul} className="max-w-none rounded shadow-card" style={{ width: `${skala * 100}%` }} onError={() => setGagal(true)} />
+            </div>
         </div>
     );
 }
 
-function PanelTeks({ teks, mime }: { teks: string; mime: string }) {
+function PratinjauVideo({ url, layarPenuh, onUbahLayarPenuh }: { url: string } & KendaliLayarPenuh) {
+    return (
+        <div className="flex h-full min-h-0 flex-col bg-ink">
+            <KendaliPratinjau layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />
+            <div className="flex min-h-0 flex-1 items-center justify-center p-4">
+                <video src={url} controls className="max-h-full w-full rounded">Peramban Anda tidak mendukung pemutaran video.</video>
+            </div>
+        </div>
+    );
+}
+
+function PratinjauAudio({ url, layarPenuh, onUbahLayarPenuh }: { url: string } & KendaliLayarPenuh) {
+    return (
+        <div className="flex h-full min-h-0 flex-col">
+            <KendaliPratinjau layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />
+            <div className="flex min-h-0 flex-1 items-center justify-center p-8">
+                <audio src={url} controls className="w-full max-w-md">Peramban Anda tidak mendukung pemutaran audio.</audio>
+            </div>
+        </div>
+    );
+}
+
+function PanelTeks({ teks, mime, layarPenuh, onUbahLayarPenuh }: { teks: string; mime: string } & KendaliLayarPenuh) {
     const dariEkstraksi = mime !== 'text/plain';
 
     return (
-        <div className="flex h-full flex-col">
+        <div className="flex h-full min-h-0 flex-col">
+            <KendaliPratinjau layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />
             {dariEkstraksi && (
                 <p className="border-b border-line bg-warning-soft px-4 py-2 text-xs text-warning-strong">
                     Yang ditampilkan adalah isi teks hasil pembacaan berkas, bukan tata
@@ -139,6 +175,21 @@ function PanelTeks({ teks, mime }: { teks: string; mime: string }) {
                     {teks}
                 </pre>
             </div>
+        </div>
+    );
+}
+
+function KendaliPratinjau({ skala, onUbahSkala, layarPenuh, onUbahLayarPenuh }: Partial<{ skala: number; onUbahSkala: (skala: number) => void }> & KendaliLayarPenuh) {
+    return (
+        <div className="flex items-center justify-end gap-1 border-b border-line bg-surface px-3 py-2">
+            {skala !== undefined && onUbahSkala && (
+                <>
+                    <IconButton icon={ZoomOut} label="Perkecil" size="sm" disabled={skala <= 0.5} onClick={() => onUbahSkala(Math.max(0.5, skala - 0.25))} />
+                    <span className="w-12 text-center font-mono text-xs text-ink-muted">{Math.round(skala * 100)}%</span>
+                    <IconButton icon={ZoomIn} label="Perbesar" size="sm" disabled={skala >= 3} onClick={() => onUbahSkala(Math.min(3, skala + 0.25))} />
+                </>
+            )}
+            <IconButton icon={layarPenuh ? Minimize : Maximize} label={layarPenuh ? 'Keluar dari layar penuh' : 'Layar penuh'} size="sm" onClick={onUbahLayarPenuh} />
         </div>
     );
 }

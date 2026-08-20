@@ -214,6 +214,27 @@ final class DocumentUploadTest extends TestCase
         $this->assertSame(0, Document::count());
     }
 
+    public function test_pengunggah_boleh_membuat_dokumen_hanya_saya(): void
+    {
+        $this->actingAs($this->pengunggah)
+            ->post('/documents', $this->formulir([
+                'is_private' => true,
+                'is_shared_to_all' => false,
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertTrue((bool) Document::firstWhere('judul', 'Dokumen Uji Unggah')?->is_private);
+    }
+
+    public function test_hanya_saya_tidak_boleh_digabungkan_dengan_akses_berbagi(): void
+    {
+        $this->actingAs($this->pengunggah)
+            ->post('/documents', $this->formulir(['is_private' => true]))
+            ->assertSessionHasErrors('akses');
+
+        $this->assertSame(0, Document::count());
+    }
+
     public function test_berkas_tidak_tertinggal_saat_validasi_menolak(): void
     {
         $this->actingAs($this->pengunggah)

@@ -25,7 +25,7 @@ final class DocumentWorkspaceController extends Controller
             title: 'Dokumen Saya',
             folder: null,
             folders: DocumentFolder::query()->ownedBy($user)->notTrashed()->whereNull('parent_id')->orderBy('name')->get(),
-            documents: Document::query()->active()->notTrashed()->where('uploaded_by', $user->id)->latest('id')->get(),
+            documents: Document::query()->active()->notTrashed()->where('uploaded_by', $user->id)->select(Document::KOLOM_DAFTAR)->latest('id')->get(),
             userId: $user->id,
         );
     }
@@ -45,6 +45,7 @@ final class DocumentWorkspaceController extends Controller
                 ->notTrashed()
                 ->where('uploaded_by', $user->id)
                 ->whereHas('placements', fn ($query) => $query->where('owner_id', $user->id)->where('folder_id', $folder->id))
+                ->select(Document::KOLOM_DAFTAR)
                 ->latest('id')
                 ->get(),
             userId: $user->id,
@@ -61,6 +62,7 @@ final class DocumentWorkspaceController extends Controller
                 ->visibleTo($user)
                 ->active()
                 ->whereHas('stars', fn ($query) => $query->where('user_id', $user->id))
+                ->select(Document::KOLOM_DAFTAR)
                 ->orderByDesc(DocumentStar::query()->select('created_at')->whereColumn('document_id', 'documents.id')->where('user_id', $user->id))
                 ->get(),
             $user->id,
@@ -77,6 +79,7 @@ final class DocumentWorkspaceController extends Controller
                 ->visibleTo($user)
                 ->active()
                 ->whereHas('recents', fn ($query) => $query->where('user_id', $user->id))
+                ->select(Document::KOLOM_DAFTAR)
                 ->orderByDesc(DocumentRecent::query()->select('last_opened_at')->whereColumn('document_id', 'documents.id')->where('user_id', $user->id))
                 ->get(),
             $user->id,
@@ -89,6 +92,7 @@ final class DocumentWorkspaceController extends Controller
         $documents = Document::query()
             ->whereNotNull('trashed_at')
             ->when(! $user->isSuperadmin(), fn ($query) => $query->where('uploaded_by', $user->id))
+            ->select([...Document::KOLOM_DAFTAR, 'trashed_at', 'purge_after'])
             ->latest('trashed_at')
             ->get();
         $folders = DocumentFolder::query()->ownedBy($user)->whereNotNull('trashed_at')->latest('trashed_at')->get();

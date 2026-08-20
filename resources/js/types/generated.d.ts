@@ -87,7 +87,7 @@ nomor_versi_berikutnya: string | null,
 judul_versi_berikutnya: string | null,
 aktif: boolean,
 boleh_ubah: boolean,
-boleh_nonaktifkan: boolean,
+boleh_pindah_ke_sampah: boolean,
 boleh_aktifkan: boolean,
 boleh_pulihkan_versi: boolean,
 };
@@ -206,7 +206,7 @@ inisial: string,
 }
 namespace Enums {
 export type ActivityLogName = 'dokumen' | 'pengguna' | 'unit' | 'jabatan' | 'kategori' | 'document_share' | 'document_unit';
-export type AuditEvent = 'document_uploaded' | 'document_updated' | 'document_viewed' | 'document_downloaded' | 'document_deactivated' | 'document_restored' | 'document_replaced' | 'document_version_restored' | 'document_status_changed' | 'access_granted' | 'access_revoked' | 'created' | 'updated' | 'deactivated' | 'restored' | 'password_reset';
+export type AuditEvent = 'document_uploaded' | 'document_updated' | 'document_viewed' | 'document_downloaded' | 'document_deactivated' | 'document_restored' | 'document_trashed' | 'document_trash_restored' | 'document_purged' | 'document_replaced' | 'document_version_restored' | 'document_status_changed' | 'access_granted' | 'access_revoked' | 'created' | 'updated' | 'deactivated' | 'restored' | 'password_reset';
 export type DocumentEditScope = 'owner_only' | 'match_visibility';
 export type DocumentStatus = 'berlaku' | 'kadaluarsa';
 export type DocumentVersionKind = 'content' | 'metadata' | 'restoration';

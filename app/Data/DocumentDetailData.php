@@ -98,7 +98,7 @@ final class DocumentDetailData extends Data
         /** Dokumen nonaktif hanya terlihat lewat riwayat versi atau Superadmin. */
         public bool $aktif,
         public bool $boleh_ubah,
-        public bool $boleh_nonaktifkan,
+        public bool $boleh_pindah_ke_sampah,
         public bool $boleh_aktifkan,
         public bool $boleh_pulihkan_versi,
     ) {}
@@ -106,6 +106,7 @@ final class DocumentDetailData extends Data
     public static function fromModel(
         Document $document,
         bool $bolehUbah,
+        bool $bolehPindahKeSampah = false,
         bool $bolehAktifkan = false,
         bool $bolehPulihkanVersi = false,
         array $jabatanTujuan = [],
@@ -169,7 +170,7 @@ final class DocumentDetailData extends Data
 
             aktif: $document->is_active,
             boleh_ubah: $bolehUbah,
-            boleh_nonaktifkan: $bolehUbah,
+            boleh_pindah_ke_sampah: $bolehPindahKeSampah,
             boleh_aktifkan: $bolehAktifkan,
             boleh_pulihkan_versi: $bolehPulihkanVersi,
         );

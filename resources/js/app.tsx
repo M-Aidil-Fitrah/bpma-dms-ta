@@ -3,6 +3,8 @@ import './bootstrap';
 
 import { FlashToast } from '@/Components/ui/FlashToast';
 import { ToastProvider } from '@/Components/ui/Toast';
+import { PasswordConfirmationProvider } from '@/Components/auth/PasswordConfirmationProvider';
+import { memilikiPenggunaTerautentikasi } from '@/types/auth';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
@@ -20,12 +22,10 @@ createInertiaApp({
         const root = createRoot(el);
 
         /*
-         * `ToastProvider` sengaja di LUAR `<App>`: layout dilepas dan dipasang
-         * ulang tiap kali halaman berganti, sehingga toast yang dimunculkan
-         * tepat sebelum berpindah akan ikut lenyap bila provider-nya di dalam.
-         *
-         * `FlashToast` sebaliknya harus di DALAM — ia memakai `usePage()`, dan
-         * konteks itu baru tersedia di bawah `<App>`.
+         * `ToastProvider` berada di dalam `<App>` supaya ia dapat membedakan
+         * halaman autentikasi (tanpa bilah atas) dari portal (dengan bilah
+         * atas). Posisi komponen ini tetap sama saat halaman Inertia berganti,
+         * sehingga toast yang muncul sebelum pengalihan tidak ikut hilang.
          *
          * Fungsi render di bawah menggantikan bawaan Inertia, yang tugasnya
          * juga memasang layout persisten lewat `Component.layout`. Aplikasi ini
@@ -34,16 +34,20 @@ createInertiaApp({
          * harus ikut menanganinya.
          */
         root.render(
-            <ToastProvider>
-                <App {...props}>
-                    {({ Component, props: propHalaman, key }) => (
-                        <>
-                            <FlashToast />
-                            <Component key={key} {...propHalaman} />
-                        </>
-                    )}
-                </App>
-            </ToastProvider>,
+            <App {...props}>
+                {({ Component, props: propHalaman, key }) => {
+                    const beradaDiPortal = memilikiPenggunaTerautentikasi(propHalaman);
+
+                    return (
+                        <ToastProvider posisi={beradaDiPortal ? 'portal' : 'auth'}>
+                            <PasswordConfirmationProvider>
+                                <FlashToast />
+                                <Component key={key} {...propHalaman} />
+                            </PasswordConfirmationProvider>
+                        </ToastProvider>
+                    );
+                }}
+            </App>,
         );
     },
     progress: {

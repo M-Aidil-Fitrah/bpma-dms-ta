@@ -2,10 +2,9 @@ import { useToast, type StatusToast } from '@/Components/ui/Toast';
 import { usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 
-/** Bentuk pesan kilat yang dibagikan `HandleInertiaRequests`. */
-type Kilat = Partial<Record<StatusToast, string | null>>;
-
 const URUTAN: StatusToast[] = ['error', 'warning', 'success', 'info'];
+const FLASH_TERPUBLIKASI = new Set<string>();
+const BATAS_FLASH_TERSIMPAN = 100;
 
 /**
  * Mengubah pesan kilat dari server menjadi toast.
@@ -15,24 +14,27 @@ const URUTAN: StatusToast[] = ['error', 'warning', 'success', 'info'];
  * tempat pesan itu diangkat menjadi toast — kalau tiap halaman menanganinya
  * sendiri, halaman yang lupa memasangnya akan menelan hasil aksi tanpa jejak.
  *
- * Pemicunya adalah identitas objek `props`, bukan isi pesannya. Inertia
- * membuat objek props baru pada setiap kunjungan, sehingga dua aksi berturut-turut
- * yang menghasilkan kalimat yang sama persis tetap memunculkan dua toast —
- * sementara render ulang biasa di dalam satu halaman tidak memunculkan apa pun.
+ * ID flash berasal dari respons server. Ia tetap sama ketika komponen dipasang
+ * ulang pada kunjungan yang sama, namun berbeda untuk aksi berikutnya walau
+ * pesannya kebetulan sama.
  */
 export function FlashToast() {
     const { props } = usePage();
     const { tampilkan } = useToast();
-    const terakhir = useRef<object | null>(null);
+    const terakhir = useRef<string | null>(null);
 
     useEffect(() => {
-        if (terakhir.current === props) return;
+        const kilat = props.flash;
 
-        terakhir.current = props;
+        const id = kilat.id;
+        if (terakhir.current === id || FLASH_TERPUBLIKASI.has(id)) return;
 
-        const kilat = (props as { flash?: Kilat }).flash;
-
-        if (kilat === undefined) return;
+        terakhir.current = id;
+        FLASH_TERPUBLIKASI.add(id);
+        if (FLASH_TERPUBLIKASI.size > BATAS_FLASH_TERSIMPAN) {
+            const palingLama = FLASH_TERPUBLIKASI.values().next().value;
+            if (palingLama !== undefined) FLASH_TERPUBLIKASI.delete(palingLama);
+        }
 
         for (const status of URUTAN) {
             const pesan = kilat[status];

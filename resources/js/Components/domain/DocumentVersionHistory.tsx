@@ -1,4 +1,5 @@
 import { Avatar } from '@/Components/ui/Avatar';
+import { usePasswordConfirmation } from '@/Components/auth/PasswordConfirmationProvider';
 import { Button } from '@/Components/ui/Button';
 import { Field } from '@/Components/ui/Field';
 import { Textarea } from '@/Components/ui/Textarea';
@@ -16,13 +17,14 @@ interface DocumentVersionHistoryProps {
 
 /** Daftar revisi yang memilih ulang halaman pratinjau, bukan menyalin viewer. */
 export function DocumentVersionHistory({ versi, bolehPulihkan }: DocumentVersionHistoryProps) {
+    const konfirmasikan = usePasswordConfirmation();
     const [batasTampil, setBatasTampil] = useState(5);
     const { data, setData, post, processing, errors } = useForm({ version_note: '' });
     const versiDitampilkan = versi.slice(0, batasTampil);
 
     function pulihkan(event: FormEvent, id: number) {
         event.preventDefault();
-        post(`/documents/${id}/restore-version`);
+        konfirmasikan(() => post(`/documents/${id}/restore-version`));
     }
 
     return (

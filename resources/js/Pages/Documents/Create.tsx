@@ -43,7 +43,7 @@ export default function Create({ opsi, pengganti }: CreateProps) {
                     judul: pengganti?.judul ?? '',
                     deskripsi: pengganti?.deskripsi ?? '',
                     category_id: String(pengganti?.category_id ?? ''),
-                    origin_unit_id: String(pengganti?.origin_unit_id ?? ''),
+                    origin_unit_id: String(pengganti?.origin_unit_id ?? opsi.unit_akun_id ?? ''),
                     tanggal: pengganti?.tanggal ?? new Date().toISOString().slice(0, 10),
                     masa_berlaku: pengganti?.masa_berlaku ?? '',
                     edit_scope: pengganti?.edit_scope ?? 'owner_only',

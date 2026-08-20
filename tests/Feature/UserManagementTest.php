@@ -179,6 +179,32 @@ final class UserManagementTest extends TestCase
         $this->assertFalse($pengguna->hasRole(User::ROLE_SUPERADMIN));
     }
 
+    public function test_pimpinan_tertinggi_dapat_ditambahkan_tanpa_unit_kerja(): void
+    {
+        $jabatanTertinggi = Jabatan::factory()->tingkat(1)->create();
+
+        $this->actingAs($this->superadmin)
+            ->post('/admin/users', $this->formulir([
+                'jabatan_id' => $jabatanTertinggi->id,
+                'unit_id' => null,
+            ]))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'pengguna.baru@bpma.internal',
+            'jabatan_id' => $jabatanTertinggi->id,
+            'unit_id' => null,
+        ]);
+    }
+
+    public function test_pengguna_nonpimpinan_tetap_wajib_memiliki_unit_kerja(): void
+    {
+        $this->actingAs($this->superadmin)
+            ->post('/admin/users', $this->formulir(['unit_id' => null]))
+            ->assertSessionHasErrors('unit_id');
+    }
+
     public function test_pengguna_baru_dapat_langsung_masuk(): void
     {
         $this->actingAs($this->superadmin)->post('/admin/users', $this->formulir());

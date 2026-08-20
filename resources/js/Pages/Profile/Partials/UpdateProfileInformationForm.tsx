@@ -2,18 +2,17 @@ import { Button } from '@/Components/ui/Button';
 import { Card, CardBody, CardHeader, CardTitle } from '@/Components/ui/Card';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
+import { wajibPenggunaTerautentikasi } from '@/types/auth';
 import { useForm, usePage } from '@inertiajs/react';
 import { Check, Save } from 'lucide-react';
 import { type FormEvent } from 'react';
 
 export function UpdateProfileInformationForm() {
-    const { auth } = usePage().props as unknown as {
-        auth: { user: App.Data.AuthUserData };
-    };
+    const penggunaSaatIni = wajibPenggunaTerautentikasi(usePage().props);
 
     const { data, setData, patch, processing, errors, recentlySuccessful } = useForm({
-        name: auth.user.name,
-        email: auth.user.email,
+        name: penggunaSaatIni.name,
+        email: penggunaSaatIni.email,
     });
 
     function handleSubmit(event: FormEvent) {
@@ -66,12 +65,12 @@ export function UpdateProfileInformationForm() {
                         <div>
                             <dt className="text-ink-muted">Jabatan</dt>
                             <dd className="font-medium text-ink">
-                                {auth.user.jabatan ?? '—'}
+                                {penggunaSaatIni.jabatan ?? '—'}
                             </dd>
                         </div>
                         <div>
                             <dt className="text-ink-muted">Unit Kerja</dt>
-                            <dd className="font-medium text-ink">{auth.user.unit ?? '—'}</dd>
+                            <dd className="font-medium text-ink">{penggunaSaatIni.unit ?? '—'}</dd>
                         </div>
                     </dl>
 

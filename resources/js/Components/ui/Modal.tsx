@@ -11,6 +11,8 @@ export interface ModalProps {
     keterangan?: ReactNode;
     children: ReactNode;
     footer?: ReactNode;
+    /** Aksi kontekstual di dekat tombol tutup, mis. salin isi teks. */
+    aksiHeader?: ReactNode;
     className?: string;
     contentClassName?: string;
 }
@@ -29,6 +31,7 @@ export function Modal({
     keterangan,
     children,
     footer,
+    aksiHeader,
     className,
     contentClassName,
 }: ModalProps) {
@@ -39,7 +42,7 @@ export function Modal({
             <div className="fixed inset-0 flex items-end justify-center p-4 sm:items-center">
                 <DialogPanel
                     className={cn(
-                        'flex h-[min(42rem,calc(100dvh-2rem))] w-full max-w-3xl flex-col rounded-card bg-surface shadow-pop',
+                        'flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col rounded-card bg-surface shadow-pop',
                         className,
                     )}
                 >
@@ -48,12 +51,15 @@ export function Modal({
                             <DialogTitle className="text-base font-semibold text-ink">{judul}</DialogTitle>
                             {keterangan && <div className="mt-1 text-sm text-ink-muted">{keterangan}</div>}
                         </div>
-                        <IconButton
-                            icon={X}
-                            label={`Tutup ${judul}`}
-                            variant="ghost"
-                            onClick={() => onTutup(false)}
-                        />
+                        <div className="flex shrink-0 items-center gap-1">
+                            {aksiHeader}
+                            <IconButton
+                                icon={X}
+                                label={`Tutup ${judul}`}
+                                variant="ghost"
+                                onClick={() => onTutup(false)}
+                            />
+                        </div>
                     </div>
 
                     <div className={cn('min-h-0 flex-1 overflow-auto p-5', contentClassName)}>{children}</div>

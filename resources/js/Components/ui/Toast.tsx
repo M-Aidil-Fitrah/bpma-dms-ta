@@ -26,16 +26,11 @@ export interface IsiToast {
     judul: string;
     /** Keterangan tambahan bila judulnya saja belum cukup menjelaskan. */
     keterangan?: string;
-    /**
-     * Lama tampil dalam milidetik. `null` berarti menetap sampai ditutup
-     * pengguna — dipakai untuk kegagalan, yang tidak boleh lenyap sebelum
-     * sempat dibaca.
-     */
-    durasi?: number | null;
 }
 
 interface Toast extends IsiToast {
     id: number;
+    menutup: boolean;
 }
 
 interface KontrakToast {
@@ -59,20 +54,22 @@ const KonteksToast = createContext<KontrakToast | null>(null);
  *    menangkap hasil sebuah aksi, dan menyamakan keduanya justru membuat
  *    penolakan terbaca sebagai keberhasilan.
  *
- * 2. **Kegagalan tidak hilang sendiri.** Pesan sukses boleh lewat begitu saja
- *    — kalau terlewat, pengguna tetap melihat hasilnya di layar. Pesan gagal
- *    tidak: ia satu-satunya penjelasan mengapa sesuatu tidak terjadi, dan
- *    menghilangkannya setelah lima detik berarti menyembunyikan masalah.
+ * 2. **Waktunya konsisten.** Semua status tampil lima detik agar ritmenya
+ *    mudah dipahami; pengguna tetap dapat menahan atau menutupnya sendiri.
  *
  * 3. **Hitungan mundur berhenti saat disentuh.** Menggerakkan tetikus ke arah
  *    tombol tutup, atau membaca pelan-pelan, tidak boleh membuat pesannya
  *    kabur tepat sebelum sempat dibaca.
  */
-export function ToastProvider({ children }: { children: ReactNode }) {
+export function ToastProvider({ children, posisi = 'auth' }: { children: ReactNode; posisi?: 'auth' | 'portal' }) {
     const [daftar, setDaftar] = useState<Toast[]>([]);
     const nomor = useRef(0);
 
     const tutup = useCallback((id: number) => {
+        setDaftar((s) => s.map((t) => t.id === id ? { ...t, menutup: true } : t));
+    }, []);
+
+    const hapus = useCallback((id: number) => {
         setDaftar((s) => s.filter((t) => t.id !== id));
     }, []);
 
@@ -82,7 +79,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         setDaftar((s) => {
             // Tumpukan dibatasi supaya rentetan aksi cepat tidak menutupi
             // seluruh layar. Yang terlama disingkirkan lebih dulu.
-            const berikutnya = [...s, { ...isi, id }];
+            const berikutnya = [...s, { ...isi, id, menutup: false }];
 
             return berikutnya.slice(-4);
         });
@@ -120,21 +117,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               */}
             <div
                 className={cn(
-                    /* Ditempatkan DI BAWAH bilah atas, bukan menimpanya. Menu
-                       pengguna dan tombol aksi ada di sudut kanan atas; toast
-                       yang menutupinya membuat aksi berikutnya tidak dapat
-                       diklik justru saat pengguna baru selesai melakukan
-                       sesuatu. */
-                    'pointer-events-none fixed inset-x-0 top-14 z-[60] flex flex-col gap-2 px-3',
-                    'sm:inset-x-auto sm:right-0 sm:top-16 sm:w-full sm:max-w-sm sm:px-4',
+                    'pointer-events-none fixed inset-x-0 z-[60] flex flex-col gap-2 px-3',
+                    posisi === 'portal'
+                        ? 'top-14 sm:inset-x-auto sm:right-0 sm:top-16 sm:w-full sm:max-w-sm sm:px-4'
+                        : 'top-3 sm:inset-x-auto sm:right-0 sm:top-4 sm:w-full sm:max-w-sm sm:px-4',
                 )}
             >
                 <Wilayah
                     daftar={daftar.filter((t) => t.status === 'error')}
                     tutup={tutup}
+                    hapus={hapus}
                     tegas
                 />
-                <Wilayah daftar={daftar.filter((t) => t.status !== 'error')} tutup={tutup} />
+                <Wilayah daftar={daftar.filter((t) => t.status !== 'error')} tutup={tutup} hapus={hapus} />
             </div>
         </KonteksToast.Provider>
     );
@@ -153,10 +148,12 @@ export function useToast(): KontrakToast {
 function Wilayah({
     daftar,
     tutup,
+    hapus,
     tegas = false,
 }: {
     daftar: Toast[];
     tutup: (id: number) => void;
+    hapus: (id: number) => void;
     tegas?: boolean;
 }) {
     return (
@@ -173,7 +170,7 @@ function Wilayah({
                 terdorong ke bawah, bukan menutupi yang baru muncul — pesan
                 terakhirlah yang sedang ditunggu pengguna. */}
             {[...daftar].reverse().map((toast) => (
-                <KartuToast key={toast.id} toast={toast} onTutup={() => tutup(toast.id)} />
+                <KartuToast key={toast.id} toast={toast} onTutup={() => tutup(toast.id)} onHapus={() => hapus(toast.id)} />
             ))}
         </div>
     );
@@ -240,21 +237,14 @@ const GAYA: Record<
 /**
  * Lama tampil bawaan: lima detik untuk semua status.
  *
- * Pesan yang harus menetap sampai dibaca tetap bisa diminta per kasus dengan
- * `durasi: null` — dipakai nanti untuk kegagalan yang tidak boleh terlewat,
- * mis. unggahan gagal di tengah jalan.
+ * Semua status memakai durasi yang sama supaya pola umpan baliknya konsisten.
  */
-const DURASI_BAWAAN: Record<StatusToast, number | null> = {
-    success: 5000,
-    info: 5000,
-    warning: 5000,
-    error: 5000,
-};
+const DURASI_TOAST = 5000;
 
-function KartuToast({ toast, onTutup }: { toast: Toast; onTutup: () => void }) {
+function KartuToast({ toast, onTutup, onHapus }: { toast: Toast; onTutup: () => void; onHapus: () => void }) {
     const { icon: Icon, label, warnaIkon, warnaLabel, latarBilah, latarIkon, garis } =
         GAYA[toast.status];
-    const durasi = toast.durasi === undefined ? DURASI_BAWAAN[toast.status] : toast.durasi;
+    const durasi = DURASI_TOAST;
 
     const [tertahan, setTertahan] = useState(false);
     const adaKeterangan = toast.keterangan !== undefined && toast.keterangan !== '';
@@ -318,12 +308,20 @@ function KartuToast({ toast, onTutup }: { toast: Toast; onTutup: () => void }) {
     });
 
     useEffect(() => {
-        if (durasi === null || tertahan) return;
+        if (toast.menutup || tertahan) return;
 
         const pewaktu = window.setTimeout(() => tutupRef.current(), durasi);
 
         return () => window.clearTimeout(pewaktu);
-    }, [durasi, tertahan]);
+    }, [durasi, tertahan, toast.menutup]);
+
+    useEffect(() => {
+        if (! toast.menutup) return;
+
+        const pewaktu = window.setTimeout(onHapus, 180);
+
+        return () => window.clearTimeout(pewaktu);
+    }, [onHapus, toast.menutup]);
 
     return (
         <div
@@ -339,7 +337,7 @@ function KartuToast({ toast, onTutup }: { toast: Toast; onTutup: () => void }) {
                 banyakBaris ? 'items-start' : 'items-center',
                 // `motion-safe` membuat animasinya dilewati sepenuhnya bila
                 // sistem pengguna meminta gerak dikurangi.
-                'motion-safe:animate-toast-masuk',
+                toast.menutup ? 'pointer-events-none motion-safe:animate-toast-keluar' : 'motion-safe:animate-toast-masuk',
                 garis,
             )}
         >
@@ -382,19 +380,17 @@ function KartuToast({ toast, onTutup }: { toast: Toast; onTutup: () => void }) {
                 menutup sendiri. Tanpa penanda ini, hilangnya pesan terasa
                 mendadak dan pengguna tidak tahu ia sempat terlewat atau tidak.
                 Animasinya ikut berhenti saat kartu disentuh, seiring pewaktunya. */}
-            {durasi !== null && (
-                <span
-                    aria-hidden
-                    className={cn(
-                        'absolute inset-x-0 bottom-0 block h-0.5 origin-left',
-                        latarBilah,
-                    )}
-                    style={{
-                        animation: `toast-mundur ${durasi}ms linear forwards`,
-                        animationPlayState: tertahan ? 'paused' : 'running',
-                    }}
-                />
-            )}
+            <span
+                aria-hidden
+                className={cn(
+                    'absolute inset-x-0 bottom-0 block h-0.5 origin-left',
+                    latarBilah,
+                )}
+                style={{
+                    animation: `toast-mundur ${durasi}ms linear forwards`,
+                    animationPlayState: tertahan ? 'paused' : 'running',
+                }}
+            />
         </div>
     );
 }

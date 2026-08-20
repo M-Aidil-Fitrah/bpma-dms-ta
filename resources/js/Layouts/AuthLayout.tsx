@@ -1,4 +1,4 @@
-import { Logo } from '@/Components/ui/Logo';
+import { DmsBrand } from '@/Components/ui/DmsBrand';
 import { Head } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 
@@ -20,7 +20,7 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
             <main className="flex flex-1 items-center justify-center px-4 py-10">
                 <div className="w-full max-w-sm">
                     <div className="mb-8 flex flex-col items-center text-center">
-                        <Logo size="lg" className="mb-6" />
+                        <DmsBrand className="mb-6 items-center" />
                         <h1 className="text-xl font-semibold text-ink">{title}</h1>
                         {subtitle && (
                             <p className="mt-1 text-sm text-ink-muted">{subtitle}</p>
@@ -32,7 +32,7 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
                     </div>
 
                     <p className="mt-6 text-center text-xs text-ink-subtle">
-                        Sistem Manajemen Dokumen BPMA — akses internal
+                        Data Management System BPMA — akses internal
                     </p>
                 </div>
             </main>

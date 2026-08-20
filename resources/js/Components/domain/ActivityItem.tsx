@@ -4,9 +4,7 @@ import { Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
 
 export function ActivityItem({ activity }: { activity: App.Data.ActivityLogData }) {
-    const before = (activity.perubahan.old ?? {}) as Record<string, string>;
-    const after = (activity.perubahan.attributes ?? {}) as Record<string, string>;
-    const changes = Object.entries(after);
+    const changes = Object.entries(activity.perubahan.baru);
 
     return (
         <article className="flex gap-3 px-3 py-3">
@@ -32,7 +30,7 @@ export function ActivityItem({ activity }: { activity: App.Data.ActivityLogData 
                         {changes.map(([field, value]) => (
                             <div key={field} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
                                 <dt className="col-span-3 font-medium text-ink-muted">{field}</dt>
-                                <dd className="truncate text-ink-subtle">{before[field] ?? '—'}</dd>
+                                <dd className="truncate text-ink-subtle">{activity.perubahan.lama[field] ?? '—'}</dd>
                                 <ArrowRight className="size-3 text-ink-subtle" aria-hidden />
                                 <dd className="truncate text-ink">{value}</dd>
                             </div>

@@ -1,5 +1,9 @@
 declare namespace App {
 namespace Data {
+export type ActivityAttributeChangesData = {
+lama: Record<string, string>,
+baru: Record<string, string>,
+};
 export type ActivityLogData = {
 id: number,
 log_name: string,
@@ -10,8 +14,7 @@ inisial_pelaku: string,
 subjek: string,
 document_id: number | null,
 terjadi_pada: string,
-perubahan: Record<string, any>,
-properti: Record<string, any>,
+perubahan: App.Data.ActivityAttributeChangesData,
 };
 export type AuthUserData = {
 id: number,

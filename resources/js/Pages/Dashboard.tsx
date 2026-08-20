@@ -7,6 +7,7 @@ import { EmptyState } from '@/Components/ui/EmptyState';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
 import { formatAngka } from '@/lib/format';
+import { wajibPenggunaTerautentikasi } from '@/types/auth';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     CalendarClock,
@@ -23,14 +24,12 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ data }: DashboardProps) {
-    const { auth } = usePage().props as unknown as {
-        auth: { user: App.Data.AuthUserData };
-    };
+    const penggunaSaatIni = wajibPenggunaTerautentikasi(usePage().props);
 
     return (
         <AppLayout title="Beranda">
             <div className="space-y-5">
-                <SambutanBanner user={auth.user} />
+                <SambutanBanner user={penggunaSaatIni} />
 
                 <section aria-labelledby="statistik">
                     <h2 id="statistik" className="mb-3 text-sm font-semibold text-ink">

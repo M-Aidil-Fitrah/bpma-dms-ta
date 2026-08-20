@@ -95,12 +95,18 @@ final class DocumentIndexTest extends TestCase
             'file_name_original' => 'laporan.pdf',
             'tanggal' => '2026-02-01',
         ]);
+        $this->buatDokumen([
+            'file_mime_type' => 'video/mp4',
+            'file_name_original' => 'rekaman.mp4',
+            'tanggal' => '2026-03-01',
+        ]);
 
         $this->actingAs($this->anggota)->get('/documents')
             ->assertInertia(fn (AssertableInertia $p) => $p
-                ->has('dokumen.data', 2)
+                ->has('dokumen.data', 3)
                 ->where('dokumen.data.0.bisa_pratinjau_di_tab_baru', true)
-                ->where('dokumen.data.1.bisa_pratinjau_di_tab_baru', false));
+                ->where('dokumen.data.1.bisa_pratinjau_di_tab_baru', true)
+                ->where('dokumen.data.2.bisa_pratinjau_di_tab_baru', false));
     }
 
     public function test_dokumen_nonaktif_tidak_tampil(): void

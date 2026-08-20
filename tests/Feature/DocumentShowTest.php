@@ -234,6 +234,20 @@ final class DocumentShowTest extends TestCase
             ->assertHeader('content-disposition', 'inline; filename=laporan.pdf');
     }
 
+    public function test_pratinjau_video_dapat_dibuka_di_tab_baru(): void
+    {
+        $document = $this->buatDokumen([
+            'file_name_original' => 'rekaman.mp4',
+            'file_mime_type' => 'video/mp4',
+        ]);
+
+        $this->actingAs($this->berhak)
+            ->get("/documents/{$document->id}/preview")
+            ->assertOk()
+            ->assertHeader('content-disposition', 'inline; filename=rekaman.mp4')
+            ->assertHeader('content-type', 'video/mp4');
+    }
+
     public function test_pratinjau_memakai_proteksi_yang_sama_dengan_unduhan(): void
     {
         // Rute pratinjau yang lebih longgar akan menjadi pintu belakang menuju

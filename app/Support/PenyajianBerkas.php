@@ -41,6 +41,14 @@ final class PenyajianBerkas
         'image/gif',
         'image/webp',
         'image/bmp',
+        'video/mp4',
+        'video/webm',
+        'video/ogg',
+        'audio/mpeg',
+        'audio/mp4',
+        'audio/ogg',
+        'audio/wav',
+        'audio/webm',
         'text/plain',
     ];
 

@@ -30,6 +30,7 @@ use App\Services\DocumentMetadataChanges;
 use App\Services\DocumentThumbnailService;
 use App\Services\DocumentUploadService;
 use App\Services\DocumentVersionService;
+use App\Services\DocumentWorkspaceService;
 use App\Services\PengaturanService;
 use App\Support\BatasUnggah;
 use App\Support\JenjangAkses;
@@ -371,23 +372,40 @@ final class DocumentController extends Controller
      */
     public function destroy(Request $request, Document $document, ActivityLogService $aktivitas): RedirectResponse
     {
-        $this->authorize('delete', $document);
+        $this->authorize('trash', $document);
+
+        app(DocumentWorkspaceService::class)->trashDocument($document, $request->user());
 
         DB::transaction(function () use ($document, $request, $aktivitas): void {
-            $document->update(['is_active' => false]);
-
             $aktivitas->record(
                 ActivityLogName::Dokumen,
-                AuditEvent::DocumentDeactivated,
-                'Dokumen dinonaktifkan.',
+                AuditEvent::DocumentTrashed,
+                'Dokumen dipindahkan ke Sampah.',
                 $document,
                 $request->user(),
             );
         });
 
         return redirect()
-            ->route('documents.index')
-            ->with('success', "Dokumen \"{$document->judul}\" dinonaktifkan dan tidak lagi tampil di daftar.");
+            ->route('documents.trash')
+            ->with('success', "Dokumen \"{$document->judul}\" dipindahkan ke Sampah selama 30 hari.");
+    }
+
+    public function restoreTrash(Request $request, Document $document, DocumentWorkspaceService $workspace, ActivityLogService $aktivitas): RedirectResponse
+    {
+        $this->authorize('restoreTrash', $document);
+        abort_if($document->trashed_at === null, 422);
+        $workspace->restoreDocument($document);
+
+        $aktivitas->record(
+            ActivityLogName::Dokumen,
+            AuditEvent::DocumentTrashRestored,
+            'Dokumen dipulihkan dari Sampah.',
+            $document,
+            $request->user(),
+        );
+
+        return redirect()->route('documents.show', $document)->with('success', 'Dokumen berhasil dipulihkan dari Sampah.');
     }
 
     /**
@@ -464,8 +482,10 @@ final class DocumentController extends Controller
         Request $request,
         Document $document,
         ActivityLogQuery $aktivitas,
+        DocumentWorkspaceService $workspace,
     ): Response {
         $this->authorize('view', $document);
+        $workspace->recordRecent($document, $request->user());
 
         // Relasi identitas tunggal ini dibaca sekaligus. Memanggil `load()`
         // untuk kategori, unit asal, pengunggah, jabatan, dan unit pengunggah

@@ -21,6 +21,7 @@ enum AuditEvent: string
     case DocumentRestored = 'document_restored';
     case DocumentTrashed = 'document_trashed';
     case DocumentTrashRestored = 'document_trash_restored';
+    case DocumentPurged = 'document_purged';
     case DocumentReplaced = 'document_replaced';
     case DocumentVersionRestored = 'document_version_restored';
     case DocumentStatusChanged = 'document_status_changed';

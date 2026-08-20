@@ -13,3 +13,7 @@ Artisan::command('inspire', function () {
 Schedule::command('documents:update-expired-status')
     ->dailyAt('00:05')
     ->withoutOverlapping();
+
+Schedule::command('documents:purge-trash')
+    ->dailyAt('00:20')
+    ->withoutOverlapping();

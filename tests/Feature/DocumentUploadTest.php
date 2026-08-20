@@ -19,6 +19,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Spatie\Permission\Models\Role;
@@ -100,6 +101,77 @@ final class DocumentUploadTest extends TestCase
         $this->assertNotNull($document);
         $this->assertSame($this->pengunggah->id, $document->uploaded_by);
         $this->assertTrue(Storage::disk('local')->exists($document->file_path));
+    }
+
+    public function test_unit_kerja_pengunggah_menimpa_unit_yang_dikirim_manual(): void
+    {
+        $unitLain = Unit::factory()->create();
+
+        $this->actingAs($this->pengunggah)
+            ->post('/documents', $this->formulir(['origin_unit_id' => $unitLain->id]))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('documents', [
+            'judul' => 'Dokumen Uji Unggah',
+            'origin_unit_id' => $this->divisi->id,
+        ]);
+    }
+
+    public function test_pimpinan_tanpa_unit_dapat_menerbitkan_dokumen_pimpinan_bpma(): void
+    {
+        $pimpinan = User::factory()->create([
+            'jabatan_id' => Jabatan::factory()->tingkat(1)->create()->id,
+            'unit_id' => null,
+        ]);
+        $pimpinan->assignRole(User::ROLE_PENGGUNA);
+
+        $this->actingAs($pimpinan)
+            ->post('/documents', $this->formulir(['origin_unit_id' => null]))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('documents', [
+            'judul' => 'Dokumen Uji Unggah',
+            'uploaded_by' => $pimpinan->id,
+            'origin_unit_id' => null,
+        ]);
+    }
+
+    public function test_superadmin_wajib_menyebut_unit_kerja_penerbit(): void
+    {
+        Role::findOrCreate(User::ROLE_SUPERADMIN, 'web');
+        $superadmin = User::factory()->create(['jabatan_id' => null, 'unit_id' => null]);
+        $superadmin->assignRole(User::ROLE_SUPERADMIN);
+
+        $this->actingAs($superadmin)
+            ->post('/documents', $this->formulir(['origin_unit_id' => null]))
+            ->assertSessionHasErrors('origin_unit_id');
+    }
+
+    public function test_pilihan_unit_dan_kategori_formulir_terurut_sesuai_konteks(): void
+    {
+        $sekretaris = Unit::factory()->tingkatAtas()->create([
+            'nama' => 'Sekretaris BPMA',
+            'tipe' => Unit::TIPE_SEKRETARIS,
+        ]);
+        $divisiSekretaris = Unit::factory()->dibawah($sekretaris)->create([
+            'nama' => 'Divisi Sekretaris',
+        ]);
+        Category::factory()->create(['nama' => 'Lainnya']);
+
+        $this->actingAs($this->pengunggah)->get('/documents/create')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Documents/Create')
+                ->where('opsi.unit_akun_id', $this->divisi->id)
+                ->where('opsi.unit_kerja_wajib', false)
+                ->where('opsi.kategori', fn ($kategori): bool => $kategori->last()['nama'] === 'Lainnya')
+                ->where('opsi.unit', function ($unit) use ($sekretaris, $divisiSekretaris): bool {
+                    $indeksSekretaris = $unit->search(fn (array $item): bool => $item['id'] === $sekretaris->id);
+                    $indeksDivisi = $unit->search(fn (array $item): bool => $item['id'] === $divisiSekretaris->id);
+
+                    return is_int($indeksSekretaris)
+                        && is_int($indeksDivisi)
+                        && $indeksDivisi === $indeksSekretaris + 1;
+                }));
     }
 
     public function test_pola_jalur_berkas_sama_dengan_yang_dipakai_seeder(): void

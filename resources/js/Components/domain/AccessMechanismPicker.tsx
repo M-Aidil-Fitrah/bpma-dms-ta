@@ -341,10 +341,12 @@ function Pratinjau({
     jenjang: readonly JenjangJabatan[];
 }) {
     if (jumlahAktif === 0) {
+        const jabatanTertinggi = jenjang[0]?.jabatan.map(({ nama }) => nama).join(' dan ') ?? 'Pimpinan BPMA';
+
         return (
             <Alert variant="warning" title="Belum ada mekanisme akses yang aktif">
                 Dokumen ini hanya akan terlihat oleh Anda sendiri, Superadmin, dan
-                jabatan tingkat tertinggi. Aktifkan minimal satu mekanisme di atas.
+                {' '}{jabatanTertinggi}. Aktifkan minimal satu mekanisme di atas.
             </Alert>
         );
     }

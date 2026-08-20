@@ -38,6 +38,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -114,7 +115,7 @@ final class DocumentController extends Controller
     /**
      * Formulir unggah dokumen baru (FR-06).
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $this->authorize('create', Document::class);
 
@@ -127,7 +128,7 @@ final class DocumentController extends Controller
         }
 
         return Inertia::render('Documents/Create', [
-            'opsi' => $this->opsiFormulir(),
+            'opsi' => $this->opsiFormulir($request->user()),
             'pengganti' => $pengganti === null ? null : DocumentEditData::fromModel($pengganti),
         ]);
     }
@@ -160,12 +161,20 @@ final class DocumentController extends Controller
         }
 
         $berkas = $uploader->store($request->file('file'));
+        $kolomDokumen = $request->kolomDokumen();
+
+        // Pengguna yang ditempatkan pada unit selalu menerbitkan dokumen dari
+        // unitnya. Nilai dari browser tidak dipercaya karena permintaan dapat
+        // dikirim langsung tanpa melewati dropdown yang dikunci.
+        if ($lama === null && $request->user()->unit_id !== null) {
+            $kolomDokumen['origin_unit_id'] = $request->user()->unit_id;
+        }
 
         try {
             $document = $lama === null
-                ? DB::transaction(function () use ($request, $berkas, $akses, $aktivitas): Document {
+                ? DB::transaction(function () use ($request, $berkas, $kolomDokumen, $akses, $aktivitas): Document {
                     $document = Document::create([
-                        ...$request->kolomDokumen(),
+                        ...$kolomDokumen,
                         ...$berkas,
                         'status' => DocumentStatus::Berlaku,
                         'uploaded_by' => $request->user()->id,
@@ -230,7 +239,7 @@ final class DocumentController extends Controller
      * penyunting yang hanya ingin memperbaiki satu huruf pada judul tanpa sadar
      * mencabut seluruh daftar aksesnya.
      */
-    public function edit(Document $document): Response
+    public function edit(Request $request, Document $document): Response
     {
         $this->authorize('update', $document);
 
@@ -243,7 +252,7 @@ final class DocumentController extends Controller
 
         return Inertia::render('Documents/Edit', [
             'dokumen' => DocumentEditData::fromModel($document),
-            'opsi' => $this->opsiFormulir(),
+            'opsi' => $this->opsiFormulir($request->user()),
         ]);
     }
 
@@ -263,9 +272,14 @@ final class DocumentController extends Controller
             ]);
         }
 
+        $kolomDokumen = $request->kolomDokumen();
+        // Versi baru adalah kelanjutan arsip, sehingga unit kerjanya tidak
+        // boleh berubah hanya karena pengunggah versi berbeda dari pemiliknya.
+        $kolomDokumen['origin_unit_id'] = $lama->origin_unit_id;
+
         $document = $versi->buatMajor(
             $lama,
-            [...$request->kolomDokumen(), 'status' => DocumentStatus::Berlaku],
+            [...$kolomDokumen, 'status' => DocumentStatus::Berlaku],
             $berkas,
             $request->unitIds(),
             $request->penerimaIds(),
@@ -308,13 +322,21 @@ final class DocumentController extends Controller
     ): RedirectResponse {
         $this->authorize('update', $document);
 
+        $kolomDokumen = $request->kolomDokumen();
+        if ($request->user()->unit_id !== null) {
+            // Pengguna berunit tidak dapat memindahkan kepemilikan arsip lewat
+            // request buatan sendiri; pimpinan dan Superadmin tetap dapat
+            // melakukannya lewat revisi metadata yang tercatat.
+            $kolomDokumen['origin_unit_id'] = $document->origin_unit_id;
+        }
+
         $snapshotDenganPerubahan = clone $document;
-        $snapshotDenganPerubahan->fill($request->kolomDokumen());
+        $snapshotDenganPerubahan->fill($kolomDokumen);
         $perubahanMetadata = $metadata->fromDirty($snapshotDenganPerubahan);
 
         $revisi = $versi->buatMinor(
             $document,
-            $request->kolomDokumen(),
+            $kolomDokumen,
             $request->unitIds(),
             $request->penerimaIds(),
             $request->user(),
@@ -873,10 +895,18 @@ final class DocumentController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function opsiFormulir(): array
+    private function opsiFormulir(User $user): array
     {
         return [
             ...$this->opsiFilter(),
+
+            // Unit kerja adalah konteks arsip, bukan mekanisme akses. Untuk
+            // pengguna yang ditempatkan di unit tertentu, nilainya selalu
+            // mengikuti unit akun saat dokumen dibuat; pimpinan tanpa unit
+            // dapat menerbitkan sebagai Pimpinan BPMA, sedangkan Superadmin
+            // wajib menyebut unit yang benar-benar menerbitkan dokumen.
+            'unit_akun_id' => $user->unit_id,
+            'unit_kerja_wajib' => $user->isSuperadmin(),
 
             // Bukan sekadar daftar angka: tiap tingkat dikirim beserta nama
             // jabatan dan jumlah pemegangnya, supaya formulir dapat menyebutkan
@@ -908,17 +938,16 @@ final class DocumentController extends Controller
         return [
             'kategori' => Category::query()
                 ->active()
+                // "Lainnya" adalah pilihan cadangan, bukan kategori utama.
+                // Tetap letakkan terakhir meski Superadmin menambah kategori.
+                ->orderByRaw('CASE WHEN nama = ? THEN 1 ELSE 0 END', ['Lainnya'])
                 ->orderBy('nama')
                 ->get(['id', 'nama']),
 
             // Dipakai mencari label chip filter yang sedang aktif — nama
             // induk disertakan supaya "Divisi Keuangan Internal" dapat
             // dibedakan dari divisi bernama mirip di deputi lain.
-            'unit' => Unit::query()
-                ->active()
-                ->with('parent:id,nama')
-                ->orderBy('nama')
-                ->get(['id', 'nama', 'parent_id'])
+            'unit' => $this->unitAktifTerurut()
                 ->map(fn (Unit $unit): array => [
                     'id' => $unit->id,
                     'nama' => $unit->parent === null
@@ -929,13 +958,40 @@ final class DocumentController extends Controller
             // Bentuk pohon untuk `UnitTreeSelect` — nama TIDAK digabung
             // dengan induknya di sini, komponennya sendiri yang menyusun
             // hierarkinya lewat `parent_id`.
-            'unit_pohon' => Unit::query()
-                ->active()
-                ->orderBy('parent_id')
-                ->orderBy('nama')
-                ->get(['id', 'nama', 'parent_id']),
+            'unit_pohon' => $this->unitAktifTerurut()
+                ->map(fn (Unit $unit): array => [
+                    'id' => $unit->id,
+                    'nama' => $unit->nama,
+                    'parent_id' => $unit->parent_id,
+                ]),
             'pengunggah' => User::query()->active()->orderBy('name')->get(['id', 'name']),
         ];
+    }
+
+    /**
+     * Unit tingkat atas selalu segera diikuti divisinya. Mengurutkan seluruh
+     * nama secara datar membuat Sekretaris atau Deputi muncul jauh dari
+     * divisinya sendiri dan mudah salah pilih pada dropdown.
+     *
+     * @return Collection<int, Unit>
+     */
+    private function unitAktifTerurut(): Collection
+    {
+        $unit = Unit::query()
+            ->active()
+            ->with('parent:id,nama')
+            ->get(['id', 'nama', 'parent_id', 'tipe']);
+        $anakPerInduk = $unit->whereNotNull('parent_id')->groupBy('parent_id');
+
+        return $unit
+            ->whereNull('parent_id')
+            ->sortBy(fn (Unit $induk): string => ($induk->tipe === Unit::TIPE_SEKRETARIS ? '0' : '1').$induk->nama)
+            ->flatMap(function (Unit $induk) use ($anakPerInduk) {
+                return collect([$induk])->concat(
+                    $anakPerInduk->get($induk->id, collect())->sortBy('nama'),
+                );
+            })
+            ->values();
     }
 
     /**

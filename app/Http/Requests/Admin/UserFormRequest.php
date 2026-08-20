@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Jabatan;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -46,7 +47,8 @@ abstract class UserFormRequest extends FormRequest
                 Rule::exists('jabatans', 'id')->where('is_active', true),
             ],
             'unit_id' => [
-                'required', 'integer',
+                Rule::requiredIf(fn (): bool => $this->jabatanMembutuhkanUnit()),
+                'nullable', 'integer',
                 Rule::exists('units', 'id')->where('is_active', true),
             ],
         ];
@@ -58,5 +60,15 @@ abstract class UserFormRequest extends FormRequest
     public function kolomPengguna(): array
     {
         return $this->only(['name', 'email', 'jabatan_id', 'unit_id']);
+    }
+
+    private function jabatanMembutuhkanUnit(): bool
+    {
+        $tingkat = Jabatan::query()
+            ->active()
+            ->whereKey($this->input('jabatan_id'))
+            ->value('tingkat_akses');
+
+        return $tingkat !== null && (int) $tingkat !== Jabatan::TINGKAT_TERTINGGI;
     }
 }

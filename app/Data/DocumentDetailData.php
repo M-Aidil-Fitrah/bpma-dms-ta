@@ -116,7 +116,7 @@ final class DocumentDetailData extends Data
             judul: $document->judul,
             deskripsi: $document->deskripsi,
             kategori: $document->getAttribute('kategori_nama') ?? $document->category?->nama,
-            unit_asal: $document->getAttribute('unit_asal_nama') ?? $document->originUnit?->nama,
+            unit_asal: $document->getAttribute('unit_asal_nama') ?? $document->originUnit?->nama ?? 'Pimpinan BPMA',
             tanggal: $document->tanggal->toDateString(),
             masa_berlaku: $document->masa_berlaku?->toDateString(),
             status: $document->status,

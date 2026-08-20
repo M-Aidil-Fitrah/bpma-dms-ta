@@ -29,6 +29,8 @@ export interface OpsiFormulirDokumen {
     batas_unggah_label: string;
     batas_dijanjikan_label: string;
     lingkungan_kurang: boolean;
+    unit_akun_id: number | null;
+    unit_kerja_wajib: boolean;
 }
 
 export interface NilaiAwalDokumen {
@@ -97,6 +99,12 @@ export function DocumentForm({
             file: null,
             replaces_document_id: replacesDocumentId,
         });
+    const memakaiUnitAkun = opsi.unit_akun_id !== null;
+    const keteranganUnitKerja = memakaiUnitAkun
+        ? 'Mengikuti unit kerja akun Anda saat dokumen diunggah.'
+        : opsi.unit_kerja_wajib
+          ? 'Pilih unit kerja yang bertanggung jawab atas dokumen ini.'
+          : 'Kosongkan untuk dokumen yang diterbitkan Pimpinan BPMA.';
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
@@ -258,12 +266,18 @@ export function DocumentForm({
                             )}
                         </Field>
 
-                        <Field label="Unit Asal" error={errors.origin_unit_id}>
+                        <Field
+                            label="Unit Kerja"
+                            hint={keteranganUnitKerja}
+                            error={errors.origin_unit_id}
+                            required={opsi.unit_kerja_wajib}
+                        >
                             {(props) => (
                                 <Select
                                     {...props}
-                                    placeholder="Pilih unit asal"
+                                    placeholder="Pilih unit kerja"
                                     value={data.origin_unit_id}
+                                    disabled={memakaiUnitAkun}
                                     invalid={Boolean(errors.origin_unit_id)}
                                     options={opsi.unit.map((u) => ({
                                         value: u.id,
@@ -371,13 +385,13 @@ export function DocumentForm({
                     </CardBody>
                 </Card>
 
-                <div className="flex flex-col gap-2 sm:flex-row xl:flex-col">
+                <div className="grid grid-cols-2 gap-2">
                     <Button
                         type="submit"
                         icon={mode === 'buat' ? Upload : Save}
                         loading={processing}
                         size="lg"
-                        className="flex-1"
+                        className="w-full"
                     >
                         {mode === 'buat'
                             ? processing
@@ -390,7 +404,7 @@ export function DocumentForm({
                               : 'Simpan Perubahan'}
                     </Button>
 
-                    <Link href={batal} className="flex-1">
+                    <Link href={batal}>
                         <Button type="button" variant="secondary" size="lg" className="w-full">
                             Batal
                         </Button>

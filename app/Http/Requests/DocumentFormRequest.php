@@ -54,6 +54,7 @@ abstract class DocumentFormRequest extends FormRequest
                 Rule::exists('categories', 'id')->where('is_active', true),
             ],
             'origin_unit_id' => [
+                Rule::requiredIf(fn (): bool => ($this->user()?->isSuperadmin() ?? false) && ! $this->filled('replaces_document_id')),
                 'nullable', 'integer',
                 Rule::exists('units', 'id')->where('is_active', true),
             ],
@@ -102,7 +103,8 @@ abstract class DocumentFormRequest extends FormRequest
         return [
             'category_id.required' => 'Kategori wajib dipilih.',
             'category_id.exists' => 'Kategori yang dipilih tidak tersedia lagi.',
-            'origin_unit_id.exists' => 'Unit asal yang dipilih tidak tersedia lagi.',
+            'origin_unit_id.exists' => 'Unit kerja yang dipilih tidak tersedia lagi.',
+            'origin_unit_id.required' => 'Superadmin wajib memilih unit kerja yang bertanggung jawab atas dokumen.',
             'masa_berlaku.after_or_equal' => 'Masa berlaku tidak boleh mendahului tanggal dokumen.',
             'min_tingkat_akses.exists' => 'Jenjang jabatan yang dipilih tidak tersedia lagi.',
             'unit_ids.*.exists' => 'Salah satu unit yang dipilih sudah tidak aktif.',

@@ -87,16 +87,16 @@ export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: Sh
                 </Alert>
             )}
 
-            <div className="grid items-start gap-5 xl:grid-cols-5">
+            <div className="grid gap-5 xl:h-[calc(100dvh-6.5rem)] xl:grid-cols-5">
                 {/* Pratinjau mendapat porsi terbesar: itu yang dicari orang saat
                     membuka halaman ini, bukan daftar metadatanya. */}
-                <Card className="overflow-hidden xl:col-span-3">
-                    <div className="h-[28rem] xl:h-[38rem]">
+                <Card className="min-h-0 overflow-hidden xl:col-span-3">
+                    <div className="h-[28rem] xl:h-full">
                         <DocumentPreview dokumen={dokumen} sedangMenyiapkanPratinjau={masihMenyiapkanPratinjau} />
                     </div>
                 </Card>
 
-                <Card className="flex min-h-0 flex-col xl:sticky xl:top-20 xl:col-span-2 xl:max-h-[calc(100dvh-6rem)]">
+                <Card className="flex min-h-0 flex-col xl:col-span-2 xl:h-full">
                     <Tabs items={TAB_ITEMS} value={tab} onChange={setTab} label="Bagian dokumen" />
 
                     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5">

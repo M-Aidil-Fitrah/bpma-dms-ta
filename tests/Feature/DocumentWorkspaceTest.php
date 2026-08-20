@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\ActivityLogName;
+use App\Enums\AuditEvent;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\DocumentFolder;
@@ -12,6 +14,7 @@ use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -49,6 +52,13 @@ final class DocumentWorkspaceTest extends TestCase
         $this->actingAs($this->owner)->post(route('folders.store'), ['name' => 'Laporan 2026'])->assertRedirect();
         $folder = DocumentFolder::firstWhere('name', 'Laporan 2026');
 
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => ActivityLogName::DocumentWorkspace->value,
+            'event' => AuditEvent::FolderCreated->value,
+            'subject_id' => $folder->id,
+            'causer_id' => $this->owner->id,
+        ]);
+
         $this->actingAs($this->owner)
             ->put(route('documents.folder', $this->document), ['folder_id' => $folder->id])
             ->assertRedirect();
@@ -58,6 +68,13 @@ final class DocumentWorkspaceTest extends TestCase
             'document_id' => $this->document->id,
             'folder_id' => $folder->id,
         ]);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => ActivityLogName::DocumentWorkspace->value,
+            'event' => AuditEvent::DocumentMoved->value,
+            'subject_id' => $this->document->id,
+            'causer_id' => $this->owner->id,
+        ]);
+        $this->assertSame('Laporan 2026', Activity::query()->sole()->getProperty('lokasi_tujuan'));
     }
 
     public function test_pengguna_lain_tidak_dapat_melihat_folder_atau_memindahkan_dokumen_milik_pengunggah(): void
@@ -78,6 +95,21 @@ final class DocumentWorkspaceTest extends TestCase
         $this->assertDatabaseHas('document_recents', ['user_id' => $this->other->id, 'document_id' => $this->document->id]);
         $this->assertDatabaseHas('document_stars', ['user_id' => $this->other->id, 'document_id' => $this->document->id]);
         $this->assertDatabaseMissing('document_stars', ['user_id' => $this->owner->id, 'document_id' => $this->document->id]);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => ActivityLogName::DocumentWorkspace->value,
+            'event' => AuditEvent::DocumentStarred->value,
+            'subject_id' => $this->document->id,
+            'causer_id' => $this->other->id,
+        ]);
+
+        $this->actingAs($this->other)->delete(route('documents.unstar', $this->document))->assertRedirect();
+
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => ActivityLogName::DocumentWorkspace->value,
+            'event' => AuditEvent::DocumentUnstarred->value,
+            'subject_id' => $this->document->id,
+            'causer_id' => $this->other->id,
+        ]);
     }
 
     public function test_membuang_dokumen_menyembunyikannya_dan_dapat_dipulihkan(): void
@@ -89,6 +121,11 @@ final class DocumentWorkspaceTest extends TestCase
 
         $this->assertNotNull($this->document->fresh()->trashed_at);
         $this->actingAs($this->owner)->get(route('documents.show', $this->document))->assertForbidden();
+        $this->actingAs($this->owner)
+            ->get('/activity-log')
+            ->assertInertia(fn ($page) => $page
+                ->where('aktivitas.total', 1)
+                ->where('aktivitas.data.0.event', AuditEvent::DocumentTrashed->value));
 
         $this->actingAs($this->owner)
             ->withSession(['auth.password_confirmed_at' => time()])

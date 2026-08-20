@@ -8,10 +8,12 @@ use App\Enums\ActivityLogName;
 use App\Enums\AuditEvent;
 use App\Models\Category;
 use App\Models\Document;
+use App\Models\DocumentFolder;
 use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\ActivityLogService;
+use App\Services\DocumentWorkspaceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
@@ -89,6 +91,23 @@ final class ActivityLogVisibilityTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('aktivitas.total', 1)
                 ->where('aktivitas.data.0.subjek', 'Dokumen Tertutup'));
+    }
+
+    public function test_pemilik_melihat_aktivitas_ruang_kerja_pribadinya_tanpa_membuka_aktivitas_pengguna_lain(): void
+    {
+        $folder = DocumentFolder::query()->create([
+            'owner_id' => $this->anggota->id,
+            'name' => 'Arsip Kerja',
+            'name_normalized' => 'arsip kerja',
+        ]);
+        app(DocumentWorkspaceService::class)->trashFolder($folder, $this->anggota);
+
+        $this->actingAs($this->anggota)
+            ->get('/activity-log?jenis=document_workspace')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('aktivitas.total', 1)
+                ->where('aktivitas.data.0.event', AuditEvent::FolderTrashed->value)
+                ->where('aktivitas.data.0.subjek', 'Arsip Kerja'));
     }
 
     public function test_jumlah_query_riwayat_tidak_bertambah_seiring_aktivitas(): void

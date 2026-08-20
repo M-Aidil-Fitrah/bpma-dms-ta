@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Data\ActivityLogData;
+use App\Enums\ActivityLogName;
 use App\Http\Requests\ActivityLogIndexRequest;
 use App\Models\Document;
 use App\Models\User;
@@ -73,9 +74,33 @@ final class ActivityLogQuery
             return $query;
         }
 
-        return $query
-            ->where('activity_log.subject_type', (new Document)->getMorphClass())
-            ->whereIn('activity_log.subject_id', Document::query()->active()->visibleTo($user)->select('documents.id'));
+        return $query->where(function (Builder $query) use ($user): void {
+            $query
+                ->where(function (Builder $documentQuery) use ($user): void {
+                    $documentQuery
+                        ->where('activity_log.subject_type', (new Document)->getMorphClass())
+                        ->whereIn('activity_log.subject_id', Document::query()
+                            ->where(function (Builder $visibleDocuments) use ($user): void {
+                                $visibleDocuments
+                                    ->active()
+                                    ->visibleTo($user)
+                                    // Riwayat pengunggah tetap tersedia setelah
+                                    // dokumennya masuk Sampah atau dinonaktifkan.
+                                    // Tanpa cabang ini, aksi hapus/pulihkan justru
+                                    // hilang dari jejak audit pelakunya sendiri.
+                                    ->orWhere('documents.uploaded_by', $user->id);
+                            })
+                            ->select('documents.id'));
+                })
+                // Folder bersifat pribadi dan tidak memiliki policy akses dokumen.
+                // Pemilik tetap perlu melihat jejak pindah/Sampah foldernya sendiri,
+                // tetapi aktivitas ruang kerja pengguna lain tidak boleh bocor.
+                ->orWhere(function (Builder $workspaceQuery) use ($user): void {
+                    $workspaceQuery
+                        ->where('activity_log.log_name', ActivityLogName::DocumentWorkspace->value)
+                        ->where('activity_log.causer_id', $user->id);
+                });
+        });
     }
 
     /** @return Builder<Activity> */

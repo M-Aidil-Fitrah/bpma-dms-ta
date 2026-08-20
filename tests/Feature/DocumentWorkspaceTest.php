@@ -74,7 +74,13 @@ final class DocumentWorkspaceTest extends TestCase
             'subject_id' => $this->document->id,
             'causer_id' => $this->owner->id,
         ]);
-        $this->assertSame('Laporan 2026', Activity::query()->sole()->getProperty('lokasi_tujuan'));
+        $this->assertSame(
+            'Laporan 2026',
+            Activity::query()
+                ->where('event', AuditEvent::DocumentMoved->value)
+                ->sole()
+                ->getProperty('lokasi_tujuan'),
+        );
     }
 
     public function test_pengguna_lain_tidak_dapat_melihat_folder_atau_memindahkan_dokumen_milik_pengunggah(): void

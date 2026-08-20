@@ -6,6 +6,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Remember Me Duration
+    |--------------------------------------------------------------------------
+    |
+    | Session biasa memiliki batas diam yang lebih pendek. Cookie "Ingat saya"
+    | hanya dipakai bila pengguna mencentangnya, dan sengaja dibatasi agar
+    | perangkat bersama tidak menyimpan akses berbulan-bulan.
+    |
+    */
+
+    'remember_duration' => (int) env('AUTH_REMEMBER_DURATION', 60 * 24 * 30),
+
+    /*
+    |--------------------------------------------------------------------------
     | Authentication Defaults
     |--------------------------------------------------------------------------
     |

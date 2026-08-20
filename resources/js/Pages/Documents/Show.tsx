@@ -2,11 +2,10 @@ import { DocumentAccessPanel } from '@/Components/domain/DocumentAccessPanel';
 import { ActivityItem } from '@/Components/domain/ActivityItem';
 import { DocumentHeaderActions } from '@/Components/domain/DocumentHeaderActions';
 import { DocumentPreview } from '@/Components/domain/DocumentPreview';
-import { DocumentVersionHistory } from '@/Components/domain/DocumentVersionHistory';
+import { DocumentVersionHistory, KontrolTampilkanLebihBanyak } from '@/Components/domain/DocumentVersionHistory';
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
 import { ExtractionStatusBadge } from '@/Components/domain/ExtractionStatusBadge';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
-import { Pagination } from '@/Components/data/Pagination';
 import { Alert } from '@/Components/ui/Alert';
 import { Avatar } from '@/Components/ui/Avatar';
 import { Button } from '@/Components/ui/Button';
@@ -25,7 +24,7 @@ import { useState, type ReactNode } from 'react';
 interface ShowProps {
     dokumen: App.Data.DocumentDetailData;
     versi: App.Data.DocumentVersionData[];
-    riwayat: Pagination.Paginated<App.Data.ActivityLogData>;
+    riwayat: App.Data.ActivityLogData[];
     pollingKonfigurasi: { jedaMs: number; maksPercobaan: number };
 }
 
@@ -88,7 +87,7 @@ export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: Sh
                 </Alert>
             )}
 
-            <div className="grid gap-5 xl:grid-cols-5">
+            <div className="grid items-start gap-5 xl:grid-cols-5">
                 {/* Pratinjau mendapat porsi terbesar: itu yang dicari orang saat
                     membuka halaman ini, bukan daftar metadatanya. */}
                 <Card className="overflow-hidden xl:col-span-3">
@@ -97,10 +96,10 @@ export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: Sh
                     </div>
                 </Card>
 
-                <Card className="flex flex-col xl:col-span-2">
+                <Card className="flex min-h-0 flex-col xl:sticky xl:top-20 xl:col-span-2 xl:max-h-[calc(100dvh-6rem)]">
                     <Tabs items={TAB_ITEMS} value={tab} onChange={setTab} label="Bagian dokumen" />
 
-                    <div className="flex-1 overflow-auto p-5">
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5">
                         {tab === 'detail' && <PanelDetail dokumen={dokumen} />}
                         {tab === 'akses' && <DocumentAccessPanel dokumen={dokumen} />}
                         {tab === 'riwayat' && (
@@ -274,10 +273,12 @@ function PanelRiwayat({
     bolehPulihkan,
 }: {
     versi: App.Data.DocumentVersionData[];
-    riwayat: Pagination.Paginated<App.Data.ActivityLogData>;
+    riwayat: App.Data.ActivityLogData[];
     bolehPulihkan: boolean;
 }) {
     const [bagian, setBagian] = useState<'versi' | 'aktivitas'>('versi');
+    const [batasAktivitas, setBatasAktivitas] = useState(5);
+    const aktivitasDitampilkan = riwayat.slice(0, batasAktivitas);
 
     return (
         <div className="space-y-4" id="riwayat">
@@ -302,11 +303,16 @@ function PanelRiwayat({
 
             {bagian === 'versi' ? (
                 <DocumentVersionHistory versi={versi} bolehPulihkan={bolehPulihkan} />
-            ) : riwayat.data.length > 0 ? (
+            ) : riwayat.length > 0 ? (
                 <div className="-mx-5 divide-y divide-line">
-                    <div className="px-2 py-2">{riwayat.data.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div>
+                    <div className="px-2 py-2">{aktivitasDitampilkan.map((activity) => <ActivityItem key={activity.id} activity={activity} />)}</div>
                     <div className="px-5 py-3">
-                        <Pagination meta={riwayat} labelItem="aktivitas" pageParameter="activity_page" />
+                        <KontrolTampilkanLebihBanyak
+                            jumlahTampil={batasAktivitas}
+                            jumlahTotal={riwayat.length}
+                            onTampilkanLagi={() => setBatasAktivitas((batas) => batas + 5)}
+                            onTampilkanSemua={() => setBatasAktivitas(riwayat.length)}
+                        />
                     </div>
                 </div>
             ) : (

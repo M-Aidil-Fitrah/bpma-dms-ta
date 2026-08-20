@@ -242,7 +242,11 @@ final class UserController extends Controller
         return [
             // Hanya jabatan dan unit aktif — dipakai bersama formulir tambah
             // pengguna, yang memang tidak boleh menawarkan pilihan usang.
-            'jabatan' => Jabatan::query()->active()->orderBy('nama')->get(['id', 'nama']),
+            'jabatan' => Jabatan::query()
+                ->active()
+                ->orderBy('tingkat_akses')
+                ->orderBy('nama')
+                ->get(['id', 'nama', 'tingkat_akses']),
             'unit' => Unit::query()->active()->orderBy('nama')->get(['id', 'nama']),
         ];
     }

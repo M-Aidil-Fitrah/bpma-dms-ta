@@ -1,8 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\User;
 
 return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Remember Me Duration
+    |--------------------------------------------------------------------------
+    |
+    | Session biasa memiliki batas diam yang lebih pendek. Cookie "Ingat saya"
+    | hanya dipakai bila pengguna mencentangnya, dan sengaja dibatasi agar
+    | perangkat bersama tidak menyimpan akses berbulan-bulan.
+    |
+    */
+
+    'remember_duration' => (int) env('AUTH_REMEMBER_DURATION', 60 * 24 * 30),
 
     /*
     |--------------------------------------------------------------------------
@@ -108,10 +123,10 @@ return [
     |
     | Here you may define the number of seconds before a password confirmation
     | window expires and users are asked to re-enter their password via the
-    | confirmation screen. By default, the timeout lasts for three hours.
+    | confirmation screen. By default, the timeout lasts for fifteen minutes.
     |
     */
 
-    'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+    'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 900),
 
 ];

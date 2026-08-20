@@ -8,6 +8,7 @@ import { Card, CardFooter } from '@/Components/ui/Card';
 import { EmptyState } from '@/Components/ui/EmptyState';
 import { useFilters } from '@/hooks/useFilters';
 import { AppLayout } from '@/Layouts/AppLayout';
+import { wajibPenggunaTerautentikasi } from '@/types/auth';
 import { Link, usePage } from '@inertiajs/react';
 import { UserPlus, UserSearch, Users } from 'lucide-react';
 import { useMemo } from 'react';
@@ -36,9 +37,7 @@ const STATUS_OPTIONS = [
 ] as const;
 
 export default function Index({ pengguna, filter, opsi }: UsersIndexProps) {
-    const { auth } = usePage().props as unknown as {
-        auth: { user: App.Data.AuthUserData };
-    };
+    const penggunaSaatIni = wajibPenggunaTerautentikasi(usePage().props);
 
     const { ubah, bersihkan } = useFilters('/admin/users', filter);
 
@@ -135,8 +134,8 @@ export default function Index({ pengguna, filter, opsi }: UsersIndexProps) {
                         <KeadaanKosong adaPenyaring={chips.length > 0} onReset={bersihkan} />
                     ) : (
                         <>
-                            <UserTable pengguna={pengguna.data} idSayaSendiri={auth.user.id} />
-                            <UserCardList pengguna={pengguna.data} idSayaSendiri={auth.user.id} />
+                            <UserTable pengguna={pengguna.data} idSayaSendiri={penggunaSaatIni.id} />
+                            <UserCardList pengguna={pengguna.data} idSayaSendiri={penggunaSaatIni.id} />
                         </>
                     )}
 

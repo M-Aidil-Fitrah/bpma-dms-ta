@@ -1,4 +1,5 @@
 import { Alert } from '@/Components/ui/Alert';
+import { usePasswordConfirmation } from '@/Components/auth/PasswordConfirmationProvider';
 import { Button } from '@/Components/ui/Button';
 import { Card, CardBody, CardHeader, CardTitle } from '@/Components/ui/Card';
 import { Field } from '@/Components/ui/Field';
@@ -6,7 +7,7 @@ import { Input } from '@/Components/ui/Input';
 import { Select } from '@/Components/ui/Select';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { useForm } from '@inertiajs/react';
-import { RotateCcw, Save, Settings } from 'lucide-react';
+import { RotateCcw, Save } from 'lucide-react';
 import { type FormEvent } from 'react';
 
 interface SettingsProps {
@@ -15,6 +16,7 @@ interface SettingsProps {
 
 /** Pengaturan yang memang dapat diubah Superadmin, dibatasi allowlist backend. */
 export default function Index({ pengaturan }: SettingsProps) {
+    const konfirmasikan = usePasswordConfirmation();
     const { data, setData, patch, processing, errors } = useForm({
         unggah_batas_kb: String(pengaturan.unggah_batas_kb),
         dokumen_per_halaman: String(pengaturan.dokumen_per_halaman),
@@ -23,7 +25,7 @@ export default function Index({ pengaturan }: SettingsProps) {
 
     function submit(event: FormEvent) {
         event.preventDefault();
-        patch('/admin/settings');
+        konfirmasikan(() => patch('/admin/settings'));
     }
 
     function kembaliKeBawaan() {

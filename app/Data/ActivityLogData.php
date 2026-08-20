@@ -13,10 +13,6 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 final class ActivityLogData extends Data
 {
-    /**
-     * @param  array<string, mixed>  $perubahan
-     * @param  array<string, mixed>  $properti
-     */
     public function __construct(
         public int $id,
         public string $log_name,
@@ -27,8 +23,7 @@ final class ActivityLogData extends Data
         public string $subjek,
         public ?int $document_id,
         public string $terjadi_pada,
-        public array $perubahan,
-        public array $properti,
+        public ActivityAttributeChangesData $perubahan,
     ) {}
 
     public static function fromActivity(Activity $activity, ?string $namaPelaku): self
@@ -46,8 +41,7 @@ final class ActivityLogData extends Data
             subjek: $subjek['label'] ?? 'Subjek tidak tersedia',
             document_id: $activity->getProperty('dokumen_id'),
             terjadi_pada: $activity->created_at->toIso8601String(),
-            perubahan: $activity->attribute_changes?->all() ?? [],
-            properti: $activity->properties?->all() ?? [],
+            perubahan: ActivityAttributeChangesData::fromChanges($activity->attribute_changes?->all() ?? []),
         );
     }
 }

@@ -1,4 +1,5 @@
 import { ConfirmDialog } from '@/Components/ui/ConfirmDialog';
+import { usePasswordConfirmation } from '@/Components/auth/PasswordConfirmationProvider';
 import { IconButton } from '@/Components/ui/IconButton';
 import { Link, router } from '@inertiajs/react';
 import { Pencil, RotateCcw, Trash2 } from 'lucide-react';
@@ -21,12 +22,17 @@ const PATH: Record<ReferenceResourceKind, string> = {
 };
 
 export function ReferenceResourceActions({ jenis, id, nama, aktif, dampak }: ReferenceResourceActionsProps) {
+    const konfirmasikan = usePasswordConfirmation();
     const [konfirmasi, setKonfirmasi] = useState(false);
     const [memproses, setMemproses] = useState(false);
     const path = `/admin/${PATH[jenis]}/${id}`;
     const label = jenis === 'unit' ? 'unit kerja' : jenis;
 
     function nonaktifkan() {
+        konfirmasikan(jalankanNonaktifkan);
+    }
+
+    function jalankanNonaktifkan() {
         setMemproses(true);
         router.delete(path, {
             onFinish: () => {
@@ -37,6 +43,10 @@ export function ReferenceResourceActions({ jenis, id, nama, aktif, dampak }: Ref
     }
 
     function aktifkan() {
+        konfirmasikan(jalankanAktifkan);
+    }
+
+    function jalankanAktifkan() {
         setMemproses(true);
         router.patch(`${path}/restore`, {}, { onFinish: () => setMemproses(false) });
     }

@@ -105,7 +105,7 @@ final class DocumentListData extends Data
             nomor: $document->nomor,
             judul: $document->judul,
             kategori: $document->category?->nama,
-            unit_asal: $document->originUnit?->nama,
+            unit_asal: $document->originUnit?->nama ?? 'Pimpinan BPMA',
             tanggal: $document->tanggal->toDateString(),
             masa_berlaku: $document->masa_berlaku?->toDateString(),
             status: $document->status,

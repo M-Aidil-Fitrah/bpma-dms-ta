@@ -66,11 +66,14 @@ Route::middleware(['auth'])->group(function (): void {
     Route::patch('/documents/{document}', [DocumentController::class, 'update'])
         ->name('documents.update');
     Route::post('/documents/{document}/restore-version', [DocumentController::class, 'restoreVersion'])
+        ->middleware('password.confirm')
         ->name('documents.restore-version');
     // `delete` di sini berarti MENONAKTIFKAN, bukan menghapus baris (FR-10).
     Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])
+        ->middleware('password.confirm')
         ->name('documents.destroy');
     Route::patch('/documents/{document}/restore', [DocumentController::class, 'restore'])
+        ->middleware('password.confirm')
         ->name('documents.restore');
 
     // Unduh dan pratinjau memakai proteksi Policy yang sama persis; bedanya
@@ -96,14 +99,14 @@ Route::middleware(['auth'])->group(function (): void {
 Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->group(function (): void {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
-    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::post('/users', [UserController::class, 'store'])->middleware('password.confirm')->name('users.store');
     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
-    Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::patch('/users/{user}', [UserController::class, 'update'])->middleware('password.confirm')->name('users.update');
     // `delete` di sini berarti MENONAKTIFKAN, sama seperti dokumen (FR-27) —
     // riwayat dan dokumen yang pernah diunggah akun ini tetap utuh.
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-    Route::patch('/users/{user}/restore', [UserController::class, 'restore'])->name('users.restore');
-    Route::patch('/users/{user}/password', [UserController::class, 'resetPassword'])->name('users.password');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('password.confirm')->name('users.destroy');
+    Route::patch('/users/{user}/restore', [UserController::class, 'restore'])->middleware('password.confirm')->name('users.restore');
+    Route::patch('/users/{user}/password', [UserController::class, 'resetPassword'])->middleware('password.confirm')->name('users.password');
 
     /*
     |--------------------------------------------------------------------------
@@ -116,30 +119,30 @@ Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->grou
     */
     Route::get('/jabatans', [JabatanController::class, 'index'])->name('jabatans.index');
     Route::get('/jabatans/create', [JabatanController::class, 'create'])->name('jabatans.create');
-    Route::post('/jabatans', [JabatanController::class, 'store'])->name('jabatans.store');
+    Route::post('/jabatans', [JabatanController::class, 'store'])->middleware('password.confirm')->name('jabatans.store');
     Route::get('/jabatans/{jabatan}/edit', [JabatanController::class, 'edit'])->name('jabatans.edit');
-    Route::patch('/jabatans/{jabatan}', [JabatanController::class, 'update'])->name('jabatans.update');
-    Route::delete('/jabatans/{jabatan}', [JabatanController::class, 'destroy'])->name('jabatans.destroy');
-    Route::patch('/jabatans/{jabatan}/restore', [JabatanController::class, 'restore'])->name('jabatans.restore');
+    Route::patch('/jabatans/{jabatan}', [JabatanController::class, 'update'])->middleware('password.confirm')->name('jabatans.update');
+    Route::delete('/jabatans/{jabatan}', [JabatanController::class, 'destroy'])->middleware('password.confirm')->name('jabatans.destroy');
+    Route::patch('/jabatans/{jabatan}/restore', [JabatanController::class, 'restore'])->middleware('password.confirm')->name('jabatans.restore');
 
     Route::get('/units', [UnitController::class, 'index'])->name('units.index');
     Route::get('/units/create', [UnitController::class, 'create'])->name('units.create');
-    Route::post('/units', [UnitController::class, 'store'])->name('units.store');
+    Route::post('/units', [UnitController::class, 'store'])->middleware('password.confirm')->name('units.store');
     Route::get('/units/{unit}/edit', [UnitController::class, 'edit'])->name('units.edit');
-    Route::patch('/units/{unit}', [UnitController::class, 'update'])->name('units.update');
-    Route::delete('/units/{unit}', [UnitController::class, 'destroy'])->name('units.destroy');
-    Route::patch('/units/{unit}/restore', [UnitController::class, 'restore'])->name('units.restore');
+    Route::patch('/units/{unit}', [UnitController::class, 'update'])->middleware('password.confirm')->name('units.update');
+    Route::delete('/units/{unit}', [UnitController::class, 'destroy'])->middleware('password.confirm')->name('units.destroy');
+    Route::patch('/units/{unit}/restore', [UnitController::class, 'restore'])->middleware('password.confirm')->name('units.restore');
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
-    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::post('/categories', [CategoryController::class, 'store'])->middleware('password.confirm')->name('categories.store');
     Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
-    Route::patch('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
-    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
-    Route::patch('/categories/{category}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
+    Route::patch('/categories/{category}', [CategoryController::class, 'update'])->middleware('password.confirm')->name('categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware('password.confirm')->name('categories.destroy');
+    Route::patch('/categories/{category}/restore', [CategoryController::class, 'restore'])->middleware('password.confirm')->name('categories.restore');
 
     Route::get('/settings', [PengaturanController::class, 'index'])->name('settings.index');
-    Route::patch('/settings', [PengaturanController::class, 'update'])->name('settings.update');
+    Route::patch('/settings', [PengaturanController::class, 'update'])->middleware('password.confirm')->name('settings.update');
 });
 
 /*

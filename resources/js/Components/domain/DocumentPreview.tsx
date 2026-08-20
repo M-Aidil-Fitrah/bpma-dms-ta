@@ -120,21 +120,27 @@ function MenyiapkanPratinjau() {
 function PratinjauGambar({ url, dokumen, layarPenuh, onUbahLayarPenuh }: { url: string; dokumen: App.Data.DocumentDetailData } & KendaliLayarPenuh) {
     const [gagal, setGagal] = useState(false);
     const [skala, setSkala] = useState(1);
+    const [sedangGeser, setSedangGeser] = useState(false);
     const areaGambar = useRef<HTMLDivElement>(null);
     const geser = useRef<{ pointerId: number; x: number; y: number; kiri: number; atas: number } | null>(null);
 
-    function ubahSkala(nilai: number) {
-        setSkala(nilai);
+    function ubahSkala(pengubah: (saatIni: number) => number) {
+        setSkala((saatIni) => {
+            const berikutnya = pengubah(saatIni);
 
-        if (nilai <= 1) {
-            requestAnimationFrame(() => areaGambar.current?.scrollTo({ left: 0, top: 0 }));
-        }
+            if (saatIni > 1 && berikutnya <= 1) {
+                requestAnimationFrame(() => areaGambar.current?.scrollTo({ left: 0, top: 0 }));
+            }
+
+            return berikutnya;
+        });
     }
 
     function mulaiGeser(event: ReactPointerEvent<HTMLDivElement>) {
-        if (skala <= 1) return;
+        if (skala <= 1 || event.button !== 0) return;
 
         const area = event.currentTarget;
+        event.preventDefault();
         area.setPointerCapture(event.pointerId);
         geser.current = {
             pointerId: event.pointerId,
@@ -143,6 +149,7 @@ function PratinjauGambar({ url, dokumen, layarPenuh, onUbahLayarPenuh }: { url: 
             kiri: area.scrollLeft,
             atas: area.scrollTop,
         };
+        setSedangGeser(true);
     }
 
     function geserGambar(event: ReactPointerEvent<HTMLDivElement>) {
@@ -162,6 +169,12 @@ function PratinjauGambar({ url, dokumen, layarPenuh, onUbahLayarPenuh }: { url: 
             event.currentTarget.releasePointerCapture(event.pointerId);
         }
         geser.current = null;
+        setSedangGeser(false);
+    }
+
+    function batalkanGeser() {
+        geser.current = null;
+        setSedangGeser(false);
     }
 
     if (gagal) {
@@ -170,16 +183,31 @@ function PratinjauGambar({ url, dokumen, layarPenuh, onUbahLayarPenuh }: { url: 
 
     return (
         <div className="flex h-full min-h-0 flex-col">
-            <KendaliPratinjau skala={skala} onUbahSkala={ubahSkala} layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />
+            <KendaliPratinjau
+                skala={skala}
+                onPerkecil={() => ubahSkala((saatIni) => Math.max(0.5, saatIni - 0.25))}
+                onPerbesar={() => ubahSkala((saatIni) => Math.min(3, saatIni + 0.25))}
+                layarPenuh={layarPenuh}
+                onUbahLayarPenuh={onUbahLayarPenuh}
+            />
             <div
                 ref={areaGambar}
-                className={`flex min-h-0 flex-1 items-center justify-center overflow-auto bg-surface-sunken p-4 ${skala > 1 ? 'cursor-grab touch-none active:cursor-grabbing' : ''}`}
+                className={`min-h-0 flex-1 overflow-auto bg-surface-sunken p-4 ${skala > 1 ? `block touch-none ${sedangGeser ? 'cursor-grabbing' : 'cursor-grab'}` : 'flex items-center justify-center'}`}
                 onPointerDown={mulaiGeser}
                 onPointerMove={geserGambar}
                 onPointerUp={selesaiGeser}
                 onPointerCancel={selesaiGeser}
+                onLostPointerCapture={batalkanGeser}
             >
-                <img src={url} alt={dokumen.judul} draggable={false} className="max-w-none rounded shadow-card" style={{ width: `${skala * 100}%` }} onError={() => setGagal(true)} />
+                <img
+                    src={url}
+                    alt={dokumen.judul}
+                    draggable={false}
+                    className="block max-w-none rounded shadow-card"
+                    style={{ width: `${skala * 100}%` }}
+                    onDragStart={(event) => event.preventDefault()}
+                    onError={() => setGagal(true)}
+                />
             </div>
         </div>
     );
@@ -226,14 +254,14 @@ function PanelTeks({ teks, mime, layarPenuh, onUbahLayarPenuh }: { teks: string;
     );
 }
 
-function KendaliPratinjau({ skala, onUbahSkala, layarPenuh, onUbahLayarPenuh }: Partial<{ skala: number; onUbahSkala: (skala: number) => void }> & KendaliLayarPenuh) {
+function KendaliPratinjau({ skala, onPerkecil, onPerbesar, layarPenuh, onUbahLayarPenuh }: Partial<{ skala: number; onPerkecil: () => void; onPerbesar: () => void }> & KendaliLayarPenuh) {
     return (
         <div className="flex items-center justify-end gap-1 border-b border-line bg-surface px-3 py-2">
-            {skala !== undefined && onUbahSkala && (
+            {skala !== undefined && onPerkecil && onPerbesar && (
                 <>
-                    <IconButton icon={ZoomOut} label="Perkecil" size="sm" disabled={skala <= 0.5} onClick={() => onUbahSkala(Math.max(0.5, skala - 0.25))} />
+                    <IconButton icon={ZoomOut} label="Perkecil" size="sm" disabled={skala <= 0.5} onClick={onPerkecil} />
                     <span className="w-12 text-center font-mono text-xs text-ink-muted">{Math.round(skala * 100)}%</span>
-                    <IconButton icon={ZoomIn} label="Perbesar" size="sm" disabled={skala >= 3} onClick={() => onUbahSkala(Math.min(3, skala + 0.25))} />
+                    <IconButton icon={ZoomIn} label="Perbesar" size="sm" disabled={skala >= 3} onClick={onPerbesar} />
                 </>
             )}
             <IconButton icon={layarPenuh ? Minimize : Maximize} label={layarPenuh ? 'Keluar dari layar penuh' : 'Layar penuh'} size="sm" onClick={onUbahLayarPenuh} />

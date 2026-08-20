@@ -74,6 +74,14 @@ final class DocumentSeedTest extends TestCase
             );
         }
 
+        $this->assertSame(
+            0,
+            Document::where('extraction_status', ExtractionStatus::Completed)
+                ->where(fn ($query) => $query->whereNull('extracted_text')->orWhere('extracted_text', ''))
+                ->count(),
+            'Status selesai hanya boleh dipakai saat teks yang dapat dicari benar-benar tersedia.',
+        );
+
         // -- Isi dokumen benar-benar dapat dicari ----------------------------
         $this->assertGreaterThan(
             0,
@@ -89,9 +97,9 @@ final class DocumentSeedTest extends TestCase
 
         // -- Berkas tersimpan berdasarkan tahun dan bulan --------------------
         $this->assertMatchesRegularExpression(
-            '#^documents/\d{4}/\d{2}/[0-9a-f-]{36}\.\w+$#',
+            '#^documents/seed/\d{4}/\d{2}/[0-9a-f-]{36}\.\w+$#',
             Document::value('file_path'),
-            'Pola penyimpanan harus sama dengan yang dipakai unggahan sungguhan.',
+            'Berkas seed harus berada di ruang demo yang terpisah dari unggahan pengguna.',
         );
 
         // -- Bahan uji dasbor dan perintah terjadwal -------------------------
@@ -105,5 +113,12 @@ final class DocumentSeedTest extends TestCase
                 ->count(),
             'Perlu dokumen yang masa berlakunya lewat untuk mendemokan transisi status otomatis.',
         );
+
+        // Menjalankan seed ulang pada data demo yang telah ada tidak boleh
+        // menduplikasi dokumen atau menghapus berkas yang masih dirujuk.
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertSame(220, Document::count());
+        $this->assertTrue(Storage::disk('local')->exists(Document::value('file_path')));
     }
 }

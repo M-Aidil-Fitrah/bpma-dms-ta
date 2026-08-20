@@ -9,7 +9,7 @@ type DokumenAkses = Pick<
 
 /** Ringkasan akses baca dan wewenang ubah pada detail dokumen. */
 export function DocumentAccessPanel({ dokumen }: { dokumen: DokumenAkses }) {
-    const mekanisme = [
+    const kandidatMekanisme: Array<Mekanisme | false> = [
         dokumen.dibagikan_ke_semua && {
             icon: Globe,
             judul: 'Bagikan ke semua',
@@ -33,7 +33,8 @@ export function DocumentAccessPanel({ dokumen }: { dokumen: DokumenAkses }) {
             keterangan: `${dokumen.orang_tertentu.length} orang mendapat akses langsung.`,
             detail: <DaftarOrang orang={dokumen.orang_tertentu} />,
         },
-    ].filter(Boolean) as Mekanisme[];
+    ];
+    const mekanisme = kandidatMekanisme.filter((item): item is Mekanisme => item !== false);
 
     const ringkasan = mekanisme.length === 0
         ? ['Hanya pemilik dokumen yang dapat membuka dokumen ini.']

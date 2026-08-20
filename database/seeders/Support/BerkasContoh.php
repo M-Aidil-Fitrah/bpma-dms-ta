@@ -23,6 +23,9 @@ final class BerkasContoh
 {
     private const FOLDER_SUMBER = __DIR__.'/../files';
 
+    /** Berkas demo dipisahkan dari berkas yang benar-benar diunggah pengguna. */
+    private const FOLDER_TUJUAN = 'documents/seed';
+
     /**
      * Katalog berkas contoh beserta perilaku ekstraksi yang diharapkan.
      *
@@ -44,11 +47,12 @@ final class BerkasContoh
             'status' => ExtractionStatus::Completed,
             'teks' => true,
         ],
-        // PDF hasil pindaian: berhasil diproses, tapi tidak ada teks untuk
-        // diambil. Bukan kegagalan (FR-32c).
+        // PDF hasil pindaian: OCR tidak menemukan teks yang layak diindeks.
+        // Berkas tetap dapat diunduh, tetapi tidak boleh dilabeli selesai dan
+        // dapat dicari.
         'nota-dinas-hasil-pindai.pdf' => [
             'mime' => 'application/pdf',
-            'status' => ExtractionStatus::Completed,
+            'status' => ExtractionStatus::ReviewRequired,
             'teks' => false,
         ],
         'notulen-rapat-koordinasi.docx' => [
@@ -95,15 +99,10 @@ final class BerkasContoh
         ],
     ];
 
-    /**
-     * Mengosongkan folder dokumen sebelum seeding.
-     *
-     * Tanpa ini, setiap `migrate:fresh --seed` meninggalkan berkas yatim:
-     * basis datanya bersih, tapi cakram terus membengkak tanpa disadari.
-     */
-    public static function bersihkanPenyimpanan(): void
+    /** Mengosongkan berkas demo lama tanpa pernah menyentuh unggahan pengguna. */
+    public static function bersihkanPenyimpananSeed(): void
     {
-        Storage::disk('local')->deleteDirectory('documents');
+        Storage::disk('local')->deleteDirectory(self::FOLDER_TUJUAN);
     }
 
     /**
@@ -123,7 +122,7 @@ final class BerkasContoh
         }
 
         $ekstensi = pathinfo($namaBerkas, PATHINFO_EXTENSION);
-        $tujuan = sprintf('documents/%s/%s/%s.%s', $tahun, $bulan, Str::uuid(), $ekstensi);
+        $tujuan = sprintf('%s/%s/%s/%s.%s', self::FOLDER_TUJUAN, $tahun, $bulan, Str::uuid(), $ekstensi);
 
         Storage::disk('local')->put($tujuan, (string) file_get_contents($sumber));
 

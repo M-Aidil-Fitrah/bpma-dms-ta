@@ -1,4 +1,5 @@
 import { Button } from '@/Components/ui/Button';
+import { usePasswordConfirmation } from '@/Components/auth/PasswordConfirmationProvider';
 import { Card, CardBody, CardHeader, CardTitle } from '@/Components/ui/Card';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
@@ -8,7 +9,7 @@ import { Save, UserPlus } from 'lucide-react';
 import { type FormEvent } from 'react';
 
 export interface OpsiFormulirPengguna {
-    jabatan: { id: number; nama: string }[];
+    jabatan: { id: number; nama: string; tingkat_akses: number }[];
     unit: { id: number; nama: string }[];
 }
 
@@ -41,6 +42,7 @@ export interface UserFormProps {
  * saat menambah, dan sama sekali tidak ada medannya saat menyunting.
  */
 export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
+    const konfirmasikan = usePasswordConfirmation();
     const { data, setData, post, patch, processing, errors } = useForm<
         NilaiAwalPengguna & { password: string; password_confirmation: string }
     >({
@@ -48,10 +50,15 @@ export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
         password: '',
         password_confirmation: '',
     });
+    const jabatanTerpilih = opsi.jabatan.find((jabatan) => jabatan.id.toString() === data.jabatan_id);
+    const jabatanTertinggi = jabatanTerpilih?.tingkat_akses === 1;
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
+        konfirmasikan(simpan);
+    }
 
+    function simpan() {
         if (mode === 'buat') {
             post(aksi);
         } else {
@@ -97,17 +104,30 @@ export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
                                 value={data.jabatan_id}
                                 invalid={Boolean(errors.jabatan_id)}
                                 options={opsi.jabatan.map((j) => ({ value: j.id, label: j.nama }))}
-                                onChange={(e) => setData('jabatan_id', e.target.value)}
+                                onChange={(e) => {
+                                    const jabatanId = e.target.value;
+                                    setData('jabatan_id', jabatanId);
+
+                                    if (opsi.jabatan.find((jabatan) => jabatan.id.toString() === jabatanId)?.tingkat_akses === 1) {
+                                        setData('unit_id', '');
+                                    }
+                                }}
                             />
                         )}
                     </Field>
 
-                    <Field label="Unit Kerja" error={errors.unit_id} required>
+                    <Field
+                        label="Unit Kerja"
+                        error={errors.unit_id}
+                        required={!jabatanTertinggi}
+                        hint={jabatanTertinggi ? 'Pimpinan tingkat tertinggi tidak ditempatkan pada unit kerja.' : undefined}
+                    >
                         {(props) => (
                             <Select
                                 {...props}
-                                placeholder="Pilih unit"
+                                placeholder={jabatanTertinggi ? 'Tidak ditempatkan pada unit kerja' : 'Pilih unit'}
                                 value={data.unit_id}
+                                disabled={jabatanTertinggi}
                                 invalid={Boolean(errors.unit_id)}
                                 options={opsi.unit.map((u) => ({ value: u.id, label: u.nama }))}
                                 onChange={(e) => setData('unit_id', e.target.value)}

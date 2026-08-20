@@ -65,9 +65,21 @@ final class DocumentSeeder extends Seeder
 
     public function run(): void
     {
+        // Seeder referensi boleh dijalankan ulang karena memakai
+        // `updateOrCreate()`. Dokumen berbeda: data kerja nyata tidak boleh
+        // dihapus atau ditumpuk hanya karena seseorang menjalankan `db:seed`.
+        // Keadaan demo lengkap dibuat lewat database kosong
+        // (`migrate:fresh --seed`), sedangkan basis data yang sudah memiliki
+        // dokumen dipertahankan apa adanya.
+        if (Document::query()->exists()) {
+            $this->command?->warn('Seeder dokumen dilewati karena basis data sudah berisi dokumen.');
+
+            return;
+        }
+
         mt_srand(self::BENIH);
 
-        BerkasContoh::bersihkanPenyimpanan();
+        BerkasContoh::bersihkanPenyimpananSeed();
 
         $this->nomor = new NomorDokumen;
         $this->units = Unit::with('parent')->get();
@@ -157,6 +169,7 @@ final class DocumentSeeder extends Seeder
         );
 
         $status = BerkasContoh::KATALOG[$data['berkas']]['status'];
+        $teksEkstraksi = BerkasContoh::teksEkstraksi($data['berkas']);
 
         $document = Document::create([
             'nomor' => $this->nomor->berikutnya($unit, $tanggal),
@@ -168,8 +181,8 @@ final class DocumentSeeder extends Seeder
             'status' => DocumentStatus::Berlaku,
             'deskripsi' => $this->deskripsi($data['judul'], $unit->nama),
             ...$berkas,
-            'extracted_text' => BerkasContoh::teksEkstraksi($data['berkas']),
-            'extraction_status' => $this->statusEkstraksi($status, $urutan),
+            'extracted_text' => $teksEkstraksi,
+            'extraction_status' => $this->statusEkstraksi($status, $urutan, $teksEkstraksi),
             'is_shared_to_all' => $akses['is_shared_to_all'] ?? false,
             'min_tingkat_akses' => $akses['min_tingkat_akses'] ?? null,
             'edit_scope' => $urutan % 10 < 3
@@ -312,7 +325,7 @@ final class DocumentSeeder extends Seeder
      * punya wujud nyata segera setelah seeding — tanpa menunggu ada yang
      * mengunggah berkas rusak.
      */
-    private function statusEkstraksi(ExtractionStatus $bawaan, int $urutan): ExtractionStatus
+    private function statusEkstraksi(ExtractionStatus $bawaan, int $urutan, ?string $teks): ExtractionStatus
     {
         if ($bawaan === ExtractionStatus::NotApplicable) {
             return $bawaan;
@@ -321,6 +334,7 @@ final class DocumentSeeder extends Seeder
         return match (true) {
             $urutan % 71 === 13 => ExtractionStatus::Pending,
             $urutan % 41 === 9 => ExtractionStatus::Failed,
+            trim($teks ?? '') === '' => ExtractionStatus::ReviewRequired,
             default => $bawaan,
         };
     }

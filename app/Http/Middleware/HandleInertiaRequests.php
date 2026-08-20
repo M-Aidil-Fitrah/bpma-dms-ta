@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use App\Data\AuthUserData;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -46,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user === null
                     ? null
                     : AuthUserData::fromUser($user->loadMissing(['jabatan', 'unit', 'roles'])),
+                'password_confirmed_until' => fn (): ?string => $this->passwordConfirmedUntil($request),
             ],
 
             // Pesan sekali-tampil setelah sebuah aksi. Dibungkus closure supaya
@@ -55,11 +57,29 @@ class HandleInertiaRequests extends Middleware
             // menambahnya di kedua tempat — dan yang tidak terdaftar di sini
             // tidak akan pernah sampai ke layar.
             'flash' => [
+                // ID dibuat per respons supaya antarmuka dapat membedakan
+                // kunjungan baru dari pemasangan ulang komponen pada kunjungan
+                // yang sama. Tanpanya satu flash dapat memunculkan dua toast.
+                'id' => (string) Str::uuid(),
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
                 'info' => fn () => $request->session()->get('info'),
             ],
         ];
+    }
+
+    private function passwordConfirmedUntil(Request $request): ?string
+    {
+        $terkonfirmasiPada = (int) $request->session()->get('auth.password_confirmed_at', 0);
+        if ($terkonfirmasiPada === 0) {
+            return null;
+        }
+
+        $berlakuSampai = $terkonfirmasiPada + (int) config('auth.password_timeout');
+
+        return $berlakuSampai > now()->timestamp
+            ? now()->setTimestamp($berlakuSampai)->toIso8601String()
+            : null;
     }
 }

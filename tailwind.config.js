@@ -117,8 +117,12 @@ export default {
             // menambah satu dependensi lagi ke berkas bundel.
             keyframes: {
                 'toast-masuk': {
-                    from: { opacity: '0', transform: 'translateY(-0.5rem)' },
+                    from: { opacity: '0', transform: 'translate(0.75rem, -0.5rem)' },
                     to: { opacity: '1', transform: 'translateY(0)' },
+                },
+                'toast-keluar': {
+                    from: { opacity: '1', transform: 'translateY(0)' },
+                    to: { opacity: '0', transform: 'translate(0.75rem, -0.5rem)' },
                 },
                 // Bilah hitung mundur toast; durasinya disetel per kartu.
                 'toast-mundur': {
@@ -128,6 +132,7 @@ export default {
             },
             animation: {
                 'toast-masuk': 'toast-masuk 180ms ease-out',
+                'toast-keluar': 'toast-keluar 180ms ease-in forwards',
             },
         },
     },

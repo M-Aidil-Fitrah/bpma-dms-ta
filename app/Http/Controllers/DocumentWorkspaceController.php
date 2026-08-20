@@ -29,7 +29,9 @@ final class DocumentWorkspaceController extends Controller
                 ->active()
                 ->notTrashed()
                 ->where('uploaded_by', $user->id)
-                ->whereDoesntHave('placements', fn ($query) => $query->where('owner_id', $user->id))
+                ->whereDoesntHave('placements', fn ($query) => $query
+                    ->where('owner_id', $user->id)
+                    ->whereHas('folder', fn ($folderQuery) => $folderQuery->notTrashed()))
                 ->select(Document::KOLOM_DAFTAR)
                 ->latest('id')
                 ->get(),

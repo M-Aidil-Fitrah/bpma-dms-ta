@@ -79,7 +79,7 @@ export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: Sh
                     judul={dokumen.judul}
                     aktif={dokumen.aktif}
                     bolehUbah={dokumen.boleh_ubah}
-                    bolehNonaktifkan={dokumen.boleh_nonaktifkan}
+                    bolehPindahKeSampah={dokumen.boleh_pindah_ke_sampah}
                     bolehAktifkan={dokumen.boleh_aktifkan}
                 />
             }

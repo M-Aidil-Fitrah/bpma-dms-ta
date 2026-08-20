@@ -538,6 +538,7 @@ final class DocumentController extends Controller
             'dokumen' => DocumentDetailData::fromModel(
                 $document,
                 bolehUbah: $request->user()->can('update', $document),
+                bolehPindahKeSampah: $request->user()->can('trash', $document),
                 bolehAktifkan: $request->user()->can('restore', $document),
                 bolehPulihkanVersi: $request->user()->can('restoreVersion', $document),
                 jabatanTujuan: $jabatanTujuan,

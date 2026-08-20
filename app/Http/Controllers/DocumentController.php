@@ -20,6 +20,7 @@ use App\Jobs\ExtractDocumentTextJob;
 use App\Jobs\GenerateDocumentThumbnailJob;
 use App\Models\Category;
 use App\Models\Document;
+use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\ActivityLogQuery;
@@ -466,7 +467,8 @@ final class DocumentController extends Controller
 
         $document->load([
             'targetUnits:id,nama',
-            'sharedUsers:id,name',
+            'sharedUsers:id,name,unit_id',
+            'sharedUsers.unit:id,nama',
             'replacedDocument:id,nomor,judul',
             // Foreign key wajib ikut dipilih pada hasOne; tanpa ini Eloquent
             // tidak dapat memasangkan versi penerus ke dokumen yang dibuka.
@@ -480,6 +482,15 @@ final class DocumentController extends Controller
             ->orderByDesc('version_minor')
             ->get();
         $latestId = $versi->first()?->id ?? $document->id;
+        $jabatanTujuan = $document->min_tingkat_akses === null
+            ? []
+            : Jabatan::query()
+                ->active()
+                ->where('tingkat_akses', '<=', $document->min_tingkat_akses)
+                ->orderBy('tingkat_akses')
+                ->orderBy('nama')
+                ->pluck('nama')
+                ->all();
 
         return Inertia::render('Documents/Show', [
             'dokumen' => DocumentDetailData::fromModel(
@@ -487,6 +498,7 @@ final class DocumentController extends Controller
                 bolehUbah: $request->user()->can('update', $document),
                 bolehAktifkan: $request->user()->can('restore', $document),
                 bolehPulihkanVersi: $request->user()->can('restoreVersion', $document),
+                jabatanTujuan: $jabatanTujuan,
             ),
             'versi' => $versi
                 ->map(fn (Document $versi): DocumentVersionData => DocumentVersionData::fromModel($versi, $document->id, $latestId))

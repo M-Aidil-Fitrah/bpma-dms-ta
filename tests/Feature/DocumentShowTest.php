@@ -132,6 +132,9 @@ final class DocumentShowTest extends TestCase
     public function test_seluruh_mekanisme_akses_dikirim_ke_antarmuka(): void
     {
         $unit = Unit::factory()->create();
+        Jabatan::factory()->tingkat(1)->create(['nama' => 'Kepala Badan']);
+        Jabatan::factory()->tingkat(2)->create(['nama' => 'Deputi']);
+        Jabatan::factory()->tingkat(2)->create(['nama' => 'Jabatan Lama', 'is_active' => false]);
         $document = $this->buatDokumen([
             'is_shared_to_all' => false,
             'min_tingkat_akses' => 2,
@@ -145,7 +148,9 @@ final class DocumentShowTest extends TestCase
                 ->where('dokumen.dibagikan_ke_semua', false)
                 ->where('dokumen.min_tingkat_akses', 2)
                 ->has('dokumen.unit_tujuan', 1)
-                ->has('dokumen.orang_tertentu', 1));
+                ->where('dokumen.jabatan_tujuan', ['Kepala Badan', 'Deputi'])
+                ->where('dokumen.orang_tertentu.0.nama', $this->berhak->name)
+                ->where('dokumen.orang_tertentu.0.unit', $this->berhak->unit?->nama));
     }
 
     public function test_halaman_detail_tidak_boros_query(): void

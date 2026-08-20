@@ -28,7 +28,8 @@ final class DocumentDetailData extends Data
     /**
      * @param  list<string>  $ringkasan_akses
      * @param  list<string>  $unit_tujuan
-     * @param  list<string>  $orang_tertentu
+     * @param  list<string>  $jabatan_tujuan
+     * @param  list<array{nama: string, unit: string|null}>  $orang_tertentu
      */
     public function __construct(
         public int $id,
@@ -78,6 +79,7 @@ final class DocumentDetailData extends Data
         public bool $dibagikan_ke_semua,
         public ?int $min_tingkat_akses,
         public array $unit_tujuan,
+        public array $jabatan_tujuan,
         public array $orang_tertentu,
         public DocumentEditScope $edit_scope,
         public string $label_edit_scope,
@@ -106,6 +108,7 @@ final class DocumentDetailData extends Data
         bool $bolehUbah,
         bool $bolehAktifkan = false,
         bool $bolehPulihkanVersi = false,
+        array $jabatanTujuan = [],
     ): self {
         return new self(
             id: $document->id,
@@ -146,7 +149,14 @@ final class DocumentDetailData extends Data
             dibagikan_ke_semua: $document->is_shared_to_all,
             min_tingkat_akses: $document->min_tingkat_akses,
             unit_tujuan: $document->targetUnits->pluck('nama')->all(),
-            orang_tertentu: $document->sharedUsers->pluck('name')->all(),
+            jabatan_tujuan: $jabatanTujuan,
+            orang_tertentu: $document->sharedUsers
+                ->map(fn ($pengguna): array => [
+                    'nama' => $pengguna->name,
+                    'unit' => $pengguna->unit?->nama,
+                ])
+                ->values()
+                ->all(),
             edit_scope: $document->edit_scope,
             label_edit_scope: $document->edit_scope->label(),
 

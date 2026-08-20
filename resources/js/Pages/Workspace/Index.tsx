@@ -1,4 +1,4 @@
-import { WorkspaceDocumentCard, type WorkspaceDocument } from '@/Components/domain/WorkspaceDocumentCard';
+import { WorkspaceDocumentCard, type WorkspaceDocument, type WorkspaceFolderOption } from '@/Components/domain/WorkspaceDocumentCard';
 import { Button } from '@/Components/ui/Button';
 import { EmptyState } from '@/Components/ui/EmptyState';
 import { Field } from '@/Components/ui/Field';
@@ -15,10 +15,11 @@ interface Props {
     title: string;
     folder: CurrentFolder | null;
     folders: FolderItem[];
+    folder_options: WorkspaceFolderOption[];
     documents: WorkspaceDocument[];
 }
 
-export default function Index({ title, folder, folders, documents }: Props) {
+export default function Index({ title, folder, folders, folder_options: folderOptions, documents }: Props) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm({ name: '', parent_id: folder?.id ?? null as number | null });
 
@@ -41,7 +42,7 @@ export default function Index({ title, folder, folders, documents }: Props) {
                 ) : (
                     <div className="space-y-5">
                         {folders.length > 0 && <section><h2 className="mb-3 text-sm font-semibold text-ink">Folder</h2><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{folders.map((item) => <Link key={item.id} href={`/folders/${item.id}`} className="flex min-h-touch items-center gap-3 rounded-lg border border-line bg-surface p-4 font-medium text-ink hover:border-brand-300 hover:bg-brand-50/30"><Folder className="size-5 text-brand-700" aria-hidden />{item.name}</Link>)}</div></section>}
-                        {documents.length > 0 && <section><h2 className="mb-3 text-sm font-semibold text-ink">Dokumen</h2><div className="grid gap-3 lg:grid-cols-2">{documents.map((document) => <WorkspaceDocumentCard key={document.id} document={document} />)}</div></section>}
+                        {documents.length > 0 && <section><h2 className="mb-3 text-sm font-semibold text-ink">Dokumen</h2><div className="grid gap-3 lg:grid-cols-2">{documents.map((document) => <WorkspaceDocumentCard key={document.id} document={document} folderOptions={folderOptions} currentFolderId={folder?.id ?? null} />)}</div></section>}
                     </div>
                 )}
             </div>

@@ -3,6 +3,7 @@ import { IconButton } from '@/Components/ui/IconButton';
 import { labelTipeBerkas } from '@/lib/format';
 import { Link, router } from '@inertiajs/react';
 import { FileText, Star } from 'lucide-react';
+import { type ChangeEvent } from 'react';
 
 export interface WorkspaceDocument {
     id: number;
@@ -15,7 +16,17 @@ export interface WorkspaceDocument {
     purge_after: string | null;
 }
 
-export function WorkspaceDocumentCard({ document }: { document: WorkspaceDocument }) {
+export interface WorkspaceFolderOption { id: number; name: string; }
+
+export function WorkspaceDocumentCard({
+    document,
+    folderOptions,
+    currentFolderId = null,
+}: {
+    document: WorkspaceDocument;
+    folderOptions?: WorkspaceFolderOption[];
+    currentFolderId?: number | null;
+}) {
     function toggleStar() {
         if (document.starred) {
             router.delete(`/documents/${document.id}/star`, { preserveScroll: true });
@@ -24,6 +35,17 @@ export function WorkspaceDocumentCard({ document }: { document: WorkspaceDocumen
         }
 
         router.put(`/documents/${document.id}/star`, {}, { preserveScroll: true });
+    }
+
+    function move(event: ChangeEvent<HTMLSelectElement>) {
+        const folderId = event.target.value;
+        if (folderId === '') {
+            router.delete(`/documents/${document.id}/folder`, { preserveScroll: true });
+
+            return;
+        }
+
+        router.put(`/documents/${document.id}/folder`, { folder_id: Number(folderId) }, { preserveScroll: true });
     }
 
     return (
@@ -47,6 +69,17 @@ export function WorkspaceDocumentCard({ document }: { document: WorkspaceDocumen
                 className={document.starred ? 'text-warning-strong' : undefined}
                 onClick={toggleStar}
             />
+            {folderOptions !== undefined && (
+                <select
+                    aria-label={`Pindahkan ${document.judul} ke folder`}
+                    value={currentFolderId ?? ''}
+                    onChange={move}
+                    className="min-h-touch max-w-40 rounded-lg border border-line bg-surface px-2 text-xs text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-700 sm:min-h-8"
+                >
+                    <option value="">Akar Dokumen Saya</option>
+                    {folderOptions.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
+                </select>
+            )}
         </article>
     );
 }

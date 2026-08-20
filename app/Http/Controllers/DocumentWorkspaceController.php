@@ -25,7 +25,14 @@ final class DocumentWorkspaceController extends Controller
             title: 'Dokumen Saya',
             folder: null,
             folders: DocumentFolder::query()->ownedBy($user)->notTrashed()->whereNull('parent_id')->orderBy('name')->get(),
-            documents: Document::query()->active()->notTrashed()->where('uploaded_by', $user->id)->select(Document::KOLOM_DAFTAR)->latest('id')->get(),
+            documents: Document::query()
+                ->active()
+                ->notTrashed()
+                ->where('uploaded_by', $user->id)
+                ->whereDoesntHave('placements', fn ($query) => $query->where('owner_id', $user->id))
+                ->select(Document::KOLOM_DAFTAR)
+                ->latest('id')
+                ->get(),
             userId: $user->id,
         );
     }
@@ -184,6 +191,13 @@ final class DocumentWorkspaceController extends Controller
             'title' => $title,
             'folder' => $folder === null ? null : ['id' => $folder->id, 'name' => $folder->name, 'parent_id' => $folder->parent_id],
             'folders' => $folders->map(fn (DocumentFolder $item): array => ['id' => $item->id, 'name' => $item->name])->all(),
+            'folder_options' => DocumentFolder::query()
+                ->where('owner_id', $userId)
+                ->notTrashed()
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (DocumentFolder $item): array => ['id' => $item->id, 'name' => $item->name])
+                ->all(),
             'documents' => $this->documents($documents, $userId),
         ]);
     }

@@ -101,6 +101,7 @@ origin_unit_id: number | null,
 tanggal: string,
 masa_berlaku: string | null,
 is_shared_to_all: boolean,
+is_private: boolean,
 min_tingkat_akses: number | null,
 unit_ids: number[],
 orang_tertentu: {

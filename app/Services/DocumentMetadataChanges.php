@@ -54,6 +54,7 @@ final class DocumentMetadataChanges
                 'tanggal' => ['Tanggal dokumen', (string) ($original['tanggal'] ?? ''), (string) $dirty['tanggal']],
                 'masa_berlaku' => ['Masa berlaku', $this->nullableText($original['masa_berlaku'] ?? null), $this->nullableText($dirty['masa_berlaku'])],
                 'is_shared_to_all' => ['Bagikan ke semua', $this->booleanLabel($original['is_shared_to_all'] ?? false), $this->booleanLabel($dirty['is_shared_to_all'])],
+                'is_private' => ['Hanya saya', $this->booleanLabel($original['is_private'] ?? false), $this->booleanLabel($dirty['is_private'])],
                 'min_tingkat_akses' => ['Jenjang jabatan', $this->jenjangLabel($original['min_tingkat_akses'] ?? null), $this->jenjangLabel($dirty['min_tingkat_akses'])],
                 'edit_scope' => ['Cakupan ubah', $this->editScopeLabel($original['edit_scope'] ?? null), $this->editScopeLabel($dirty['edit_scope'])],
                 default => [null, null, null],

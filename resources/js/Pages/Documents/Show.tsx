@@ -1,4 +1,4 @@
-import { AccessSummary } from '@/Components/domain/AccessSummary';
+import { DocumentAccessPanel } from '@/Components/domain/DocumentAccessPanel';
 import { ActivityItem } from '@/Components/domain/ActivityItem';
 import { DocumentHeaderActions } from '@/Components/domain/DocumentHeaderActions';
 import { DocumentPreview } from '@/Components/domain/DocumentPreview';
@@ -102,7 +102,7 @@ export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: Sh
 
                     <div className="flex-1 overflow-auto p-5">
                         {tab === 'detail' && <PanelDetail dokumen={dokumen} />}
-                        {tab === 'akses' && <PanelAkses dokumen={dokumen} />}
+                        {tab === 'akses' && <DocumentAccessPanel dokumen={dokumen} />}
                         {tab === 'riwayat' && (
                             <PanelRiwayat
                                 versi={versi}
@@ -265,112 +265,6 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                 {formatWaktu(dokumen.diperbarui_pada)}
             </Baris>
         </dl>
-    );
-}
-
-function PanelAkses({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
-    return (
-        <div className="space-y-5" id="akses">
-            <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-subtle">
-                    Mekanisme Aktif
-                </p>
-                <AccessSummary ringkasan={dokumen.ringkasan_akses} />
-            </div>
-
-            {/* Keempat mekanisme ditampilkan seluruhnya, termasuk yang tidak
-                aktif. Menyembunyikan yang mati membuat pengguna tidak dapat
-                memastikan apakah sebuah jalur akses memang tidak aktif atau
-                sekadar tidak ikut ditampilkan. */}
-            <div className="space-y-3">
-                <MekanismeAkses
-                    aktif={dokumen.dibagikan_ke_semua}
-                    judul="Bagikan ke semua"
-                    keterangan="Seluruh pengguna internal dapat melihat dokumen ini."
-                />
-
-                <MekanismeAkses
-                    aktif={dokumen.min_tingkat_akses !== null}
-                    judul="Bagikan ke jenjang jabatan"
-                    keterangan={
-                        dokumen.min_tingkat_akses !== null
-                            ? `Jabatan tingkat ${dokumen.min_tingkat_akses} ke atas, lintas unit.`
-                            : 'Tidak dibatasi ke jenjang jabatan tertentu.'
-                    }
-                />
-
-                <MekanismeAkses
-                    aktif={dokumen.unit_tujuan.length > 0}
-                    judul="Bagikan ke unit"
-                    keterangan={
-                        dokumen.unit_tujuan.length > 0
-                            ? dokumen.unit_tujuan.join(' · ')
-                            : 'Belum ada unit yang dituju.'
-                    }
-                />
-
-                <MekanismeAkses
-                    aktif={dokumen.orang_tertentu.length > 0}
-                    judul="Bagikan ke orang tertentu"
-                    keterangan={
-                        dokumen.orang_tertentu.length > 0
-                            ? dokumen.orang_tertentu.join(' · ')
-                            : 'Belum ada orang yang ditunjuk.'
-                    }
-                />
-            </div>
-
-            <div className="rounded-lg bg-surface-sunken p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-ink-subtle">
-                    Wewenang Mengubah
-                </p>
-                <p className="mt-1 text-sm text-ink">{dokumen.label_edit_scope}</p>
-                <p className="mt-0.5 text-xs text-ink-muted">
-                    {dokumen.edit_scope === 'owner_only'
-                        ? 'Hanya pengunggah yang dapat mengubah dokumen ini.'
-                        : 'Siapa pun yang dapat melihat dokumen ini juga dapat mengubahnya.'}
-                </p>
-            </div>
-        </div>
-    );
-}
-
-function MekanismeAkses({
-    aktif,
-    judul,
-    keterangan,
-}: {
-    aktif: boolean;
-    judul: string;
-    keterangan: string;
-}) {
-    return (
-        <div
-            className={cn(
-                'rounded-lg border p-3',
-                aktif ? 'border-brand-200 bg-brand-50' : 'border-line bg-surface',
-            )}
-        >
-            <div className="flex items-center justify-between gap-2">
-                <p
-                    className={cn(
-                        'text-sm font-medium',
-                        aktif ? 'text-brand-700' : 'text-ink-subtle',
-                    )}
-                >
-                    {judul}
-                </p>
-                <span
-                    className={cn(
-                        'shrink-0 text-xs font-medium',
-                        aktif ? 'text-brand-700' : 'text-ink-subtle',
-                    )}
-                >
-                    {aktif ? 'Aktif' : 'Nonaktif'}
-                </span>
-            </div>
-            <p className="mt-1 text-xs text-ink-muted">{keterangan}</p>
-        </div>
     );
 }
 

@@ -3,9 +3,10 @@ import { Button } from '@/Components/ui/Button';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
 import { AuthLayout } from '@/Layouts/AuthLayout';
+import { useToast } from '@/Components/ui/Toast';
 import { useForm } from '@inertiajs/react';
 import { LogIn, Lock, Mail } from 'lucide-react';
-import { type FormEvent } from 'react';
+import { useEffect, useRef, type FormEvent } from 'react';
 
 interface LoginProps {
     status?: string;
@@ -17,6 +18,27 @@ export default function Login({ status }: LoginProps) {
         password: '',
         remember: false,
     });
+    const { tampilkan } = useToast();
+    const terakhirDiberitahukan = useRef<string | null>(null);
+    const galatPembatasan = (errors as Partial<Record<string, string>>).rate_limit;
+    const pesanAutentikasi = galatPembatasan ?? errors.email ?? errors.password;
+
+    useEffect(() => {
+        if (! pesanAutentikasi) {
+            terakhirDiberitahukan.current = null;
+
+            return;
+        }
+        if (terakhirDiberitahukan.current === pesanAutentikasi) return;
+
+        terakhirDiberitahukan.current = pesanAutentikasi;
+        tampilkan({
+            status: galatPembatasan ? 'warning' : 'error',
+            judul: galatPembatasan ? 'Percobaan masuk dibatasi' : 'Masuk belum berhasil',
+            keterangan: pesanAutentikasi,
+            durasi: null,
+        });
+    }, [galatPembatasan, pesanAutentikasi, tampilkan]);
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();

@@ -36,6 +36,7 @@ export interface IsiToast {
 
 interface Toast extends IsiToast {
     id: number;
+    menutup: boolean;
 }
 
 interface KontrakToast {
@@ -73,6 +74,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const nomor = useRef(0);
 
     const tutup = useCallback((id: number) => {
+        setDaftar((s) => s.map((t) => t.id === id ? { ...t, menutup: true } : t));
+    }, []);
+
+    const hapus = useCallback((id: number) => {
         setDaftar((s) => s.filter((t) => t.id !== id));
     }, []);
 
@@ -82,7 +87,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         setDaftar((s) => {
             // Tumpukan dibatasi supaya rentetan aksi cepat tidak menutupi
             // seluruh layar. Yang terlama disingkirkan lebih dulu.
-            const berikutnya = [...s, { ...isi, id }];
+            const berikutnya = [...s, { ...isi, id, menutup: false }];
 
             return berikutnya.slice(-4);
         });
@@ -132,9 +137,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <Wilayah
                     daftar={daftar.filter((t) => t.status === 'error')}
                     tutup={tutup}
+                    hapus={hapus}
                     tegas
                 />
-                <Wilayah daftar={daftar.filter((t) => t.status !== 'error')} tutup={tutup} />
+                <Wilayah daftar={daftar.filter((t) => t.status !== 'error')} tutup={tutup} hapus={hapus} />
             </div>
         </KonteksToast.Provider>
     );
@@ -153,10 +159,12 @@ export function useToast(): KontrakToast {
 function Wilayah({
     daftar,
     tutup,
+    hapus,
     tegas = false,
 }: {
     daftar: Toast[];
     tutup: (id: number) => void;
+    hapus: (id: number) => void;
     tegas?: boolean;
 }) {
     return (
@@ -173,7 +181,7 @@ function Wilayah({
                 terdorong ke bawah, bukan menutupi yang baru muncul — pesan
                 terakhirlah yang sedang ditunggu pengguna. */}
             {[...daftar].reverse().map((toast) => (
-                <KartuToast key={toast.id} toast={toast} onTutup={() => tutup(toast.id)} />
+                <KartuToast key={toast.id} toast={toast} onTutup={() => tutup(toast.id)} onHapus={() => hapus(toast.id)} />
             ))}
         </div>
     );
@@ -251,7 +259,7 @@ const DURASI_BAWAAN: Record<StatusToast, number | null> = {
     error: 5000,
 };
 
-function KartuToast({ toast, onTutup }: { toast: Toast; onTutup: () => void }) {
+function KartuToast({ toast, onTutup, onHapus }: { toast: Toast; onTutup: () => void; onHapus: () => void }) {
     const { icon: Icon, label, warnaIkon, warnaLabel, latarBilah, latarIkon, garis } =
         GAYA[toast.status];
     const durasi = toast.durasi === undefined ? DURASI_BAWAAN[toast.status] : toast.durasi;
@@ -318,12 +326,20 @@ function KartuToast({ toast, onTutup }: { toast: Toast; onTutup: () => void }) {
     });
 
     useEffect(() => {
-        if (durasi === null || tertahan) return;
+        if (toast.menutup || durasi === null || tertahan) return;
 
         const pewaktu = window.setTimeout(() => tutupRef.current(), durasi);
 
         return () => window.clearTimeout(pewaktu);
-    }, [durasi, tertahan]);
+    }, [durasi, tertahan, toast.menutup]);
+
+    useEffect(() => {
+        if (! toast.menutup) return;
+
+        const pewaktu = window.setTimeout(onHapus, 180);
+
+        return () => window.clearTimeout(pewaktu);
+    }, [onHapus, toast.menutup]);
 
     return (
         <div
@@ -339,7 +355,7 @@ function KartuToast({ toast, onTutup }: { toast: Toast; onTutup: () => void }) {
                 banyakBaris ? 'items-start' : 'items-center',
                 // `motion-safe` membuat animasinya dilewati sepenuhnya bila
                 // sistem pengguna meminta gerak dikurangi.
-                'motion-safe:animate-toast-masuk',
+                toast.menutup ? 'pointer-events-none motion-safe:animate-toast-keluar' : 'motion-safe:animate-toast-masuk',
                 garis,
             )}
         >

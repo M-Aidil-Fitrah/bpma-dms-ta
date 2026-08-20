@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use App\Data\AuthUserData;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -55,6 +56,10 @@ class HandleInertiaRequests extends Middleware
             // menambahnya di kedua tempat — dan yang tidak terdaftar di sini
             // tidak akan pernah sampai ke layar.
             'flash' => [
+                // ID dibuat per respons supaya antarmuka dapat membedakan
+                // kunjungan baru dari pemasangan ulang komponen pada kunjungan
+                // yang sama. Tanpanya satu flash dapat memunculkan dua toast.
+                'id' => (string) Str::uuid(),
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),

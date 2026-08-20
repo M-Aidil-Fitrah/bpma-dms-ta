@@ -65,12 +65,15 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->post('/login', [
+        $response = $this->post('/login', [
             'email' => $user->email,
             'password' => 'wrong-password',
         ]);
 
         $this->assertGuest();
+        $response->assertSessionHasErrors([
+            'email' => 'Surel atau kata sandi yang Anda masukkan tidak sesuai.',
+        ]);
     }
 
     public function test_batas_lima_percobaan_mengirim_penanda_toast(): void

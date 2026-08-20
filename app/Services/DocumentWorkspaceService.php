@@ -122,11 +122,59 @@ final class DocumentWorkspaceService
             ->update(['trashed_at' => null, 'trashed_by' => null, 'purge_after' => null, 'trash_token' => null]);
     }
 
+    public function trashFolder(DocumentFolder $folder, User $owner): void
+    {
+        $this->pastikanFolderAktifMilik($folder, $owner);
+        $token = (string) Str::uuid();
+        $folderIds = $this->folderBesertaTurunan($folder);
+
+        DocumentFolder::query()
+            ->whereIn('id', $folderIds)
+            ->notTrashed()
+            ->update([
+                'trashed_at' => now(),
+                'trashed_by' => $owner->id,
+                'purge_after' => now()->addDays(self::RETENSI_HARI),
+                'trash_token' => $token,
+            ]);
+    }
+
+    public function restoreFolder(DocumentFolder $folder, User $owner): void
+    {
+        if ($folder->owner_id !== $owner->id || $folder->trash_token === null) {
+            throw ValidationException::withMessages(['folder' => 'Folder tidak tersedia.']);
+        }
+
+        DocumentFolder::query()
+            ->where('trash_token', $folder->trash_token)
+            ->where('owner_id', $owner->id)
+            ->update(['trashed_at' => null, 'trashed_by' => null, 'purge_after' => null, 'trash_token' => null]);
+    }
+
     private function pastikanFolderAktifMilik(DocumentFolder $folder, User $owner): void
     {
         if ($folder->owner_id !== $owner->id || $folder->trashed_at !== null) {
             throw ValidationException::withMessages(['folder' => 'Folder tidak tersedia.']);
         }
+    }
+
+    /** @return list<int> */
+    private function folderBesertaTurunan(DocumentFolder $folder): array
+    {
+        $ids = [$folder->id];
+        $antrian = [$folder->id];
+
+        while ($antrian !== []) {
+            $anak = DocumentFolder::query()
+                ->whereIn('parent_id', $antrian)
+                ->pluck('id')
+                ->map(intval(...))
+                ->all();
+            $ids = [...$ids, ...$anak];
+            $antrian = $anak;
+        }
+
+        return $ids;
     }
 
     private function pastikanKedalaman(DocumentFolder $parent): void
@@ -150,7 +198,7 @@ final class DocumentWorkspaceService
             ->notTrashed()
             ->where('parent_id', $parentId)
             ->where('name_normalized', $this->namaNormal($name))
-            ->when($exceptId !== null, fn ($query) => $query->whereKeyNot($exceptId))
+            ->when($exceptId !== null, fn ($query) => $query->where('id', '!=', $exceptId))
             ->exists();
 
         if ($ada) {

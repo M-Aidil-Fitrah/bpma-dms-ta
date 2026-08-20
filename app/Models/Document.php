@@ -87,7 +87,7 @@ class Document extends Model
         'id', 'nomor', 'judul', 'category_id', 'origin_unit_id',
         'tanggal', 'masa_berlaku', 'status', 'extraction_status',
         'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path',
-        'is_shared_to_all', 'min_tingkat_akses',
+        'is_shared_to_all', 'is_private', 'min_tingkat_akses',
         'uploaded_by', 'is_active', 'created_at',
     ];
 
@@ -365,6 +365,8 @@ class Document extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
+        $query->notTrashed();
+
         // Superadmin tetap dapat mengaudit dokumen pribadi. Jabatan tingkat 1
         // hanya mem-bypass empat mekanisme berbagi, bukan keputusan eksplisit
         // "Hanya saya" milik pengunggah.

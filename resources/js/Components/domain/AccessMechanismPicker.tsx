@@ -115,7 +115,7 @@ export function AccessMechanismPicker({
                 }
                 icon={ShieldCheck}
                 judul="Bagikan ke jabatan tertentu ke atas"
-                keterangan="Berdasarkan jenjang jabatan, berlaku di semua unit."
+                keterangan="Semua pengguna aktif pada jenjang yang dipilih dapat membuka, di seluruh unit kerja."
             >
                 <JenjangPicker
                     jenjang={jenjang}

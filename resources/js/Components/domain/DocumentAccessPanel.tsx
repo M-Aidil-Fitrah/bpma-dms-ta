@@ -18,7 +18,7 @@ export function DocumentAccessPanel({ dokumen }: { dokumen: DokumenAkses }) {
         dokumen.min_tingkat_akses !== null && {
             icon: BriefcaseBusiness,
             judul: 'Bagikan ke jabatan',
-            keterangan: 'Berlaku lintas unit kerja.',
+            keterangan: keteranganJabatan(dokumen.jabatan_tujuan),
             detail: <DaftarJabatan jabatan={dokumen.jabatan_tujuan} />,
         },
         dokumen.unit_tujuan.length > 0 && {
@@ -149,15 +149,35 @@ function DaftarJabatan({ jabatan }: { jabatan: readonly string[] }) {
     }
 
     return (
-        <ul className="space-y-1.5" aria-label="Jabatan yang dapat membuka">
-            {jabatan.map((nama) => (
-                <li key={nama} className="flex items-center gap-2 text-xs text-ink-muted">
-                    <BriefcaseBusiness className="size-3.5 shrink-0 text-brand-700" aria-hidden />
-                    {nama}
-                </li>
-            ))}
-        </ul>
+        <div className="space-y-2">
+            <p className="text-xs font-medium text-ink">
+                Semua pengguna aktif pada jabatan berikut, di seluruh unit kerja:
+            </p>
+            <ul className="space-y-1.5" aria-label="Jabatan yang dapat membuka">
+                {jabatan.map((nama) => (
+                    <li key={nama} className="flex items-center gap-2 text-xs text-ink-muted">
+                        <BriefcaseBusiness className="size-3.5 shrink-0 text-brand-700" aria-hidden />
+                        {nama}
+                    </li>
+                ))}
+            </ul>
+        </div>
     );
+}
+
+function keteranganJabatan(jabatan: readonly string[]): string {
+    if (jabatan.length === 0) {
+        return 'Tidak ada jabatan aktif yang termasuk dalam jenjang ini.';
+    }
+
+    return `Semua pengguna aktif dengan jabatan ${gabungkan(jabatan)} di seluruh unit kerja dapat membuka.`;
+}
+
+function gabungkan(item: readonly string[]): string {
+    if (item.length === 1) return item[0];
+    if (item.length === 2) return `${item[0]} dan ${item[1]}`;
+
+    return `${item.slice(0, -1).join(', ')}, dan ${item[item.length - 1]}`;
 }
 
 function DaftarUnit({ unit }: { unit: readonly string[] }) {

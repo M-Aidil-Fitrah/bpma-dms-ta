@@ -19,7 +19,7 @@ const KonteksKonfirmasiPassword = createContext<KonfirmasiAksi | null>(null);
  */
 export function PasswordConfirmationProvider({ children }: { children: ReactNode }) {
     const { props } = usePage();
-    const batasDariServer = (props.auth as { password_confirmed_until?: string | null }).password_confirmed_until;
+    const batasDariServer = props.auth.password_confirmed_until;
     const [berlakuSampai, setBerlakuSampai] = useState(waktu(batasDariServer));
     const [terbuka, setTerbuka] = useState(false);
     const [password, setPassword] = useState('');

@@ -58,12 +58,9 @@ export interface SidebarNavProps {
 }
 
 export function SidebarNav({ onNavigate }: SidebarNavProps) {
-    const { auth, url } = usePage().props as unknown as {
-        auth: { user: App.Data.AuthUserData | null };
-        url?: string;
-    };
+    const { props: { auth }, url } = usePage();
 
-    const currentPath = url ?? window.location.pathname;
+    const currentPath = url;
     const isSuperadmin = auth.user?.is_superadmin ?? false;
 
     return (

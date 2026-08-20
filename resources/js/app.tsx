@@ -4,6 +4,7 @@ import './bootstrap';
 import { FlashToast } from '@/Components/ui/FlashToast';
 import { ToastProvider } from '@/Components/ui/Toast';
 import { PasswordConfirmationProvider } from '@/Components/auth/PasswordConfirmationProvider';
+import { memilikiPenggunaTerautentikasi } from '@/types/auth';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
@@ -35,9 +36,7 @@ createInertiaApp({
         root.render(
             <App {...props}>
                 {({ Component, props: propHalaman, key }) => {
-                    const beradaDiPortal = Boolean(
-                        (propHalaman.auth as { user?: App.Data.AuthUserData | null } | undefined)?.user,
-                    );
+                    const beradaDiPortal = memilikiPenggunaTerautentikasi(propHalaman);
 
                     return (
                         <ToastProvider posisi={beradaDiPortal ? 'portal' : 'auth'}>

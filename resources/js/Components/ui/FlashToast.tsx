@@ -2,9 +2,6 @@ import { useToast, type StatusToast } from '@/Components/ui/Toast';
 import { usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 
-/** Bentuk pesan kilat yang dibagikan `HandleInertiaRequests`. */
-type Kilat = Partial<Record<StatusToast, string | null>> & { id?: string };
-
 const URUTAN: StatusToast[] = ['error', 'warning', 'success', 'info'];
 const FLASH_TERPUBLIKASI = new Set<string>();
 const BATAS_FLASH_TERSIMPAN = 100;
@@ -27,12 +24,10 @@ export function FlashToast() {
     const terakhir = useRef<string | null>(null);
 
     useEffect(() => {
-        const kilat = (props as { flash?: Kilat }).flash;
-
-        if (kilat === undefined) return;
+        const kilat = props.flash;
 
         const id = kilat.id;
-        if (id === undefined || terakhir.current === id || FLASH_TERPUBLIKASI.has(id)) return;
+        if (terakhir.current === id || FLASH_TERPUBLIKASI.has(id)) return;
 
         terakhir.current = id;
         FLASH_TERPUBLIKASI.add(id);

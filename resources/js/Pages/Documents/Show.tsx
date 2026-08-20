@@ -47,7 +47,11 @@ const TAB_ITEMS: readonly TabItem<Tab>[] = [
 function tabDariHash(): Tab {
     const hash = window.location.hash.slice(1);
 
-    return (TAB_VALID as string[]).includes(hash) ? (hash as Tab) : 'detail';
+    return isTab(hash) ? hash : 'detail';
+}
+
+function isTab(value: string): value is Tab {
+    return TAB_VALID.some((tab) => tab === value);
 }
 
 /**

@@ -7,7 +7,7 @@ import { Input } from '@/Components/ui/Input';
 import { Select } from '@/Components/ui/Select';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { useForm } from '@inertiajs/react';
-import { RotateCcw, Save, Settings } from 'lucide-react';
+import { RotateCcw, Save } from 'lucide-react';
 import { type FormEvent } from 'react';
 
 interface SettingsProps {

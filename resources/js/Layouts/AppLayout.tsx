@@ -31,9 +31,7 @@ export interface AppLayoutProps {
  * platform (`Tentang_Project.md` §5c).
  */
 export function AppLayout({ title, header, actions, children }: AppLayoutProps) {
-    const { auth } = usePage().props as unknown as {
-        auth: { user: App.Data.AuthUserData | null };
-    };
+    const { auth } = usePage().props;
 
     const [drawerOpen, setDrawerOpen] = useState(false);
 

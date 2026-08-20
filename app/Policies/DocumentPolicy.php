@@ -93,7 +93,15 @@ final class DocumentPolicy
             return false;
         }
 
-        if ($user->bypassesDocumentAccess()) {
+        if ($user->isSuperadmin()) {
+            return true;
+        }
+
+        if ($document->is_private) {
+            return $document->uploaded_by === $user->id;
+        }
+
+        if ($user->isPimpinanTertinggi()) {
             return true;
         }
 

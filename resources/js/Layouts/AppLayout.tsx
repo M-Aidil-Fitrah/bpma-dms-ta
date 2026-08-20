@@ -65,7 +65,7 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
 
                 <div className="fixed inset-0 flex">
                     <DialogPanel className="flex w-sidebar max-w-[85vw] flex-col bg-surface">
-                        <div className="flex items-center justify-between border-b border-line px-4 py-3">
+                        <div className="flex h-20 items-center justify-between border-b border-line px-4">
                             <DmsBrand />
                             <IconButton
                                 icon={X}
@@ -83,7 +83,7 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
             {/* -- Area konten ---------------------------------------------- */}
             <div className="lg:pl-sidebar">
                 <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
-                    <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
+                    <div className="flex min-h-20 items-center gap-3 px-4 py-3 sm:px-6">
                         <IconButton
                             icon={Menu}
                             label="Buka navigasi"
@@ -129,7 +129,7 @@ function SidebarBrand({ className }: { className?: string }) {
     return (
         <div
             className={cn(
-                'flex shrink-0 items-center border-b border-line px-4 py-3',
+                'flex h-20 shrink-0 items-center border-b border-line px-4',
                 className,
             )}
         >

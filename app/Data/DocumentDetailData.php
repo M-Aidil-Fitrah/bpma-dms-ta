@@ -76,6 +76,7 @@ final class DocumentDetailData extends Data
 
         // -- Mekanisme akses --------------------------------------------------
         public array $ringkasan_akses,
+        public bool $is_private,
         public bool $dibagikan_ke_semua,
         public ?int $min_tingkat_akses,
         public array $unit_tujuan,
@@ -147,6 +148,7 @@ final class DocumentDetailData extends Data
             version_note: $document->version_note,
 
             ringkasan_akses: $document->accessSummary(),
+            is_private: $document->is_private,
             dibagikan_ke_semua: $document->is_shared_to_all,
             min_tingkat_akses: $document->min_tingkat_akses,
             unit_tujuan: $document->targetUnits->pluck('nama')->all(),

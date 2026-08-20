@@ -4,7 +4,7 @@ import { type ReactNode } from 'react';
 
 type DokumenAkses = Pick<
     App.Data.DocumentDetailData,
-    'dibagikan_ke_semua' | 'min_tingkat_akses' | 'unit_tujuan' | 'jabatan_tujuan' | 'orang_tertentu' | 'edit_scope' | 'label_edit_scope'
+    'is_private' | 'dibagikan_ke_semua' | 'min_tingkat_akses' | 'unit_tujuan' | 'jabatan_tujuan' | 'orang_tertentu' | 'edit_scope' | 'label_edit_scope'
 >;
 
 /** Ringkasan akses baca dan wewenang ubah pada detail dokumen. */
@@ -36,9 +36,12 @@ export function DocumentAccessPanel({ dokumen }: { dokumen: DokumenAkses }) {
     ];
     const mekanisme = kandidatMekanisme.filter((item): item is Mekanisme => item !== false);
 
-    const ringkasan = mekanisme.length === 0
-        ? ['Hanya pemilik dokumen yang dapat membuka dokumen ini.']
+    const ringkasan = dokumen.is_private
+        ? ['Hanya Anda sebagai pengunggah dan Superadmin untuk audit serta pemulihan yang dapat membuka dokumen ini.']
+        : mekanisme.length === 0
+        ? ['Hanya pemilik dokumen, Superadmin, dan Pimpinan BPMA yang dapat membuka dokumen ini.']
         : mekanisme.map(({ judul, keterangan }) => `${judul}: ${keterangan}`);
+    const labelAkses = dokumen.is_private ? 'Hanya saya' : `${mekanisme.length} aktif`;
 
     return (
         <div className="space-y-5" id="akses">
@@ -51,9 +54,9 @@ export function DocumentAccessPanel({ dokumen }: { dokumen: DokumenAkses }) {
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <div>
                                 <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">Akses dokumen</p>
-                                <h2 className="mt-0.5 text-sm font-semibold text-ink">Siapa yang dapat membuka</h2>
+                                <h2 className="mt-0.5 text-sm font-semibold text-ink">{dokumen.is_private ? 'Hanya saya' : 'Siapa yang dapat membuka'}</h2>
                             </div>
-                            <Badge variant="brand" size="sm">{mekanisme.length} aktif</Badge>
+                            <Badge variant="brand" size="sm">{labelAkses}</Badge>
                         </div>
                         {ringkasan.length > 1 ? (
                             <ul className="mt-3 space-y-1.5" aria-label="Ringkasan akses aktif">

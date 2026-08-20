@@ -16,7 +16,7 @@ export function DmsBrand({ onDark = false, className }: DmsBrandProps) {
                     <Logo size="lg" />
                 </div>
             ) : (
-                <Logo size="md" />
+                <Logo size="lg" />
             )}
             <p
                 className={cn(

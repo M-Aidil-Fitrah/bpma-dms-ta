@@ -120,7 +120,9 @@ final class DocumentShowTest extends TestCase
 
         $this->actingAs($this->pengunggah)
             ->get("/documents/{$document->id}")
-            ->assertInertia(fn (AssertableInertia $p) => $p->where('dokumen.boleh_ubah', true));
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->where('dokumen.boleh_ubah', true)
+                ->where('dokumen.label_edit_scope', 'Hanya pemilik dokumen'));
 
         $this->actingAs($this->berhak)
             ->get("/documents/{$document->id}")

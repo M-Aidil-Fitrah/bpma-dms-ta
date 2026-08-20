@@ -294,7 +294,7 @@ export function DocumentForm({
                                             {...props}
                                             value={data.edit_scope}
                                             options={[
-                                                { value: 'owner_only', label: 'Hanya saya' },
+                                                { value: 'owner_only', label: 'Hanya pemilik dokumen' },
                                                 {
                                                     value: 'match_visibility',
                                                     label: 'Sama seperti akses',

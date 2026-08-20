@@ -25,7 +25,7 @@ enum DocumentEditScope: string
     public function label(): string
     {
         return match ($this) {
-            self::OwnerOnly => 'Hanya saya',
+            self::OwnerOnly => 'Hanya pemilik dokumen',
             self::MatchVisibility => 'Sama seperti akses',
         };
     }
@@ -33,7 +33,7 @@ enum DocumentEditScope: string
     public function description(): string
     {
         return match ($this) {
-            self::OwnerOnly => 'Hanya Anda yang dapat mengubah dokumen ini.',
+            self::OwnerOnly => 'Hanya pemilik dokumen yang dapat mengubahnya.',
             self::MatchVisibility => 'Siapa pun yang dapat melihat dokumen ini juga dapat mengubahnya.',
         };
     }

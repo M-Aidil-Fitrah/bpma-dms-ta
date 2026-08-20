@@ -50,6 +50,7 @@ export default function Create({ opsi, pengganti }: CreateProps) {
                     version_note: '',
                 }}
                 aksesAwal={{
+                    is_private: pengganti?.is_private ?? false,
                     is_shared_to_all: pengganti?.is_shared_to_all ?? false,
                     min_tingkat_akses: pengganti?.min_tingkat_akses ?? null,
                     unit_ids: pengganti?.unit_ids ?? [],

@@ -117,6 +117,7 @@ export function DocumentForm({
 
             const akhir = {
                 ...tanpaBerkas,
+                is_private: akses.is_private,
                 is_shared_to_all: akses.is_shared_to_all,
                 min_tingkat_akses: akses.min_tingkat_akses,
                 unit_ids: akses.unit_ids,

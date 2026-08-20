@@ -283,18 +283,19 @@ final class DocumentUpdateTest extends TestCase
             );
     }
 
-    // -- Nonaktifkan & aktifkan kembali (FR-10) -------------------------------
+    // -- Sampah dan pemulihan (FEAT-24) ----------------------------------------
 
-    public function test_menonaktifkan_menyembunyikan_dokumen_tanpa_menghapus_barisnya(): void
+    public function test_memindahkan_ke_sampah_menyembunyikan_dokumen_tanpa_menghapus_barisnya(): void
     {
         $this->actingAs($this->pemilik)
             ->delete("/documents/{$this->dokumen->id}")
-            ->assertRedirect(route('documents.index'));
+            ->assertRedirect(route('documents.trash'));
 
         $this->assertDatabaseHas('documents', [
             'id' => $this->dokumen->id,
-            'is_active' => false,
+            'is_active' => true,
         ]);
+        $this->assertNotNull(Document::query()->findOrFail($this->dokumen->id)->trashed_at);
     }
 
     public function test_dokumen_nonaktif_hilang_dari_daftar(): void

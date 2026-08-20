@@ -1,8 +1,10 @@
 import { Button } from '@/Components/ui/Button';
-import { usePasswordConfirmation } from '@/Components/auth/PasswordConfirmationProvider';
 import { ConfirmDialog } from '@/Components/ui/ConfirmDialog';
+import { Field } from '@/Components/ui/Field';
+import { Input } from '@/Components/ui/Input';
 import { Link, router } from '@inertiajs/react';
-import { ArchiveRestore, Download, Pencil, Trash2 } from 'lucide-react';
+import axios from 'axios';
+import { ArchiveRestore, Download, LockKeyhole, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 export interface DocumentHeaderActionsProps {
@@ -31,35 +33,61 @@ export function DocumentHeaderActions({
     bolehPindahKeSampah,
     bolehAktifkan,
 }: DocumentHeaderActionsProps) {
-    const konfirmasikan = usePasswordConfirmation();
     const [tanyaSampah, setTanyaSampah] = useState(false);
+    const [konfirmasiSandi, setKonfirmasiSandi] = useState(false);
+    const [password, setPassword] = useState('');
+    const [galatPassword, setGalatPassword] = useState<string>();
     const [memproses, setMemproses] = useState(false);
 
-    function pindahKeSampah() {
-        konfirmasikan(jalankanPindahKeSampah);
+    function lanjutkanKeKonfirmasiSandi() {
+        setKonfirmasiSandi(true);
+        setGalatPassword(undefined);
     }
 
-    function jalankanPindahKeSampah() {
+    async function pindahKeSampah() {
+        if (!password) {
+            setGalatPassword('Masukkan kata sandi Anda untuk melanjutkan.');
+
+            return;
+        }
+
         setMemproses(true);
-        router.delete(`/documents/${dokumenId}`, {
-            onFinish: () => {
-                setMemproses(false);
-                setTanyaSampah(false);
-            },
-        });
+        setGalatPassword(undefined);
+
+        try {
+            await axios.post('/confirm-password', { password }, { headers: { Accept: 'application/json' } });
+            router.delete(`/documents/${dokumenId}`, {
+                onFinish: () => {
+                    setMemproses(false);
+                    tutupKonfirmasiSampah();
+                },
+            });
+        } catch (error) {
+            if (axios.isAxiosError<{ errors?: { password?: string[] } }>(error)) {
+                setGalatPassword(error.response?.data.errors?.password?.[0] ?? 'Kata sandi tidak dapat dikonfirmasi.');
+            } else {
+                setGalatPassword('Konfirmasi kata sandi tidak dapat diproses. Coba lagi.');
+            }
+            setMemproses(false);
+        }
     }
 
     function aktifkan() {
-        konfirmasikan(jalankanAktifkan);
-    }
-
-    function jalankanAktifkan() {
         setMemproses(true);
         router.patch(
             `/documents/${dokumenId}/restore`,
             {},
             { onFinish: () => setMemproses(false) },
         );
+    }
+
+    function tutupKonfirmasiSampah() {
+        if (memproses) return;
+
+        setTanyaSampah(false);
+        setKonfirmasiSandi(false);
+        setPassword('');
+        setGalatPassword(undefined);
     }
 
     return (
@@ -85,7 +113,12 @@ export function DocumentHeaderActions({
                     icon={Trash2}
                     size="sm"
                     variant="secondary"
-                    onClick={() => setTanyaSampah(true)}
+                    onClick={() => {
+                        setTanyaSampah(true);
+                        setKonfirmasiSandi(false);
+                        setPassword('');
+                        setGalatPassword(undefined);
+                    }}
                 >
                     <span className="hidden md:inline">Pindahkan ke Sampah</span>
                     <span className="sr-only md:hidden">Pindahkan ke Sampah</span>
@@ -106,21 +139,40 @@ export function DocumentHeaderActions({
 
             <ConfirmDialog
                 terbuka={tanyaSampah}
-                onTutup={() => setTanyaSampah(false)}
-                onSetuju={pindahKeSampah}
-                judul="Pindahkan dokumen ke Sampah?"
-                labelSetuju="Ya, pindahkan"
-                ikon={Trash2}
+                onTutup={tutupKonfirmasiSampah}
+                onSetuju={konfirmasiSandi ? pindahKeSampah : lanjutkanKeKonfirmasiSandi}
+                judul={konfirmasiSandi ? 'Konfirmasi kata sandi' : 'Pindahkan dokumen ke Sampah?'}
+                labelSetuju={konfirmasiSandi ? 'Konfirmasi dan pindahkan' : 'Lanjutkan'}
+                ikon={konfirmasiSandi ? LockKeyhole : Trash2}
                 memproses={memproses}
             >
-                <p>
-                    <span className="font-medium text-ink">{judul}</span> akan hilang dari
-                    daftar dan hasil pencarian selama berada di Sampah.
-                </p>
-                <p>
-                    Anda dapat memulihkannya selama 30 hari. Setelah itu, berkas dan
-                    versinya dihapus permanen; ringkasan aktivitas audit tetap tersimpan.
-                </p>
+                {konfirmasiSandi ? (
+                    <Field label="Kata Sandi" error={galatPassword} required>
+                        {(input) => (
+                            <Input
+                                {...input}
+                                type="password"
+                                autoComplete="current-password"
+                                icon={LockKeyhole}
+                                value={password}
+                                autoFocus
+                                invalid={Boolean(galatPassword)}
+                                onChange={(event) => setPassword(event.target.value)}
+                            />
+                        )}
+                    </Field>
+                ) : (
+                    <>
+                        <p>
+                            <span className="font-medium text-ink">{judul}</span> akan hilang dari
+                            daftar dan hasil pencarian selama berada di Sampah.
+                        </p>
+                        <p>
+                            Anda dapat memulihkannya selama 30 hari. Setelah itu, berkas dan
+                            versinya dihapus permanen; ringkasan aktivitas audit tetap tersimpan.
+                        </p>
+                    </>
+                )}
             </ConfirmDialog>
         </>
     );

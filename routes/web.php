@@ -83,7 +83,7 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('/documents/{document}/restore-version', [DocumentController::class, 'restoreVersion'])
         ->middleware('password.confirm')
         ->name('documents.restore-version');
-    // `delete` di sini berarti MENONAKTIFKAN, bukan menghapus baris (FR-10).
+    // `delete` di sini memindahkan dokumen ke Sampah, bukan menghapus baris.
     Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])
         ->middleware('password.confirm')
         ->name('documents.destroy');

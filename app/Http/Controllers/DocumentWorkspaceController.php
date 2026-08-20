@@ -212,7 +212,7 @@ final class DocumentWorkspaceController extends Controller
 
     /**
      * @param  Collection<int, Document>  $documents
-     * @return list<array{id: int, judul: string, nomor: string, tipe: string, is_private: bool, starred: bool, trashed_at: string|null, purge_after: string|null}>
+     * @return list<array{id: int, judul: string, nomor: string, tipe: string, thumbnail_tersedia: bool, is_private: bool, starred: bool, trashed_at: string|null, purge_after: string|null}>
      */
     private function documents(Collection $documents, int $userId): array
     {
@@ -223,6 +223,7 @@ final class DocumentWorkspaceController extends Controller
             'judul' => $document->judul,
             'nomor' => $document->nomor,
             'tipe' => $document->file_mime_type,
+            'thumbnail_tersedia' => $document->thumbnail_path !== null,
             'is_private' => $document->is_private,
             'starred' => in_array($document->id, $starredIds, true),
             'trashed_at' => $document->trashed_at?->toIso8601String(),

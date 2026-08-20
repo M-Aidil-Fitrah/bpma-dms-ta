@@ -36,7 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'nomor_normalized', 'replaces_document_id', 'version_root_id',
     'version_major', 'version_minor', 'version_kind', 'version_note',
     'is_shared_to_all', 'is_private', 'min_tingkat_akses', 'edit_scope',
-    'uploaded_by', 'is_active',
+    'uploaded_by', 'is_active', 'trashed_at', 'trashed_by', 'purge_after', 'trash_token',
 ])]
 class Document extends Model
 {
@@ -103,6 +103,8 @@ class Document extends Model
             'is_shared_to_all' => 'boolean',
             'is_private' => 'boolean',
             'is_active' => 'boolean',
+            'trashed_at' => 'datetime',
+            'purge_after' => 'datetime',
             'min_tingkat_akses' => 'integer',
             'file_size' => 'integer',
             'extraction_pages_total' => 'integer',
@@ -163,6 +165,24 @@ class Document extends Model
     public function versions(): HasMany
     {
         return $this->hasMany(self::class, 'version_root_id');
+    }
+
+    /** @return HasMany<DocumentPlacement, $this> */
+    public function placements(): HasMany
+    {
+        return $this->hasMany(DocumentPlacement::class);
+    }
+
+    /** @return HasMany<DocumentStar, $this> */
+    public function stars(): HasMany
+    {
+        return $this->hasMany(DocumentStar::class);
+    }
+
+    /** @return HasMany<DocumentRecent, $this> */
+    public function recents(): HasMany
+    {
+        return $this->hasMany(DocumentRecent::class);
     }
 
     public function versionLabel(): string
@@ -422,6 +442,12 @@ class Document extends Model
         // punya `is_active`, sehingga scope ini akan ambigu begitu dipakai
         // bersama join — galat yang baru muncul jauh setelah scope ditulis.
         return $query->where($query->qualifyColumn('is_active'), true);
+    }
+
+    /** @param Builder<Document> $query @return Builder<Document> */
+    public function scopeNotTrashed(Builder $query): Builder
+    {
+        return $query->whereNull($query->qualifyColumn('trashed_at'));
     }
 
     /**

@@ -124,6 +124,18 @@ final class DocumentPolicy
         return $this->update($user, $document);
     }
 
+    /** Memindahkan satu rantai versi ke Sampah adalah wewenang pemiliknya. */
+    public function trash(User $user, Document $document): bool
+    {
+        return $user->isSuperadmin() || $document->uploaded_by === $user->id;
+    }
+
+    /** Pemulihan Sampah mengikuti kepemilikan yang sama dengan membuangnya. */
+    public function restoreTrash(User $user, Document $document): bool
+    {
+        return $this->trash($user, $document);
+    }
+
     /**
      * Mengaktifkan kembali dokumen yang dinonaktifkan.
      *

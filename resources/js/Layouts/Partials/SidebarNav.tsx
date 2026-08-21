@@ -43,6 +43,11 @@ const NAV: NavGroup[] = [
             { label: 'Beranda', href: '/dashboard', icon: LayoutDashboard, match: '/dashboard' },
             { label: 'Dokumen Saya', href: '/documents/mine', icon: FolderOpen, match: '/documents/mine' },
             { label: 'Jelajahi Dokumen', href: '/documents', icon: FileText, match: '/documents', exact: true },
+        ],
+    },
+    {
+        label: null,
+        items: [
             { label: 'Terbaru', href: '/documents/recent', icon: Clock3, match: '/documents/recent' },
             { label: 'Berbintang', href: '/documents/starred', icon: Star, match: '/documents/starred' },
             { label: 'Sampah', href: '/trash', icon: Trash2, match: '/trash' },

@@ -21,7 +21,6 @@ use App\Jobs\GenerateDocumentThumbnailJob;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\Jabatan;
-use App\Models\Unit;
 use App\Models\User;
 use App\Services\ActivityLogQuery;
 use App\Services\ActivityLogService;
@@ -35,11 +34,11 @@ use App\Services\PengaturanService;
 use App\Support\BatasUnggah;
 use App\Support\JenjangAkses;
 use App\Support\PenyajianBerkas;
+use App\Support\UnitOptions;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -967,54 +966,10 @@ final class DocumentController extends Controller
                 ->orderBy('nama')
                 ->get(['id', 'nama']),
 
-            // Dipakai mencari label chip filter yang sedang aktif — nama
-            // induk disertakan supaya "Divisi Keuangan Internal" dapat
-            // dibedakan dari divisi bernama mirip di deputi lain.
-            'unit' => $this->unitAktifTerurut()
-                ->map(fn (Unit $unit): array => [
-                    'id' => $unit->id,
-                    'nama' => $unit->parent === null
-                        ? $unit->nama
-                        : "{$unit->parent->nama} — {$unit->nama}",
-                ]),
-
-            // Bentuk pohon untuk `UnitTreeSelect` — nama TIDAK digabung
-            // dengan induknya di sini, komponennya sendiri yang menyusun
-            // hierarkinya lewat `parent_id`.
-            'unit_pohon' => $this->unitAktifTerurut()
-                ->map(fn (Unit $unit): array => [
-                    'id' => $unit->id,
-                    'nama' => $unit->nama,
-                    'parent_id' => $unit->parent_id,
-                ]),
+            'unit' => UnitOptions::berlabel(),
+            'unit_pohon' => UnitOptions::pohon(),
             'pengunggah' => User::query()->active()->orderBy('name')->get(['id', 'name']),
         ];
-    }
-
-    /**
-     * Unit tingkat atas selalu segera diikuti divisinya. Mengurutkan seluruh
-     * nama secara datar membuat Sekretaris atau Deputi muncul jauh dari
-     * divisinya sendiri dan mudah salah pilih pada dropdown.
-     *
-     * @return Collection<int, Unit>
-     */
-    private function unitAktifTerurut(): Collection
-    {
-        $unit = Unit::query()
-            ->active()
-            ->with('parent:id,nama')
-            ->get(['id', 'nama', 'parent_id', 'tipe']);
-        $anakPerInduk = $unit->whereNotNull('parent_id')->groupBy('parent_id');
-
-        return $unit
-            ->whereNull('parent_id')
-            ->sortBy(fn (Unit $induk): string => ($induk->tipe === Unit::TIPE_SEKRETARIS ? '0' : '1').$induk->nama)
-            ->flatMap(function (Unit $induk) use ($anakPerInduk) {
-                return collect([$induk])->concat(
-                    $anakPerInduk->get($induk->id, collect())->sortBy('nama'),
-                );
-            })
-            ->values();
     }
 
     /**

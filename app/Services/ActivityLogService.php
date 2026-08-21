@@ -46,8 +46,10 @@ final class ActivityLogService
             ->withProperties([
                 ...$properties,
                 'subjek' => $this->subjectSummary($subject),
-                // Dipakai oleh query riwayat biasa untuk menjamin kegiatan
-                // non-dokumen tidak lolos ke pengguna yang bukan Superadmin.
+                // Dipakai frontend untuk menautkan baris riwayat ke halaman
+                // detail dokumennya. Batas akses non-dokumen ke pengguna
+                // bukan-Superadmin ditegakkan lewat `subject_type`/
+                // `subject_id` di `ActivityLogQuery`, bukan properti ini.
                 'dokumen_id' => $subject instanceof Document ? $subject->id : null,
             ]);
 

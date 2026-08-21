@@ -7,10 +7,12 @@ namespace App\Services;
 use App\Data\ActivityLogData;
 use App\Enums\ActivityLogName;
 use App\Http\Requests\ActivityLogIndexRequest;
+use App\Http\Requests\Admin\ActivityLogIndexRequest as AdminActivityLogIndexRequest;
 use App\Models\Document;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Spatie\Activitylog\Models\Activity;
 
 /**
@@ -24,11 +26,25 @@ final class ActivityLogQuery
     /** @return LengthAwarePaginator<int, ActivityLogData> */
     public function paginate(ActivityLogIndexRequest $request): LengthAwarePaginator
     {
-        return $this->visibleTo($request->user())
-            ->when($request->string('cari')->toString(), fn (Builder $q, string $kata) => $q->where('activity_log.description', 'like', "%{$kata}%"))
-            ->when($request->string('jenis')->toString(), fn (Builder $q, string $jenis) => $q->where('activity_log.log_name', $jenis))
-            ->when($request->string('dari')->toString(), fn (Builder $q, string $tanggal) => $q->whereDate('activity_log.created_at', '>=', $tanggal))
-            ->when($request->string('sampai')->toString(), fn (Builder $q, string $tanggal) => $q->whereDate('activity_log.created_at', '<=', $tanggal))
+        return $this->terapkanFilter($this->visibleTo($request->user()), $request)
+            ->orderByDesc('activity_log.id')
+            ->paginate(25, ['activity_log.*', 'pelaku.name as nama_pelaku'])
+            ->withQueryString()
+            ->through(fn (Activity $activity): ActivityLogData => ActivityLogData::fromActivity($activity, $activity->getAttribute('nama_pelaku')));
+    }
+
+    /**
+     * Halaman pemantauan Superadmin (FEAT-15b): lintas seluruh pengguna,
+     * tanpa batas `visibleTo()` — akses ke halamannya sendiri sudah dijaga
+     * middleware `superadmin`, jadi query di sini sengaja tidak terbatas.
+     *
+     * @return LengthAwarePaginator<int, ActivityLogData>
+     */
+    public function paginateAdmin(AdminActivityLogIndexRequest $request): LengthAwarePaginator
+    {
+        return $this->terapkanFilter($this->base(), $request)
+            ->when($request->integer('pelaku') ?: null, fn (Builder $q, int $id) => $q->where('activity_log.causer_id', $id))
+            ->when($request->integer('unit') ?: null, fn (Builder $q, int $id) => $q->where('pelaku.unit_id', $id))
             ->orderByDesc('activity_log.id')
             ->paginate(25, ['activity_log.*', 'pelaku.name as nama_pelaku'])
             ->withQueryString()
@@ -101,6 +117,22 @@ final class ActivityLogQuery
                         ->where('activity_log.causer_id', $user->id);
                 });
         });
+    }
+
+    /**
+     * Penyaring `cari`/`jenis`/`dari`/`sampai` dipakai bersama oleh halaman
+     * riwayat pribadi dan halaman pemantauan admin — hanya cakupan awal
+     * query dan penyaring tambahannya (pelaku, unit) yang berbeda.
+     *
+     * @return Builder<Activity>
+     */
+    private function terapkanFilter(Builder $query, Request $request): Builder
+    {
+        return $query
+            ->when($request->string('cari')->toString(), fn (Builder $q, string $kata) => $q->where('activity_log.description', 'like', "%{$kata}%"))
+            ->when($request->string('jenis')->toString(), fn (Builder $q, string $jenis) => $q->where('activity_log.log_name', $jenis))
+            ->when($request->string('dari')->toString(), fn (Builder $q, string $tanggal) => $q->whereDate('activity_log.created_at', '>=', $tanggal))
+            ->when($request->string('sampai')->toString(), fn (Builder $q, string $tanggal) => $q->whereDate('activity_log.created_at', '<=', $tanggal));
     }
 
     /** @return Builder<Activity> */

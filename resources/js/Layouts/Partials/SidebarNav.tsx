@@ -1,12 +1,17 @@
 import { cn } from '@/lib/cn';
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Activity,
     Building2,
+    Clock3,
     FileText,
+    FolderOpen,
     FolderTree,
     History,
     LayoutDashboard,
     Settings,
+    Star,
+    Trash2,
     Users,
     type LucideIcon,
 } from 'lucide-react';
@@ -17,6 +22,7 @@ interface NavItem {
     icon: LucideIcon;
     /** Awalan alamat yang membuat butir ini ditandai aktif. */
     match: string;
+    exact?: boolean;
     superadminOnly?: boolean;
 }
 
@@ -36,13 +42,23 @@ const NAV: NavGroup[] = [
         label: 'Menu Utama',
         items: [
             { label: 'Beranda', href: '/dashboard', icon: LayoutDashboard, match: '/dashboard' },
-            { label: 'Semua Dokumen', href: '/documents', icon: FileText, match: '/documents' },
+            { label: 'Dokumen Saya', href: '/documents/mine', icon: FolderOpen, match: '/documents/mine' },
+            { label: 'Jelajahi Dokumen', href: '/documents', icon: FileText, match: '/documents', exact: true },
+        ],
+    },
+    {
+        label: null,
+        items: [
+            { label: 'Terbaru', href: '/documents/recent', icon: Clock3, match: '/documents/recent' },
+            { label: 'Berbintang', href: '/documents/starred', icon: Star, match: '/documents/starred' },
+            { label: 'Sampah', href: '/trash', icon: Trash2, match: '/trash' },
             { label: 'Riwayat Aktivitas', href: '/activity-log', icon: History, match: '/activity-log' },
         ],
     },
     {
         label: 'Pengelolaan',
         items: [
+            { label: 'Log Aktivitas', href: '/admin/activity-log', icon: Activity, match: '/admin/activity-log', superadminOnly: true },
             { label: 'Pengguna', href: '/admin/users', icon: Users, match: '/admin/users', superadminOnly: true },
             { label: 'Unit Kerja', href: '/admin/units', icon: Building2, match: '/admin/units', superadminOnly: true },
             { label: 'Jabatan', href: '/admin/jabatans', icon: FolderTree, match: '/admin/jabatans', superadminOnly: true },
@@ -82,7 +98,9 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
 
                         <ul className="space-y-1">
                             {items.map((item) => {
-                                const active = currentPath.startsWith(item.match);
+                                const active = item.exact
+                                    ? currentPath === item.match
+                                    : currentPath.startsWith(item.match);
 
                                 return (
                                     <li key={item.href}>

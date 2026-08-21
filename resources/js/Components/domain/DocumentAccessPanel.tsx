@@ -4,7 +4,7 @@ import { type ReactNode } from 'react';
 
 type DokumenAkses = Pick<
     App.Data.DocumentDetailData,
-    'dibagikan_ke_semua' | 'min_tingkat_akses' | 'unit_tujuan' | 'jabatan_tujuan' | 'orang_tertentu' | 'edit_scope' | 'label_edit_scope'
+    'is_private' | 'dibagikan_ke_semua' | 'min_tingkat_akses' | 'unit_tujuan' | 'jabatan_tujuan' | 'orang_tertentu' | 'edit_scope' | 'label_edit_scope'
 >;
 
 /** Ringkasan akses baca dan wewenang ubah pada detail dokumen. */
@@ -18,7 +18,7 @@ export function DocumentAccessPanel({ dokumen }: { dokumen: DokumenAkses }) {
         dokumen.min_tingkat_akses !== null && {
             icon: BriefcaseBusiness,
             judul: 'Bagikan ke jabatan',
-            keterangan: 'Berlaku lintas unit kerja.',
+            keterangan: keteranganJabatan(dokumen.jabatan_tujuan),
             detail: <DaftarJabatan jabatan={dokumen.jabatan_tujuan} />,
         },
         dokumen.unit_tujuan.length > 0 && {
@@ -36,9 +36,12 @@ export function DocumentAccessPanel({ dokumen }: { dokumen: DokumenAkses }) {
     ];
     const mekanisme = kandidatMekanisme.filter((item): item is Mekanisme => item !== false);
 
-    const ringkasan = mekanisme.length === 0
-        ? ['Hanya pemilik dokumen yang dapat membuka dokumen ini.']
+    const ringkasan = dokumen.is_private
+        ? ['Hanya Anda sebagai pengunggah dan Superadmin untuk audit serta pemulihan yang dapat membuka dokumen ini.']
+        : mekanisme.length === 0
+        ? ['Hanya pemilik dokumen, Superadmin, dan Pimpinan BPMA yang dapat membuka dokumen ini.']
         : mekanisme.map(({ judul, keterangan }) => `${judul}: ${keterangan}`);
+    const labelAkses = dokumen.is_private ? 'Hanya saya' : `${mekanisme.length} aktif`;
 
     return (
         <div className="space-y-5" id="akses">
@@ -51,9 +54,9 @@ export function DocumentAccessPanel({ dokumen }: { dokumen: DokumenAkses }) {
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <div>
                                 <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">Akses dokumen</p>
-                                <h2 className="mt-0.5 text-sm font-semibold text-ink">Siapa yang dapat membuka</h2>
+                                <h2 className="mt-0.5 text-sm font-semibold text-ink">{dokumen.is_private ? 'Hanya saya' : 'Siapa yang dapat membuka'}</h2>
                             </div>
-                            <Badge variant="brand" size="sm">{mekanisme.length} aktif</Badge>
+                            <Badge variant="brand" size="sm">{labelAkses}</Badge>
                         </div>
                         {ringkasan.length > 1 ? (
                             <ul className="mt-3 space-y-1.5" aria-label="Ringkasan akses aktif">
@@ -146,15 +149,35 @@ function DaftarJabatan({ jabatan }: { jabatan: readonly string[] }) {
     }
 
     return (
-        <ul className="space-y-1.5" aria-label="Jabatan yang dapat membuka">
-            {jabatan.map((nama) => (
-                <li key={nama} className="flex items-center gap-2 text-xs text-ink-muted">
-                    <BriefcaseBusiness className="size-3.5 shrink-0 text-brand-700" aria-hidden />
-                    {nama}
-                </li>
-            ))}
-        </ul>
+        <div className="space-y-2">
+            <p className="text-xs font-medium text-ink">
+                Semua pengguna aktif pada jabatan berikut, di seluruh unit kerja:
+            </p>
+            <ul className="space-y-1.5" aria-label="Jabatan yang dapat membuka">
+                {jabatan.map((nama) => (
+                    <li key={nama} className="flex items-center gap-2 text-xs text-ink-muted">
+                        <BriefcaseBusiness className="size-3.5 shrink-0 text-brand-700" aria-hidden />
+                        {nama}
+                    </li>
+                ))}
+            </ul>
+        </div>
     );
+}
+
+function keteranganJabatan(jabatan: readonly string[]): string {
+    if (jabatan.length === 0) {
+        return 'Tidak ada jabatan aktif yang termasuk dalam jenjang ini.';
+    }
+
+    return `Semua pengguna aktif dengan jabatan ${gabungkan(jabatan)} di seluruh unit kerja dapat membuka.`;
+}
+
+function gabungkan(item: readonly string[]): string {
+    if (item.length === 1) return item[0];
+    if (item.length === 2) return `${item[0]} dan ${item[1]}`;
+
+    return `${item.slice(0, -1).join(', ')}, dan ${item[item.length - 1]}`;
 }
 
 function DaftarUnit({ unit }: { unit: readonly string[] }) {

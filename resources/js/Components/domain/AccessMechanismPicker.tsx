@@ -3,10 +3,11 @@ import { UserPicker, type PenggunaTerpilih } from '@/Components/domain/UserPicke
 import { Alert } from '@/Components/ui/Alert';
 import { Select } from '@/Components/ui/Select';
 import { cn } from '@/lib/cn';
-import { Check, Globe, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
+import { Check, Globe, LockKeyhole, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { type ReactNode } from 'react';
 
 export interface NilaiAkses {
+    is_private: boolean;
     is_shared_to_all: boolean;
     min_tingkat_akses: number | null;
     unit_ids: number[];
@@ -54,7 +55,24 @@ export function AccessMechanismPicker({
         onChange({ ...nilai, ...sebagian });
     }
 
+    function ubahAksesPribadi() {
+        if (nilai.is_private) {
+            ubah({ is_private: false });
+
+            return;
+        }
+
+        onChange({
+            is_private: true,
+            is_shared_to_all: false,
+            min_tingkat_akses: null,
+            unit_ids: [],
+            shared_users: [],
+        });
+    }
+
     const jumlahAktif =
+        (nilai.is_private ? 1 : 0) +
         (nilai.is_shared_to_all ? 1 : 0) +
         (nilai.min_tingkat_akses !== null ? 1 : 0) +
         (nilai.unit_ids.length > 0 ? 1 : 0) +
@@ -68,6 +86,15 @@ export function AccessMechanismPicker({
                 </Alert>
             )}
 
+            <Mekanisme
+                aktif={nilai.is_private}
+                onToggle={ubahAksesPribadi}
+                icon={LockKeyhole}
+                judul="Hanya saya"
+                keterangan="Hanya Anda dan Superadmin untuk audit serta pemulihan yang dapat membuka dokumen ini."
+            />
+
+            {!nilai.is_private && <>
             <Mekanisme
                 aktif={nilai.is_shared_to_all}
                 onToggle={() => ubah({ is_shared_to_all: !nilai.is_shared_to_all })}
@@ -88,7 +115,7 @@ export function AccessMechanismPicker({
                 }
                 icon={ShieldCheck}
                 judul="Bagikan ke jabatan tertentu ke atas"
-                keterangan="Berdasarkan jenjang jabatan, berlaku di semua unit."
+                keterangan="Semua pengguna aktif pada jenjang yang dipilih dapat membuka, di seluruh unit kerja."
             >
                 <JenjangPicker
                     jenjang={jenjang}
@@ -131,6 +158,8 @@ export function AccessMechanismPicker({
                     onChange={(shared_users) => ubah({ shared_users })}
                 />
             </Mekanisme>
+
+            </>}
 
             <Pratinjau
                 nilai={nilai}
@@ -341,12 +370,18 @@ function Pratinjau({
     jenjang: readonly JenjangJabatan[];
 }) {
     if (jumlahAktif === 0) {
-        const jabatanTertinggi = jenjang[0]?.jabatan.map(({ nama }) => nama).join(' dan ') ?? 'Pimpinan BPMA';
-
         return (
             <Alert variant="warning" title="Belum ada mekanisme akses yang aktif">
-                Dokumen ini hanya akan terlihat oleh Anda sendiri, Superadmin, dan
-                {' '}{jabatanTertinggi}. Aktifkan minimal satu mekanisme di atas.
+                Aktifkan minimal satu mekanisme berbagi atau pilih Hanya saya.
+            </Alert>
+        );
+    }
+
+    if (nilai.is_private) {
+        return (
+            <Alert variant="info" title="Dokumen pribadi">
+                Dokumen ini hanya dapat dilihat oleh Anda sebagai pengunggah dan
+                {' '}Superadmin untuk audit serta pemulihan.
             </Alert>
         );
     }

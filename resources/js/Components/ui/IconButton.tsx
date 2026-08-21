@@ -15,6 +15,8 @@ const SIZES = {
 
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     icon: LucideIcon;
+    /** Kelas khusus SVG, misalnya ikon bintang yang perlu terisi penuh. */
+    iconClassName?: string;
     /** Wajib — tombol tanpa teks tidak dapat dikenali pembaca layar. */
     label: string;
     variant?: keyof typeof VARIANTS;
@@ -23,7 +25,7 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
     function IconButton(
-        { icon: Icon, label, variant = 'default', size = 'md', className, ...props },
+        { icon: Icon, iconClassName, label, variant = 'default', size = 'md', className, ...props },
         ref,
     ) {
         return (
@@ -41,7 +43,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
                 )}
                 {...props}
             >
-                <Icon className="size-4" aria-hidden />
+                <Icon className={cn('size-4', iconClassName)} aria-hidden />
             </button>
         );
     },

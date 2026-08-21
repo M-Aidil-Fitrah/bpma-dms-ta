@@ -91,8 +91,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Jabatan tingkat 1 (Kepala dan Wakil Kepala BPMA) melihat seluruh dokumen
-     * tanpa terikat mekanisme akses mana pun (FR-44).
+     * Pimpinan BPMA tingkat 1 melihat seluruh dokumen tanpa terikat mekanisme
+     * akses mana pun (FR-44).
      */
     public function isPimpinanTertinggi(): bool
     {

@@ -48,6 +48,8 @@ export function ConfirmDialog({
             terbuka={terbuka}
             onTutup={onTutup}
             judul={judul}
+            teksTerpusat
+            className="max-w-xl"
             footer={
                 <>
                     <Button
@@ -71,7 +73,7 @@ export function ConfirmDialog({
                 </>
             }
         >
-            <div className="flex gap-3">
+            <div className="flex flex-col items-center gap-3">
                 <span
                     aria-hidden
                     className={cn(
@@ -86,7 +88,7 @@ export function ConfirmDialog({
                         )}
                     />
                 </span>
-                <div className="space-y-2 text-sm text-ink-muted">{children}</div>
+                <div className="w-full space-y-2 text-sm text-ink-muted">{children}</div>
             </div>
         </Modal>
     );

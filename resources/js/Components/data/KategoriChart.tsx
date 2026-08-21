@@ -1,5 +1,6 @@
 import { Skeleton } from '@/Components/ui/Skeleton';
 import { formatAngka } from '@/lib/format';
+import { ArcElement, Chart, DoughnutController, Tooltip } from 'chart.js';
 import { useEffect, useRef, useState } from 'react';
 
 export interface KategoriChartProps {
@@ -18,9 +19,9 @@ const WARNA = [
 /**
  * Diagram komposisi dokumen per kategori (FR-02).
  *
- * Chart.js dimuat lewat `import()` dinamis dan hanya saat komponen ini benar-
- * benar dirender. Ukurannya sekitar dua ratus kilobyte — kalau ikut di bundle
- * utama, halaman masuk pun harus mengunduhnya padahal tidak pernah memakainya.
+ * Chart.js ikut pada chunk halaman Dashboard, bukan bundle utama aplikasi.
+ * Dengan begitu halaman masuk tetap ringan dan Firefox tidak perlu memuat
+ * modul chart kedua secara dinamis setelah Dashboard sudah tampil.
  */
 export function KategoriChart({ data }: KategoriChartProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -28,51 +29,43 @@ export function KategoriChart({ data }: KategoriChartProps) {
 
     useEffect(() => {
         let chart: { destroy: () => void } | null = null;
-        let dibatalkan = false;
 
-        async function render() {
-            const { Chart, ArcElement, DoughnutController, Tooltip } = await import('chart.js');
+        if (!canvasRef.current) return;
 
-            if (dibatalkan || !canvasRef.current) return;
+        // Hanya bagian yang dipakai yang didaftarkan, bukan seluruh
+        // registri Chart.js — sisanya tidak ikut terbawa ke bundel.
+        Chart.register(ArcElement, DoughnutController, Tooltip);
 
-            // Hanya bagian yang dipakai yang didaftarkan, bukan seluruh
-            // registri Chart.js — sisanya tidak ikut terbawa ke bundel.
-            Chart.register(ArcElement, DoughnutController, Tooltip);
-
-            chart = new Chart(canvasRef.current, {
-                type: 'doughnut',
-                data: {
-                    labels: data.map((d) => d.nama),
-                    datasets: [
-                        {
-                            data: data.map((d) => d.jumlah),
-                            backgroundColor: data.map((_, i) => WARNA[i % WARNA.length]),
-                            borderWidth: 0,
-                        },
-                    ],
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '62%',
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: (ctx) =>
-                                    ` ${ctx.label}: ${formatAngka(Number(ctx.parsed))} dokumen`,
-                            },
+        chart = new Chart(canvasRef.current, {
+            type: 'doughnut',
+            data: {
+                labels: data.map((d) => d.nama),
+                datasets: [
+                    {
+                        data: data.map((d) => d.jumlah),
+                        backgroundColor: data.map((_, i) => WARNA[i % WARNA.length]),
+                        borderWidth: 0,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '62%',
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) =>
+                                ` ${ctx.label}: ${formatAngka(Number(ctx.parsed))} dokumen`,
                         },
                     },
                 },
-            });
+            },
+        });
 
-            setSiap(true);
-        }
-
-        void render();
+        setSiap(true);
 
         return () => {
-            dibatalkan = true;
             chart?.destroy();
         };
     }, [data]);

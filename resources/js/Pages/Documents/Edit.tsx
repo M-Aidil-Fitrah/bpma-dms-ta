@@ -59,6 +59,7 @@ export default function Edit({ dokumen, opsi }: EditProps) {
                     version_note: '',
                 }}
                 aksesAwal={{
+                    is_private: dokumen.is_private,
                     is_shared_to_all: dokumen.is_shared_to_all,
                     min_tingkat_akses: dokumen.min_tingkat_akses,
                     unit_ids: dokumen.unit_ids,

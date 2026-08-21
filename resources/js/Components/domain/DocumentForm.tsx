@@ -100,10 +100,8 @@ export function DocumentForm({
             file: null,
             replaces_document_id: replacesDocumentId,
         });
-    const memakaiUnitAkun = opsi.unit_akun_id !== null;
-    const keteranganUnitKerja = opsi.unit_kerja_wajib
-          ? 'Pilih unit kerja yang bertanggung jawab atas dokumen ini.'
-          : 'Kosongkan untuk dokumen yang diterbitkan Pimpinan BPMA.';
+    const unitPenerbitDitentukan = opsi.unit_akun_id !== null || !opsi.unit_kerja_wajib;
+    const keteranganUnitKerja = 'Pilih unit kerja yang bertanggung jawab atas dokumen ini.';
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
@@ -117,6 +115,7 @@ export function DocumentForm({
 
             const akhir = {
                 ...tanpaBerkas,
+                is_private: akses.is_private,
                 is_shared_to_all: akses.is_shared_to_all,
                 min_tingkat_akses: akses.min_tingkat_akses,
                 unit_ids: akses.unit_ids,
@@ -266,15 +265,15 @@ export function DocumentForm({
                         </Field>
 
                         <Field
-                            label="Unit Kerja"
-                            hint={memakaiUnitAkun ? undefined : keteranganUnitKerja}
+                            label="Unit Penerbit"
+                            hint={unitPenerbitDitentukan ? 'Ditentukan dari akun Anda dan tidak dapat diubah di formulir.' : keteranganUnitKerja}
                             error={errors.origin_unit_id}
-                            required={opsi.unit_kerja_wajib}
+                            required={!unitPenerbitDitentukan}
                         >
-                            {(props) => memakaiUnitAkun ? (
+                            {(props) => unitPenerbitDitentukan ? (
                                 <Input
                                     {...props}
-                                    value={opsi.unit_akun_nama ?? 'Unit kerja tidak tersedia'}
+                                    value={opsi.unit_akun_nama ?? 'Pimpinan BPMA'}
                                     readOnly
                                     aria-readonly="true"
                                 />

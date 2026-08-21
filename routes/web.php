@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\JabatanController;
 use App\Http\Controllers\Admin\PengaturanController;
@@ -115,6 +116,12 @@ Route::middleware(['auth'])->group(function (): void {
 */
 
 Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->group(function (): void {
+    // Pemantauan lintas pengguna (FEAT-15b) — beda dari `/activity-log`
+    // biasa yang dibatasi ke aktivitas yang dapat diakses masing-masing.
+    Route::get('/activity-log', [AdminActivityLogController::class, 'index'])->name('activity-log.index');
+    Route::get('/activity-log/cari-pengguna', [AdminActivityLogController::class, 'cariPengguna'])
+        ->name('activity-log.cari-pengguna');
+
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
     Route::post('/users', [UserController::class, 'store'])->middleware('password.confirm')->name('users.store');

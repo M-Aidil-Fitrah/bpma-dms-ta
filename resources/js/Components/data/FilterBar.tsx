@@ -1,5 +1,6 @@
 import type { UnitPilihan } from '@/Components/domain/UnitTreePicker';
 import { UnitTreeSelect } from '@/Components/domain/UnitTreeSelect';
+import { UserFilterSelect, type PenggunaFilterPilihan } from '@/Components/domain/UserFilterSelect';
 import { Button } from '@/Components/ui/Button';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
@@ -16,11 +17,19 @@ export interface FilterChip {
 export interface FilterDefinition {
     kunci: string;
     label: string;
-    tipe: 'select' | 'date' | 'tree';
+    tipe: 'select' | 'date' | 'tree' | 'user';
     options?: readonly SelectOption[];
     placeholder?: string;
     /** Wajib diisi saat `tipe: 'tree'`. */
     treeUnits?: readonly UnitPilihan[];
+    /** Wajib diisi saat `tipe: 'user'` — sumber pencarian pengguna. */
+    userSearchUrl?: string;
+    /**
+     * Wajib diisi saat `tipe: 'user'` — pengguna yang sedang aktif
+     * sebagai nilai filter. Diresolusi di server (bukan dicari ulang di
+     * klien) karena `nilai[kunci]` hanya menyimpan id, bukan nama.
+     */
+    userValue?: PenggunaFilterPilihan | null;
 }
 
 export interface FilterBarProps {
@@ -115,6 +124,19 @@ export function FilterBar({
                                             nilai={nilaiUnit}
                                             onChange={(id) =>
                                                 onChange(filter.kunci, id === null ? '' : String(id))
+                                            }
+                                        />
+                                    );
+                                }
+
+                                if (filter.tipe === 'user') {
+                                    return (
+                                        <UserFilterSelect
+                                            {...props}
+                                            searchUrl={filter.userSearchUrl ?? ''}
+                                            nilai={filter.userValue ?? null}
+                                            onChange={(pengguna) =>
+                                                onChange(filter.kunci, pengguna === null ? '' : String(pengguna.id))
                                             }
                                         />
                                     );

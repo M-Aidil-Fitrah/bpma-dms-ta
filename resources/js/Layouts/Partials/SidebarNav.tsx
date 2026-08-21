@@ -1,6 +1,7 @@
 import { cn } from '@/lib/cn';
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Activity,
     Building2,
     Clock3,
     FileText,
@@ -57,6 +58,7 @@ const NAV: NavGroup[] = [
     {
         label: 'Pengelolaan',
         items: [
+            { label: 'Log Aktivitas', href: '/admin/activity-log', icon: Activity, match: '/admin/activity-log', superadminOnly: true },
             { label: 'Pengguna', href: '/admin/users', icon: Users, match: '/admin/users', superadminOnly: true },
             { label: 'Unit Kerja', href: '/admin/units', icon: Building2, match: '/admin/units', superadminOnly: true },
             { label: 'Jabatan', href: '/admin/jabatans', icon: FolderTree, match: '/admin/jabatans', superadminOnly: true },

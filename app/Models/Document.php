@@ -375,7 +375,13 @@ class Document extends Model
         }
 
         if ($user->isPimpinanTertinggi()) {
-            return $query->where('documents.is_private', false);
+            // Bypass keempat mekanisme berbagi, tapi pemilik dokumen tetap
+            // harus dapat melihat dokumennya sendiri — termasuk yang ia
+            // tandai "Hanya saya" — sama seperti jabatan lain mana pun.
+            return $query->where(function (Builder $group) use ($user): void {
+                $group->where('documents.uploaded_by', $user->id)
+                    ->orWhere('documents.is_private', false);
+            });
         }
 
         $tingkatAkses = $user->jabatan?->tingkat_akses;

@@ -248,53 +248,67 @@ export function DocumentForm({
                             )}
                         </Field>
 
-                        <Field label="Kategori" error={errors.category_id} required>
-                            {(props) => (
-                                <Select
-                                    {...props}
-                                    placeholder="Pilih kategori"
-                                    value={data.category_id}
-                                    invalid={Boolean(errors.category_id)}
-                                    options={opsi.kategori.map((k) => ({
-                                        value: k.id,
-                                        label: k.nama,
-                                    }))}
-                                    onChange={(e) => setData('category_id', e.target.value)}
-                                />
-                            )}
-                        </Field>
+                        <div className="space-y-1.5 sm:col-span-2">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <Field label="Kategori" error={errors.category_id} required>
+                                    {(props) => (
+                                        <Select
+                                            {...props}
+                                            placeholder="Pilih kategori"
+                                            value={data.category_id}
+                                            invalid={Boolean(errors.category_id)}
+                                            options={opsi.kategori.map((k) => ({
+                                                value: k.id,
+                                                label: k.nama,
+                                            }))}
+                                            onChange={(e) => setData('category_id', e.target.value)}
+                                        />
+                                    )}
+                                </Field>
 
-                        <Field
-                            label="Unit Penerbit"
-                            hint={unitPenerbitDitentukan ? 'Ditentukan dari akun Anda dan tidak dapat diubah di formulir.' : keteranganUnitKerja}
-                            error={errors.origin_unit_id}
-                            required={!unitPenerbitDitentukan}
-                        >
-                            {(props) => unitPenerbitDitentukan ? (
-                                <Input
-                                    {...props}
-                                    value={opsi.unit_akun_nama ?? 'Pimpinan BPMA'}
-                                    readOnly
-                                    aria-readonly="true"
-                                />
-                            ) : (
-                                <Select
-                                    {...props}
-                                    placeholder="Pilih unit kerja"
-                                    value={data.origin_unit_id}
-                                    invalid={Boolean(errors.origin_unit_id)}
-                                    options={opsi.unit.map((u) => ({
-                                        value: u.id,
-                                        label: u.nama,
-                                    }))}
-                                    onChange={(e) => setData('origin_unit_id', e.target.value)}
-                                />
-                            )}
-                        </Field>
+                                {/* Tanpa `hint` di sini: dulu penjelasan tampil di antara
+                                    label dan kendali, sehingga kotak dropdown ini turun
+                                    lebih rendah daripada Kategori di sebelahnya dan
+                                    keduanya tidak sejajar. Penjelasannya sekarang satu
+                                    baris di bawah, meliputi kedua kolom, sama seperti
+                                    pola pada Masa Berlaku di bawah. */}
+                                <Field
+                                    label="Unit Penerbit"
+                                    error={errors.origin_unit_id}
+                                    required={!unitPenerbitDitentukan}
+                                >
+                                    {(props) => unitPenerbitDitentukan ? (
+                                        <Input
+                                            {...props}
+                                            value={opsi.unit_akun_nama ?? 'Pimpinan BPMA'}
+                                            readOnly
+                                            aria-readonly="true"
+                                        />
+                                    ) : (
+                                        <Select
+                                            {...props}
+                                            placeholder="Pilih unit kerja"
+                                            value={data.origin_unit_id}
+                                            invalid={Boolean(errors.origin_unit_id)}
+                                            options={opsi.unit.map((u) => ({
+                                                value: u.id,
+                                                label: u.nama,
+                                            }))}
+                                            onChange={(e) => setData('origin_unit_id', e.target.value)}
+                                        />
+                                    )}
+                                </Field>
+                            </div>
+                            <p className="text-xs text-ink-muted">
+                                {unitPenerbitDitentukan
+                                    ? 'Ditentukan dari akun Anda dan tidak dapat diubah di formulir.'
+                                    : keteranganUnitKerja}
+                            </p>
+                        </div>
 
                         <div className="space-y-1.5 sm:col-span-2">
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <Field label="Masa Berlaku" error={errors.masa_berlaku}>
+                                <Field label="Masa Berlaku" optional error={errors.masa_berlaku}>
                                     {(props) => (
                                         <Input
                                             {...props}

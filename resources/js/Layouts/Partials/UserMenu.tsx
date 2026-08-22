@@ -3,12 +3,15 @@ import { Dropdown, DropdownItem } from '@/Components/ui/Dropdown';
 import { cn } from '@/lib/cn';
 import { Link } from '@inertiajs/react';
 import { ChevronDown, LogOut, UserCog } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface UserMenuProps {
     user: App.Data.AuthUserData;
 }
 
 export function UserMenu({ user }: UserMenuProps) {
+    const { t } = useTranslation('nav');
+
     return (
         <Dropdown
             trigger={
@@ -27,7 +30,7 @@ export function UserMenu({ user }: UserMenuProps) {
                             {user.name}
                         </span>
                         <span className="block truncate text-xs text-ink-muted">
-                            {user.is_superadmin ? 'Superadmin' : (user.jabatan ?? 'Pengguna')}
+                            {user.is_superadmin ? t('penggunaMenu.superadmin') : (user.jabatan ?? t('penggunaMenu.pengguna'))}
                         </span>
                     </span>
 
@@ -50,7 +53,7 @@ export function UserMenu({ user }: UserMenuProps) {
                         className="flex min-h-touch items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-muted data-[focus]:bg-surface-sunken data-[focus]:text-ink"
                     >
                         <UserCog className="size-4" aria-hidden />
-                        Profil Saya
+                        {t('penggunaMenu.profilSaya')}
                     </Link>
                 </DropdownItem>
 
@@ -62,7 +65,7 @@ export function UserMenu({ user }: UserMenuProps) {
                         className="flex min-h-touch w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-danger data-[focus]:bg-danger-soft"
                     >
                         <LogOut className="size-4" aria-hidden />
-                        Keluar
+                        {t('penggunaMenu.keluar')}
                     </Link>
                 </DropdownItem>
         </Dropdown>

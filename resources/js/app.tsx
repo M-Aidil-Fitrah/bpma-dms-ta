@@ -5,9 +5,12 @@ import { FlashToast } from '@/Components/ui/FlashToast';
 import { ToastProvider } from '@/Components/ui/Toast';
 import { PasswordConfirmationProvider } from '@/Components/auth/PasswordConfirmationProvider';
 import { memilikiPenggunaTerautentikasi } from '@/types/auth';
+import { terapkanBahasaAwal } from '@/lib/i18n';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
+
+terapkanBahasaAwal();
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

@@ -1,4 +1,5 @@
 import { DmsBrand } from '@/Components/ui/DmsBrand';
+import { LanguageSwitcher } from '@/Components/domain/LanguageSwitcher';
 import { Head } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 
@@ -16,6 +17,10 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
     return (
         <div className="flex min-h-dvh flex-col bg-surface-sunken">
             <Head title={title} />
+
+            <div className="flex justify-center px-4 pt-4 sm:justify-end sm:pr-6">
+                <LanguageSwitcher />
+            </div>
 
             <main className="flex flex-1 items-center justify-center px-4 py-10">
                 <div className="w-full max-w-sm">

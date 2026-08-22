@@ -32,5 +32,9 @@
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1"
+    },
+    "dependencies": {
+        "i18next": "^26.4.0",
+        "react-i18next": "^17.0.12"
     }
 }

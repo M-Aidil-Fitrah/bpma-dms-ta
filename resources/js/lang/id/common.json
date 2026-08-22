@@ -1,0 +1,47 @@
+{
+    "aksi": {
+        "simpan": "Simpan",
+        "simpanPerubahan": "Simpan Perubahan",
+        "batal": "Batal",
+        "hapus": "Hapus",
+        "ubah": "Ubah",
+        "unggah": "Unggah",
+        "unduh": "Unduh",
+        "cari": "Cari",
+        "tutup": "Tutup",
+        "kembali": "Kembali",
+        "lanjutkan": "Lanjutkan",
+        "pulihkan": "Pulihkan",
+        "buang": "Buang",
+        "tambah": "Tambah",
+        "buat": "Buat",
+        "filter": "Filter",
+        "resetFilter": "Reset Filter",
+        "lihatSemua": "Lihat Semua",
+        "muatLebihBanyak": "Muat Lebih Banyak"
+    },
+    "status": {
+        "aktif": "Aktif",
+        "nonaktif": "Nonaktif",
+        "berlaku": "Berlaku",
+        "kedaluwarsa": "Kedaluwarsa",
+        "menunggu": "Menunggu",
+        "diproses": "Diproses",
+        "berhasil": "Berhasil",
+        "gagal": "Gagal"
+    },
+    "kosong": {
+        "judul": "Belum ada data",
+        "tanpaHasilPencarian": "Tidak ada hasil yang cocok dengan pencarian Anda."
+    },
+    "konfirmasi": {
+        "judul": "Konfirmasi",
+        "yakin": "Apakah Anda yakin?",
+        "tidakDapatDibatalkan": "Tindakan ini tidak dapat dibatalkan."
+    },
+    "bahasa": {
+        "label": "Bahasa",
+        "indonesia": "Indonesia",
+        "inggris": "Inggris"
+    }
+}

@@ -516,8 +516,14 @@ final class DocumentController extends Controller
             'replacementDocument:id,replaces_document_id,nomor,judul',
         ]);
         $akarId = $document->version_root_id ?? $document->id;
+        // `visibleTo()` juga diterapkan di sini, bukan cuma pada dokumen yang
+        // sedang dibuka: setiap versi bisa punya mekanisme aksesnya sendiri
+        // (FR-42), sehingga versi lama yang sengaja dibuat "Hanya saya" oleh
+        // pengunggahnya tidak boleh ikut membocorkan nama berkas atau catatan
+        // revisinya ke orang lain yang kebetulan berhak atas versi terbaru.
         $versi = Document::query()
             ->where('version_root_id', $akarId)
+            ->visibleTo($request->user())
             ->with('uploader:id,name')
             ->orderByDesc('version_major')
             ->orderByDesc('version_minor')

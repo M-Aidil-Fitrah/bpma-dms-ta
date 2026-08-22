@@ -43,5 +43,25 @@
         "label": "Language",
         "indonesia": "Indonesian",
         "inggris": "English"
+    },
+    "toastStatus": {
+        "success": "Success",
+        "error": "Failed",
+        "warning": "Needs Attention",
+        "info": "Information"
+    },
+    "ui": {
+        "semua": "All",
+        "tutupPemberitahuan": "Close notification",
+        "navigasiHalaman": "Page navigation",
+        "halamanNomor": "Page {{nomor}}",
+        "halamanSebelumnya": "Previous page",
+        "halamanBerikutnya": "Next page",
+        "menampilkan": "Showing",
+        "dari": "of",
+        "modeTampilan": "View mode",
+        "tampilanTabel": "Table view",
+        "tampilanKartu": "Card view",
+        "urutkanBerdasarkan": "Sort by {{label}}"
     }
 }

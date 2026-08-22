@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn';
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface SortableHeaderProps {
     label: string;
@@ -26,6 +27,7 @@ export function SortableHeader({
     onSort,
     className,
 }: SortableHeaderProps) {
+    const { t } = useTranslation('common');
     const aktif = kunci === kunciAktif;
     const Icon = aktif ? (arah === 'asc' ? ArrowUp : ArrowDown) : ChevronsUpDown;
 
@@ -34,7 +36,7 @@ export function SortableHeader({
             <button
                 type="button"
                 onClick={() => onSort(kunci, aktif && arah === 'desc' ? 'asc' : 'desc')}
-                aria-label={`Urutkan berdasarkan ${label}`}
+                aria-label={t('ui.urutkanBerdasarkan', { label })}
                 className={cn(
                     'inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider transition-colors',
                     aktif ? 'text-ink' : 'text-ink-subtle hover:text-ink-muted',

@@ -2,6 +2,7 @@ import { cn } from '@/lib/cn';
 import { formatAngka } from '@/lib/format';
 import { Link } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface PaginationProps {
     /** Menerima bentuk paginator Laravel apa adanya, tanpa perlu dipetakan. */
@@ -20,10 +21,12 @@ export interface PaginationProps {
  * tata letak di layar sempit.
  */
 export function Pagination({ meta, labelItem = 'data', pageParameter = 'page' }: PaginationProps) {
+    const { t } = useTranslation('common');
+
     if (meta.last_page <= 1) {
         return (
             <p className="w-full text-sm text-ink-muted">
-                Menampilkan {formatAngka(meta.total)} {labelItem}
+                {t('ui.menampilkan')} {formatAngka(meta.total)} {labelItem}
             </p>
         );
     }
@@ -32,25 +35,25 @@ export function Pagination({ meta, labelItem = 'data', pageParameter = 'page' }:
 
     return (
         <nav
-            aria-label="Navigasi halaman"
+            aria-label={t('ui.navigasiHalaman')}
             // `w-full` penting: tanpa itu nav menyusut mengikuti isinya dan
             // seluruh kendali menempel di kiri, sehingga `justify-between`
             // tidak berpengaruh apa pun.
             className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
         >
             <p className="text-sm text-ink-muted">
-                Menampilkan{' '}
+                {t('ui.menampilkan')}{' '}
                 <span className="font-medium text-ink">
                     {formatAngka(meta.from ?? 0)}–{formatAngka(meta.to ?? 0)}
                 </span>{' '}
-                dari <span className="font-medium text-ink">{formatAngka(meta.total)}</span>{' '}
+                {t('ui.dari')} <span className="font-medium text-ink">{formatAngka(meta.total)}</span>{' '}
                 {labelItem}
             </p>
 
             <div className="flex items-center gap-1">
                 <TombolArah
                     url={meta.prev_page_url}
-                    label="Halaman sebelumnya"
+                    label={t('ui.halamanSebelumnya')}
                     arah="prev"
                 />
 
@@ -69,7 +72,7 @@ export function Pagination({ meta, labelItem = 'data', pageParameter = 'page' }:
                             href={urlHalaman(meta.path, nomor, pageParameter)}
                             preserveScroll
                             preserveState
-                            aria-label={`Halaman ${nomor}`}
+                            aria-label={t('ui.halamanNomor', { nomor })}
                             aria-current={nomor === meta.current_page ? 'page' : undefined}
                             className={cn(
                                 'inline-flex min-h-touch min-w-touch items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors sm:min-h-9 sm:min-w-9',
@@ -83,7 +86,7 @@ export function Pagination({ meta, labelItem = 'data', pageParameter = 'page' }:
                     ),
                 )}
 
-                <TombolArah url={meta.next_page_url} label="Halaman berikutnya" arah="next" />
+                <TombolArah url={meta.next_page_url} label={t('ui.halamanBerikutnya')} arah="next" />
             </div>
         </nav>
     );

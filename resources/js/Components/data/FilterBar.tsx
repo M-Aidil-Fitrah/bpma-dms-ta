@@ -8,6 +8,7 @@ import { Select, type SelectOption } from '@/Components/ui/Select';
 import { cn } from '@/lib/cn';
 import { Filter, RotateCcw, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface FilterChip {
     kunci: string;
@@ -60,6 +61,7 @@ export function FilterBar({
     onHapusChip,
     children,
 }: FilterBarProps) {
+    const { t } = useTranslation('common');
     const [terbuka, setTerbuka] = useState(false);
 
     return (
@@ -74,7 +76,7 @@ export function FilterBar({
                     aria-expanded={terbuka}
                     className={cn('shrink-0', chips.length > 0 && 'border-brand-700 text-brand-700')}
                 >
-                    Filter
+                    {t('aksi.filter')}
                     {chips.length > 0 && (
                         <span className="ml-1 inline-flex size-5 items-center justify-center rounded-full bg-brand-700 text-xs text-white">
                             {chips.length}
@@ -90,7 +92,7 @@ export function FilterBar({
                         onClick={onReset}
                         className="shrink-0"
                     >
-                        Reset filter
+                        {t('aksi.resetFilter')}
                     </Button>
                 )}
             </div>
@@ -105,7 +107,7 @@ export function FilterBar({
                                         <Select
                                             {...props}
                                             options={filter.options ?? []}
-                                            placeholder={filter.placeholder ?? 'Semua'}
+                                            placeholder={filter.placeholder ?? t('ui.semua')}
                                             value={nilai[filter.kunci] ?? ''}
                                             onChange={(e) => onChange(filter.kunci, e.target.value)}
                                         />

@@ -1,6 +1,7 @@
 import { Badge } from '@/Components/ui/Badge';
 import { Globe, Lock, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 export interface AccessSummaryProps {
     /** Dihitung backend dari mekanisme yang benar-benar aktif. */
@@ -38,12 +39,12 @@ export function AccessSummary({ ringkasan, ringkas = false }: AccessSummaryProps
          * lewat tooltip, dan tersaji lengkap di halaman detail.
          */
         const label = semua
-            ? 'Semua'
+            ? t('aksesRingkasan.labelSemua')
             : terbatas
-              ? 'Terbatas'
+              ? t('aksesRingkasan.labelTerbatas')
               : ringkasan.length === 1
-                ? ringkasanPendek(ringkasan[0])
-                : `${ringkasan.length} mekanisme`;
+                ? ringkasanPendek(ringkasan[0], t)
+                : t('aksesRingkasan.labelJumlahMekanisme', { jumlah: ringkasan.length });
 
         return (
             <Badge variant={variant} size="sm" className="max-w-full">
@@ -71,11 +72,17 @@ export function AccessSummary({ ringkasan, ringkas = false }: AccessSummaryProps
 
 /**
  * Menyingkat satu baris ringkasan menjadi kata kunci mekanismenya saja.
+ *
+ * `bagian` adalah teks ringkasan mentah dari backend (`Document::alasanTerlihat()`
+ * atau sejenisnya) — selalu berbahasa Indonesia apa pun bahasa aktif frontend,
+ * karena belum ada jalur terjemahan di sisi server untuk teks bebas ini.
+ * Deteksi polanya karena itu tetap mencocokkan kata kunci Indonesia; yang
+ * diterjemahkan hanya LABEL ringkas yang ditampilkan, bukan pencocokannya.
  */
-function ringkasanPendek(bagian: string): string {
-    if (bagian.startsWith('Unit:')) return 'Unit tertentu';
+function ringkasanPendek(bagian: string, t: TFunction): string {
+    if (bagian.startsWith('Unit:')) return t('aksesRingkasan.labelUnitTertentu');
     if (bagian.includes('unit kerja')) return bagian;
-    if (bagian.startsWith('Jenjang jabatan')) return 'Jenjang jabatan';
+    if (bagian.startsWith('Jenjang jabatan')) return t('aksesRingkasan.labelJenjangJabatan');
     if (bagian.includes('orang tertentu')) return bagian;
 
     return bagian;

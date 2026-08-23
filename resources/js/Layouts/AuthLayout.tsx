@@ -2,6 +2,7 @@ import { DmsBrand } from '@/Components/ui/DmsBrand';
 import { LanguageSwitcher } from '@/Components/domain/LanguageSwitcher';
 import { Head } from '@inertiajs/react';
 import { type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface AuthLayoutProps {
     title: string;
@@ -14,6 +15,8 @@ export interface AuthLayoutProps {
  * kata sandi, karena tidak ada registrasi publik (FR-24).
  */
 export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
+    const { t } = useTranslation('auth');
+
     return (
         <div className="flex min-h-dvh flex-col bg-surface-sunken">
             <Head title={title} />
@@ -37,7 +40,7 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
                     </div>
 
                     <p className="mt-6 text-center text-xs text-ink-subtle">
-                        Data Management System BPMA — akses internal
+                        {t('footerAkses')}
                     </p>
                 </div>
             </main>

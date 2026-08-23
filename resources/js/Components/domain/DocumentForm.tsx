@@ -104,7 +104,7 @@ export function DocumentForm({
             replaces_document_id: replacesDocumentId,
         });
     const unitPenerbitDitentukan = opsi.unit_akun_id !== null || !opsi.unit_kerja_wajib;
-    const keteranganUnitKerja = 'Pilih unit kerja yang bertanggung jawab atas dokumen ini.';
+    const keteranganUnitKerja = t('documentForm:form.unitPenerbit.keteranganPilih');
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
@@ -278,7 +278,7 @@ export function DocumentForm({
                                     baris di bawah, meliputi kedua kolom, sama seperti
                                     pola pada Masa Berlaku di bawah. */}
                                 <Field
-                                    label="Unit Penerbit"
+                                    label={t('documentForm:form.unitPenerbit.label')}
                                     error={errors.origin_unit_id}
                                     required={!unitPenerbitDitentukan}
                                 >
@@ -292,7 +292,7 @@ export function DocumentForm({
                                     ) : (
                                         <Select
                                             {...props}
-                                            placeholder="Pilih unit kerja"
+                                            placeholder={t('documentForm:form.unitPenerbit.placeholderSelect')}
                                             value={data.origin_unit_id}
                                             invalid={Boolean(errors.origin_unit_id)}
                                             options={opsi.unit.map((u) => ({
@@ -306,14 +306,14 @@ export function DocumentForm({
                             </div>
                             <p className="text-xs text-ink-muted">
                                 {unitPenerbitDitentukan
-                                    ? 'Ditentukan dari akun Anda dan tidak dapat diubah di formulir.'
+                                    ? t('documentForm:form.unitPenerbit.keteranganDitentukan')
                                     : keteranganUnitKerja}
                             </p>
                         </div>
 
                         <div className="space-y-1.5 sm:col-span-2">
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <Field label="Masa Berlaku" optional error={errors.masa_berlaku}>
+                                <Field label={t('documentForm:form.masaBerlaku.label')} optional error={errors.masa_berlaku}>
                                     {(props) => (
                                         <Input
                                             {...props}
@@ -342,7 +342,7 @@ export function DocumentForm({
                                     )}
                                 </Field>
                             </div>
-                            <p className="text-xs text-ink-muted">Kosongkan Masa Berlaku bila dokumen berlaku tanpa batas waktu.</p>
+                            <p className="text-xs text-ink-muted">{t('documentForm:form.masaBerlaku.keterangan')}</p>
                         </div>
 
                         <Field

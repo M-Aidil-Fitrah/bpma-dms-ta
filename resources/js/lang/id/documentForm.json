@@ -23,6 +23,16 @@
             "label": "Nomor Dokumen",
             "placeholder": "042/BPMA/DPR-TPL/VIII/2026"
         },
+        "unitPenerbit": {
+            "label": "Unit Penerbit",
+            "placeholderSelect": "Pilih unit kerja",
+            "keteranganDitentukan": "Ditentukan dari akun Anda dan tidak dapat diubah di formulir.",
+            "keteranganPilih": "Pilih unit kerja yang bertanggung jawab atas dokumen ini."
+        },
+        "masaBerlaku": {
+            "label": "Masa Berlaku",
+            "keterangan": "Kosongkan Masa Berlaku bila dokumen berlaku tanpa batas waktu."
+        },
         "tanggal": {
             "label": "Tanggal Dokumen"
         },
@@ -122,7 +132,9 @@
     "aksesRingkasan": {
         "labelSemua": "Semua",
         "labelTerbatas": "Terbatas",
-        "labelJumlahMekanisme": "{{jumlah}} mekanisme"
+        "labelJumlahMekanisme": "{{jumlah}} mekanisme",
+        "labelUnitTertentu": "Unit tertentu",
+        "labelJenjangJabatan": "Jenjang jabatan"
     },
     "panelAkses": {
         "mekanisme": {

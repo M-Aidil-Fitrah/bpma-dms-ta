@@ -77,6 +77,8 @@
         "modeTampilan": "Mode tampilan",
         "tampilanTabel": "Tampilan tabel",
         "tampilanKartu": "Tampilan kartu",
-        "urutkanBerdasarkan": "Urutkan berdasarkan {{label}}"
+        "urutkanBerdasarkan": "Urutkan berdasarkan {{label}}",
+        "cariPlaceholder": "Cari…",
+        "bersihkanPencarian": "Bersihkan pencarian"
     }
 }

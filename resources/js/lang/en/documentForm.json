@@ -23,6 +23,16 @@
             "label": "Document Number",
             "placeholder": "042/BPMA/DPR-TPL/VIII/2026"
         },
+        "unitPenerbit": {
+            "label": "Issuing Unit",
+            "placeholderSelect": "Select work unit",
+            "keteranganDitentukan": "Determined from your account and cannot be changed in this form.",
+            "keteranganPilih": "Select the work unit responsible for this document."
+        },
+        "masaBerlaku": {
+            "label": "Expiry Date",
+            "keterangan": "Leave Expiry Date empty if the document is valid indefinitely."
+        },
         "tanggal": {
             "label": "Document Date"
         },
@@ -122,7 +132,9 @@
     "aksesRingkasan": {
         "labelSemua": "All",
         "labelTerbatas": "Restricted",
-        "labelJumlahMekanisme": "{{jumlah}} mechanisms"
+        "labelJumlahMekanisme": "{{jumlah}} mechanisms",
+        "labelUnitTertentu": "Specific unit",
+        "labelJenjangJabatan": "Position tier"
     },
     "panelAkses": {
         "mekanisme": {

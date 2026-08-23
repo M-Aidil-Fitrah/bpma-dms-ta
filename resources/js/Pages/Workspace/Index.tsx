@@ -27,7 +27,7 @@ interface Props {
 }
 
 export default function Index({ title, folder, breadcrumbs, folders, folder_options: folderOptions, documents }: Props) {
-    const { t } = useTranslation(['workspace', 'common']);
+    const { t } = useTranslation(['workspace', 'common', 'nav']);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [mode, setMode] = useState<ModeTampilan>('grid');
     const { data, setData, post, processing, errors, reset } = useForm({ name: '', parent_id: folder?.id ?? null as number | null });
@@ -41,7 +41,12 @@ export default function Index({ title, folder, breadcrumbs, folders, folder_opti
 
     return (
         <AppLayout
-            title={title}
+            // `title` dari server adalah "Dokumen Saya" (literal Indonesia,
+            // tidak melewati i18n backend) di akar, atau nama folder asli
+            // (data pengguna, bukan teks UI) saat berada di dalam folder.
+            // Kasus akar diganti kunci terjemahan; nama folder tetap apa
+            // adanya karena itu benar-benar data, bukan salinan antarmuka.
+            title={folder === null ? t('nav:item.dokumenSaya') : title}
             actions={
                 <div className="flex items-center gap-2">
                     <ViewToggle nilai={mode} onChange={setMode} labels={{ tabel: t('workspace:index.viewToggle.tabel'), grid: t('workspace:index.viewToggle.grid') }} />

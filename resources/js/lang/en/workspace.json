@@ -14,7 +14,9 @@
     },
     "collection": {
         "viewToggle": { "tabel": "List view", "grid": "Grid view" },
-        "kosong": { "judul": "No documents yet", "deskripsi": "Documents you star or open will appear here." }
+        "kosong": { "judul": "No documents yet", "deskripsi": "Documents you star or open will appear here." },
+        "judulBerbintang": "Starred",
+        "judulTerbaruDibuka": "Recently Opened"
     },
     "trash": {
         "judulHalaman": "Trash",

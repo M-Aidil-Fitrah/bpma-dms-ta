@@ -14,7 +14,9 @@
     },
     "collection": {
         "viewToggle": { "tabel": "Tampilan daftar", "grid": "Tampilan grid" },
-        "kosong": { "judul": "Belum ada dokumen", "deskripsi": "Dokumen yang Anda tandai atau buka akan muncul di sini." }
+        "kosong": { "judul": "Belum ada dokumen", "deskripsi": "Dokumen yang Anda tandai atau buka akan muncul di sini." },
+        "judulBerbintang": "Berbintang",
+        "judulTerbaruDibuka": "Terbaru Dibuka"
     },
     "trash": {
         "judulHalaman": "Sampah",

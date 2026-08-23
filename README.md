@@ -91,6 +91,23 @@ normal — tapi status ekstraksi dokumen akan macet selamanya di "Memproses", da
 dokumen yang masa berlakunya lewat tidak pernah berpindah status. Keduanya
 terlihat seperti bug, padahal hanya prosesnya yang belum jalan.
 
+### Jalan pintas: `composer run dev`
+
+Empat proses di atas juga bisa dijalankan sekaligus lewat satu perintah:
+
+```bash
+composer run dev
+```
+
+Ini menjalankan `php artisan dev` bawaan Laravel, yang di proyek ini sudah
+dilengkapi lewat `AppServiceProvider::boot()` supaya benar-benar mencakup
+kelima proses (server, Vite, log, **antrean `default`+`thumbnail`**, dan
+**scheduler**) — bawaan Laravel sendiri hanya mendaftarkan `queue:listen`
+tanpa `--queue` dan tidak mendaftarkan scheduler sama sekali, yang kalau
+dibiarkan menimbulkan persis dua gejala di atas. Cocok untuk kerja
+sehari-hari; empat proses manual di atas tetap berguna kalau Anda perlu
+mengontrol atau menghentikan satu proses secara terpisah.
+
 Gambar mini/pratinjau Office berjalan di antrean **`thumbnail`**, terpisah
 dari ekstraksi teks/OCR di antrean **`default`** — sengaja dipisah supaya satu
 OCR PDF pindaian yang berjalan lama (bisa sampai 15 menit) tidak menahan

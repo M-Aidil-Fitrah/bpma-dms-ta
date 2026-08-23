@@ -21,6 +21,7 @@ interface OpsiFilter {
     unit: { id: number; nama: string }[];
     unit_pohon: { id: number; nama: string; parent_id: number | null }[];
     pengunggah: { id: number; name: string }[];
+    evaluasi_pilihan: number[];
 }
 
 interface DocumentsIndexProps {
@@ -33,16 +34,6 @@ function buatOpsiStatus(t: TFunction) {
     return [
         { value: 'berlaku', label: t('common:status.berlaku') },
         { value: 'kadaluarsa', label: t('common:status.kedaluwarsa') },
-    ] as const;
-}
-
-function buatOpsiEkstraksi(t: TFunction) {
-    return [
-        { value: 'completed', label: t('documentBrowse:index.filter.statusEkstraksi.options.completed') },
-        { value: 'review_required', label: t('documentBrowse:index.filter.statusEkstraksi.options.reviewRequired') },
-        { value: 'pending', label: t('documentBrowse:index.filter.statusEkstraksi.options.pending') },
-        { value: 'failed', label: t('common:status.gagal') },
-        { value: 'not_applicable', label: t('documentBrowse:index.filter.statusEkstraksi.options.notApplicable') },
     ] as const;
 }
 
@@ -61,8 +52,11 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
     const { ubah, urutkan, ubahTampilan, bersihkan } = useDocumentFilters(filter);
 
     const statusOptions = useMemo(() => buatOpsiStatus(t), [t]);
-    const ekstraksiOptions = useMemo(() => buatOpsiEkstraksi(t), [t]);
     const tipeOptions = useMemo(() => buatOpsiTipe(t), [t]);
+    const evaluasiOptions = useMemo(
+        () => (opsi?.evaluasi_pilihan ?? []).map((hari) => ({ value: hari, label: t('documentBrowse:index.filter.evaluasi.hari', { hari }) })),
+        [opsi, t],
+    );
 
     const definisi = useMemo<FilterDefinition[]>(
         () => [
@@ -94,13 +88,6 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
                 options: tipeOptions,
             },
             {
-                kunci: 'status_ekstraksi',
-                label: t('documentBrowse:index.filter.statusEkstraksi.label'),
-                tipe: 'select',
-                placeholder: t('documentBrowse:index.filter.statusEkstraksi.placeholder'),
-                options: ekstraksiOptions,
-            },
-            {
                 kunci: 'status',
                 label: t('documentBrowse:index.filter.status.label'),
                 tipe: 'select',
@@ -109,13 +96,19 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
             },
             { kunci: 'dari', label: t('documentBrowse:index.filter.dari.label'), tipe: 'date' },
             { kunci: 'sampai', label: t('documentBrowse:index.filter.sampai.label'), tipe: 'date' },
+            {
+                kunci: 'evaluasi',
+                label: t('documentBrowse:index.filter.evaluasi.label'),
+                tipe: 'segmented',
+                segmentedOptions: evaluasiOptions,
+            },
         ],
-        [opsi, t, tipeOptions, ekstraksiOptions, statusOptions],
+        [opsi, t, tipeOptions, evaluasiOptions, statusOptions],
     );
 
     const chips = useMemo<FilterChip[]>(
-        () => susunChip(filter, opsi, t, statusOptions, ekstraksiOptions, tipeOptions),
-        [filter, opsi, t, statusOptions, ekstraksiOptions, tipeOptions],
+        () => susunChip(filter, opsi, t, statusOptions, tipeOptions, evaluasiOptions),
+        [filter, opsi, t, statusOptions, tipeOptions, evaluasiOptions],
     );
 
     const nilaiFilter = useMemo<Record<string, string>>(
@@ -125,7 +118,7 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
             status: filter.status ?? '',
             pengunggah: filter.pengunggah?.toString() ?? '',
             tipe: filter.tipe ?? '',
-            status_ekstraksi: filter.status_ekstraksi ?? '',
+            evaluasi: filter.evaluasi?.toString() ?? '',
             dari: filter.dari ?? '',
             sampai: filter.sampai ?? '',
         }),
@@ -257,8 +250,8 @@ function susunChip(
     opsi: OpsiFilter | undefined,
     t: TFunction,
     statusOptions: ReturnType<typeof buatOpsiStatus>,
-    ekstraksiOptions: ReturnType<typeof buatOpsiEkstraksi>,
     tipeOptions: ReturnType<typeof buatOpsiTipe>,
+    evaluasiOptions: { value: number; label: string }[],
 ): FilterChip[] {
     const chips: FilterChip[] = [];
 
@@ -291,9 +284,9 @@ function susunChip(
         chips.push({ kunci: 'tipe', label: t('documentBrowse:index.chip.tipe', { nilai: label ?? filter.tipe }) });
     }
 
-    if (filter.status_ekstraksi) {
-        const label = ekstraksiOptions.find((status) => status.value === filter.status_ekstraksi)?.label;
-        chips.push({ kunci: 'status_ekstraksi', label: t('documentBrowse:index.chip.statusEkstraksi', { nilai: label ?? filter.status_ekstraksi }) });
+    if (filter.evaluasi) {
+        const label = evaluasiOptions.find((opsi) => opsi.value === filter.evaluasi)?.label;
+        chips.push({ kunci: 'evaluasi', label: t('documentBrowse:index.chip.evaluasi', { nilai: label ?? filter.evaluasi }) });
     }
 
     if (filter.dari) chips.push({ kunci: 'dari', label: t('documentBrowse:index.chip.sejak', { nilai: filter.dari }) });

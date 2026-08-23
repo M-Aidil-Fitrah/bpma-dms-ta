@@ -8,7 +8,9 @@ import { formatWaktu } from '@/lib/format';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { Link, useForm } from '@inertiajs/react';
 import { ChevronDown, Download, Eye, History, RotateCcw } from 'lucide-react';
+import type { TFunction } from 'i18next';
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface DocumentVersionHistoryProps {
     versi: App.Data.DocumentVersionData[];
@@ -17,6 +19,7 @@ interface DocumentVersionHistoryProps {
 
 /** Daftar revisi yang memilih ulang halaman pratinjau, bukan menyalin viewer. */
 export function DocumentVersionHistory({ versi, bolehPulihkan }: DocumentVersionHistoryProps) {
+    const { t } = useTranslation(['documentBrowse', 'common']);
     const konfirmasikan = usePasswordConfirmation();
     const [batasTampil, setBatasTampil] = useState(5);
     const { data, setData, post, processing, errors } = useForm({ version_note: '' });
@@ -41,7 +44,7 @@ export function DocumentVersionHistory({ versi, bolehPulihkan }: DocumentVersion
                                         </span>
                                         <span className="truncate text-sm text-ink-muted">{item.catatan}</span>
                                         {item.terbaru && (
-                                            <span className="hidden shrink-0 text-xs font-medium text-brand-700 sm:inline">Terbaru</span>
+                                            <span className="hidden shrink-0 text-xs font-medium text-brand-700 sm:inline">{t('documentBrowse:versionHistory.terbaru')}</span>
                                         )}
                                     </span>
                                     <ChevronDown
@@ -62,10 +65,10 @@ export function DocumentVersionHistory({ versi, bolehPulihkan }: DocumentVersion
                                                         {item.label}
                                                     </span>
                                                     {item.terbaru && (
-                                                        <span className="text-xs font-medium text-brand-700">Versi terbaru</span>
+                                                        <span className="text-xs font-medium text-brand-700">{t('documentBrowse:versionHistory.versiTerbaru')}</span>
                                                     )}
                                                 </div>
-                                                <p className="mt-2 text-sm font-medium text-ink">{labelJenis(item.jenis)}</p>
+                                                <p className="mt-2 text-sm font-medium text-ink">{labelJenis(item.jenis, t)}</p>
                                                 <p className="mt-0.5 whitespace-pre-wrap text-sm text-ink-muted">{item.catatan}</p>
                                             </div>
                                             <Avatar initials={item.inisial_pembuat} name={item.pembuat ?? undefined} size="sm" />
@@ -73,18 +76,18 @@ export function DocumentVersionHistory({ versi, bolehPulihkan }: DocumentVersion
 
                                         <p className="mt-3 break-all font-mono text-xs text-ink-muted">{item.nama_berkas}</p>
                                         <p className="mt-1 text-xs text-ink-subtle">
-                                            {item.pembuat ?? 'Pengguna tidak diketahui'} · {formatWaktu(item.dibuat_pada)}
+                                            {item.pembuat ?? t('documentBrowse:versionHistory.penggunaTidakDiketahui')} · {formatWaktu(item.dibuat_pada)}
                                         </p>
 
                                         <div className="mt-3 flex flex-wrap gap-2">
                                             <Link href={`/documents/${item.id}#riwayat`} className="inline-flex">
                                                 <Button size="sm" variant="ghost" icon={Eye}>
-                                                    Lihat
+                                                    {t('documentBrowse:versionHistory.lihat')}
                                                 </Button>
                                             </Link>
                                             <a href={`/documents/${item.id}/file`} className="inline-flex">
                                                 <Button size="sm" variant="ghost" icon={Download}>
-                                                    Unduh
+                                                    {t('common:aksi.unduh')}
                                                 </Button>
                                             </a>
                                         </div>
@@ -97,12 +100,12 @@ export function DocumentVersionHistory({ versi, bolehPulihkan }: DocumentVersion
                                         >
                                             <div className="flex items-center gap-2 text-sm font-semibold text-brand-800">
                                                 <RotateCcw className="size-4" aria-hidden />
-                                                Jadikan {item.label} versi terbaru
+                                                {t('documentBrowse:versionHistory.jadikanVersiTerbaru', { label: item.label })}
                                             </div>
                                             <p className="text-xs text-ink-muted">
-                                                Sistem membuat major baru dari snapshot ini. Arsip {item.label} tidak berubah.
+                                                {t('documentBrowse:versionHistory.keteranganPemulihan', { label: item.label })}
                                             </p>
-                                            <Field label="Catatan pemulihan" error={errors.version_note} required>
+                                            <Field label={t('documentBrowse:versionHistory.labelCatatanPemulihan')} error={errors.version_note} required>
                                                 {(props) => (
                                                     <Textarea
                                                         {...props}
@@ -110,12 +113,12 @@ export function DocumentVersionHistory({ versi, bolehPulihkan }: DocumentVersion
                                                         value={data.version_note}
                                                         invalid={Boolean(errors.version_note)}
                                                         onChange={(event) => setData('version_note', event.target.value)}
-                                                        placeholder="Alasan menjadikan versi ini sebagai versi terbaru"
+                                                        placeholder={t('documentBrowse:versionHistory.placeholderCatatanPemulihan')}
                                                     />
                                                 )}
                                             </Field>
                                             <Button type="submit" size="sm" icon={RotateCcw} loading={processing}>
-                                                Jadikan versi terbaru
+                                                {t('documentBrowse:versionHistory.submitJadikanVersiTerbaru')}
                                             </Button>
                                         </form>
                                     )}
@@ -129,7 +132,7 @@ export function DocumentVersionHistory({ versi, bolehPulihkan }: DocumentVersion
             {versi.length === 0 && (
                 <div className="py-6 text-center text-sm text-ink-muted">
                     <History className="mx-auto mb-2 size-5" aria-hidden />
-                    Belum ada versi dokumen.
+                    {t('documentBrowse:versionHistory.belumAdaVersi')}
                 </div>
             )}
 
@@ -154,24 +157,26 @@ export function KontrolTampilkanLebihBanyak({
     onTampilkanLagi: () => void;
     onTampilkanSemua: () => void;
 }) {
+    const { t } = useTranslation('documentBrowse');
+
     if (jumlahTampil >= jumlahTotal) return null;
 
     return (
         <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" variant="secondary" onClick={onTampilkanLagi}>
-                Tampilkan {Math.min(5, jumlahTotal - jumlahTampil)} lagi
+                {t('documentBrowse:versionHistory.tampilkanLagi', { jumlah: Math.min(5, jumlahTotal - jumlahTampil) })}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={onTampilkanSemua}>
-                Tampilkan semua
+                {t('documentBrowse:versionHistory.tampilkanSemua')}
             </Button>
         </div>
     );
 }
 
-function labelJenis(jenis: App.Enums.DocumentVersionKind): string {
+function labelJenis(jenis: App.Enums.DocumentVersionKind, t: TFunction): string {
     return {
-        content: 'Perubahan isi berkas',
-        metadata: 'Perubahan metadata atau akses',
-        restoration: 'Pemulihan versi arsip',
+        content: t('documentBrowse:versionHistory.jenis.content'),
+        metadata: t('documentBrowse:versionHistory.jenis.metadata'),
+        restoration: t('documentBrowse:versionHistory.jenis.restoration'),
     }[jenis];
 }

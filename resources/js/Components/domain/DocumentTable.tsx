@@ -7,6 +7,7 @@ import { Avatar } from '@/Components/ui/Avatar';
 import { formatTanggal, formatUkuranBerkas } from '@/lib/format';
 import { Link } from '@inertiajs/react';
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface DocumentTableProps {
     dokumen: readonly App.Data.DocumentListData[];
@@ -28,6 +29,8 @@ export function DocumentTable({
     arahUrut,
     onSort,
 }: DocumentTableProps) {
+    const { t } = useTranslation('documentBrowse');
+
     return (
         <div className="hidden overflow-x-auto lg:block">
             {/* `table-fixed` menahan kolom agar tidak melebar mengikuti isi
@@ -37,7 +40,7 @@ export function DocumentTable({
                 <thead className="border-b border-line bg-surface-sunken">
                     <tr>
                         <SortableHeader
-                            label="Nama Dokumen"
+                            label={t('documentBrowse:table.headers.namaDokumen')}
                             kunci="judul"
                             kunciAktif={kunciUrut}
                             arah={arahUrut}
@@ -45,10 +48,10 @@ export function DocumentTable({
                             className="w-[31%]"
                         />
                         <th scope="col" className="w-[11%] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-subtle">
-                            Tipe
+                            {t('documentBrowse:table.headers.tipe')}
                         </th>
                         <SortableHeader
-                            label="Tanggal"
+                            label={t('documentBrowse:table.headers.tanggal')}
                             kunci="tanggal"
                             kunciAktif={kunciUrut}
                             arah={arahUrut}
@@ -56,13 +59,13 @@ export function DocumentTable({
                             className="w-[11%]"
                         />
                         <th scope="col" className="w-[24%] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-subtle">
-                            Pengunggah & Unit Asal
+                            {t('documentBrowse:table.headers.pengunggahUnitAsal')}
                         </th>
                         <th scope="col" className="w-[11%] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-subtle">
-                            Status
+                            {t('documentBrowse:table.headers.status')}
                         </th>
                         <th scope="col" className="w-[12%] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-ink-subtle">
-                            Aksi
+                            {t('documentBrowse:table.headers.aksi')}
                         </th>
                     </tr>
                 </thead>

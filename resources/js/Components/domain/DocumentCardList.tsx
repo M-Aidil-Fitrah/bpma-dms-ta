@@ -7,6 +7,7 @@ import { formatTanggal, formatUkuranBerkas } from '@/lib/format';
 import { Link } from '@inertiajs/react';
 import { Eye } from 'lucide-react';
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface DocumentCardListProps {
     dokumen: readonly App.Data.DocumentListData[];
@@ -36,6 +37,8 @@ const DocumentCard = memo(function DocumentCard({
 }: {
     document: App.Data.DocumentListData;
 }) {
+    const { t } = useTranslation('documentBrowse');
+
     return (
         <Link
             href={`/documents/${document.id}`}
@@ -97,7 +100,7 @@ const DocumentCard = memo(function DocumentCard({
                         melihatnya (FEAT-12). Dua orang berbeda bisa melihat
                         dokumen yang sama lewat alasan yang berbeda pula. */}
                     <Eye className="size-3 shrink-0" aria-hidden />
-                    Terlihat karena: {document.alasan_terlihat}
+                    {t('documentBrowse:shared.terlihatKarena', { alasan: document.alasan_terlihat })}
                 </p>
             )}
         </Link>

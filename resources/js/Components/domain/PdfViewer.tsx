@@ -5,6 +5,7 @@ import { muatPdfJs } from '@/lib/pdf';
 import type { PDFDocumentLoadingTask, PDFDocumentProxy, PDFPageProxy, RenderTask } from 'pdfjs-dist';
 import { Loader2, Maximize, Minimize, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface PdfViewerProps {
     url: string;
@@ -19,6 +20,7 @@ const LANGKAH_SKALA = 0.25;
 
 /** Penampil PDF berhalaman berkelanjutan dengan render bertahap. */
 export function PdfViewer({ url, judul, layarPenuh, onUbahLayarPenuh }: PdfViewerProps) {
+    const { t } = useTranslation('documentBrowse');
     const dokumenRef = useRef<PDFDocumentProxy | null>(null);
     const tugasRef = useRef<PDFDocumentLoadingTask | null>(null);
     const areaGulirRef = useRef<HTMLDivElement>(null);
@@ -114,9 +116,9 @@ export function PdfViewer({ url, judul, layarPenuh, onUbahLayarPenuh }: PdfViewe
     if (keadaan === 'gagal') {
         return (
             <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-                <p className="text-sm text-ink-muted">Berkas PDF ini tidak dapat ditampilkan di peramban.</p>
+                <p className="text-sm text-ink-muted">{t('documentBrowse:pdfViewer.tidakDapatDitampilkan')}</p>
                 <Button variant="secondary" onClick={() => window.location.assign(url)}>
-                    Unduh berkas
+                    {t('documentBrowse:actions.unduhBerkas')}
                 </Button>
             </div>
         );
@@ -126,14 +128,14 @@ export function PdfViewer({ url, judul, layarPenuh, onUbahLayarPenuh }: PdfViewe
         <div className="flex h-full min-h-0 flex-col">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2">
                 <span className="px-2 font-mono text-xs text-ink-muted">
-                    Halaman {halaman} dari {jumlahHalaman || '—'}
+                    {t('documentBrowse:pdfViewer.halamanDari', { halaman, total: jumlahHalaman || '—' })}
                 </span>
 
                 <div className="flex items-center gap-1">
-                    <IconButton icon={ZoomOut} label="Perkecil" size="sm" disabled={skala <= SKALA_MIN} onClick={() => setSkala((nilai) => Math.max(SKALA_MIN, nilai - LANGKAH_SKALA))} />
+                    <IconButton icon={ZoomOut} label={t('documentBrowse:preview.perkecil')} size="sm" disabled={skala <= SKALA_MIN} onClick={() => setSkala((nilai) => Math.max(SKALA_MIN, nilai - LANGKAH_SKALA))} />
                     <span className="w-12 text-center font-mono text-xs text-ink-muted">{Math.round(skala * 100)}%</span>
-                    <IconButton icon={ZoomIn} label="Perbesar" size="sm" disabled={skala >= SKALA_MAKS} onClick={() => setSkala((nilai) => Math.min(SKALA_MAKS, nilai + LANGKAH_SKALA))} />
-                    <IconButton icon={layarPenuh ? Minimize : Maximize} label={layarPenuh ? 'Keluar dari layar penuh' : 'Layar penuh'} size="sm" onClick={onUbahLayarPenuh} />
+                    <IconButton icon={ZoomIn} label={t('documentBrowse:preview.perbesar')} size="sm" disabled={skala >= SKALA_MAKS} onClick={() => setSkala((nilai) => Math.min(SKALA_MAKS, nilai + LANGKAH_SKALA))} />
+                    <IconButton icon={layarPenuh ? Minimize : Maximize} label={layarPenuh ? t('documentBrowse:preview.keluarLayarPenuh') : t('documentBrowse:preview.layarPenuh')} size="sm" onClick={onUbahLayarPenuh} />
                 </div>
             </div>
 
@@ -181,6 +183,7 @@ function HalamanPdf({ nomor, dokumen, judul, skala, ukuran, perluDirender, aktif
     aktif: boolean;
     onPasangRef: (elemen: HTMLDivElement | null) => void;
 }) {
+    const { t } = useTranslation('documentBrowse');
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -226,7 +229,7 @@ function HalamanPdf({ nomor, dokumen, judul, skala, ukuran, perluDirender, aktif
     return (
         <div
             ref={onPasangRef}
-            aria-label={`Halaman ${nomor} dari ${judul}`}
+            aria-label={t('documentBrowse:pdfViewer.halamanAriaLabel', { nomor, judul })}
             className={cn('mx-auto flex justify-center rounded bg-surface shadow-card ring-1 ring-inset transition-colors', aktif ? 'ring-brand-300' : 'ring-line')}
             style={{ width: `${ukuran.lebar * skala}px`, minHeight: `${ukuran.tinggi * skala}px` }}
         >

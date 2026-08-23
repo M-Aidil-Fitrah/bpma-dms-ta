@@ -8,6 +8,7 @@ import { formatTanggal, formatUkuranBerkas } from '@/lib/format';
 import { Link } from '@inertiajs/react';
 import { Eye } from 'lucide-react';
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface DocumentGridProps {
     dokumen: readonly App.Data.DocumentListData[];
@@ -39,6 +40,8 @@ const DocumentGridCard = memo(function DocumentGridCard({
 }: {
     document: App.Data.DocumentListData;
 }) {
+    const { t } = useTranslation('documentBrowse');
+
     return (
         <article className="flex h-full flex-col rounded-card border border-line bg-surface transition-shadow hover:shadow-pop">
             <DocumentThumbnail
@@ -79,11 +82,11 @@ const DocumentGridCard = memo(function DocumentGridCard({
 
                 <dl className="mt-2 space-y-0.5 text-xs text-ink-muted">
                     <div className="truncate">
-                        <dt className="sr-only">Pengunggah</dt>
+                        <dt className="sr-only">{t('documentBrowse:grid.pengunggah')}</dt>
                         <dd className="truncate">{document.pengunggah ?? '—'}</dd>
                     </div>
                     <div className="truncate">
-                        <dt className="sr-only">Unit asal</dt>
+                        <dt className="sr-only">{t('documentBrowse:grid.unitAsal')}</dt>
                         <dd className="truncate text-ink-subtle">
                             {document.unit_asal ?? '—'}
                         </dd>
@@ -97,7 +100,7 @@ const DocumentGridCard = memo(function DocumentGridCard({
                 {document.alasan_terlihat && (
                     <p className="mt-1.5 flex items-center gap-1 text-xs text-ink-subtle">
                         <Eye className="size-3 shrink-0" aria-hidden />
-                        <span className="truncate">Terlihat karena: {document.alasan_terlihat}</span>
+                        <span className="truncate">{t('documentBrowse:shared.terlihatKarena', { alasan: document.alasan_terlihat })}</span>
                     </p>
                 )}
 

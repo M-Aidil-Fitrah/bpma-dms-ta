@@ -6,6 +6,7 @@ import { Link, router } from '@inertiajs/react';
 import axios from 'axios';
 import { ArchiveRestore, Download, LockKeyhole, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface DocumentHeaderActionsProps {
     dokumenId: number;
@@ -33,6 +34,7 @@ export function DocumentHeaderActions({
     bolehPindahKeSampah,
     bolehAktifkan,
 }: DocumentHeaderActionsProps) {
+    const { t } = useTranslation(['documentBrowse', 'common']);
     const [tanyaSampah, setTanyaSampah] = useState(false);
     const [konfirmasiSandi, setKonfirmasiSandi] = useState(false);
     const [password, setPassword] = useState('');
@@ -46,7 +48,7 @@ export function DocumentHeaderActions({
 
     async function pindahKeSampah() {
         if (!password) {
-            setGalatPassword('Masukkan kata sandi Anda untuk melanjutkan.');
+            setGalatPassword(t('documentBrowse:headerActions.errorPasswordKosong'));
 
             return;
         }
@@ -64,9 +66,9 @@ export function DocumentHeaderActions({
             });
         } catch (error) {
             if (axios.isAxiosError<{ errors?: { password?: string[] } }>(error)) {
-                setGalatPassword(error.response?.data.errors?.password?.[0] ?? 'Kata sandi tidak dapat dikonfirmasi.');
+                setGalatPassword(error.response?.data.errors?.password?.[0] ?? t('documentBrowse:headerActions.errorPasswordTidakValid'));
             } else {
-                setGalatPassword('Konfirmasi kata sandi tidak dapat diproses. Coba lagi.');
+                setGalatPassword(t('documentBrowse:headerActions.errorPasswordGagalProses'));
             }
             setMemproses(false);
         }
@@ -94,16 +96,16 @@ export function DocumentHeaderActions({
         <>
             <a href={`/documents/${dokumenId}/file`} download>
                 <Button icon={Download} size="sm" variant="secondary">
-                    <span className="hidden md:inline">Unduh</span>
-                    <span className="sr-only md:hidden">Unduh</span>
+                    <span className="hidden md:inline">{t('common:aksi.unduh')}</span>
+                    <span className="sr-only md:hidden">{t('common:aksi.unduh')}</span>
                 </Button>
             </a>
 
             {bolehUbah && aktif && (
                 <Link href={`/documents/${dokumenId}/edit`}>
                     <Button icon={Pencil} size="sm">
-                    <span className="hidden md:inline">Ubah</span>
-                    <span className="sr-only md:hidden">Ubah</span>
+                    <span className="hidden md:inline">{t('common:aksi.ubah')}</span>
+                    <span className="sr-only md:hidden">{t('common:aksi.ubah')}</span>
                     </Button>
                 </Link>
             )}
@@ -120,8 +122,8 @@ export function DocumentHeaderActions({
                         setGalatPassword(undefined);
                     }}
                 >
-                    <span className="hidden md:inline">Pindahkan ke Sampah</span>
-                    <span className="sr-only md:hidden">Pindahkan ke Sampah</span>
+                    <span className="hidden md:inline">{t('documentBrowse:headerActions.pindahkanKeSampah')}</span>
+                    <span className="sr-only md:hidden">{t('documentBrowse:headerActions.pindahkanKeSampah')}</span>
                 </Button>
             )}
 
@@ -132,8 +134,8 @@ export function DocumentHeaderActions({
                     loading={memproses}
                     onClick={aktifkan}
                 >
-                    <span className="hidden md:inline">Aktifkan Kembali</span>
-                    <span className="sr-only md:hidden">Aktifkan Kembali</span>
+                    <span className="hidden md:inline">{t('documentBrowse:headerActions.aktifkanKembali')}</span>
+                    <span className="sr-only md:hidden">{t('documentBrowse:headerActions.aktifkanKembali')}</span>
                 </Button>
             )}
 
@@ -141,13 +143,13 @@ export function DocumentHeaderActions({
                 terbuka={tanyaSampah}
                 onTutup={tutupKonfirmasiSampah}
                 onSetuju={konfirmasiSandi ? pindahKeSampah : lanjutkanKeKonfirmasiSandi}
-                judul={konfirmasiSandi ? 'Konfirmasi kata sandi' : 'Pindahkan dokumen ke Sampah?'}
-                labelSetuju={konfirmasiSandi ? 'Konfirmasi dan pindahkan' : 'Lanjutkan'}
+                judul={konfirmasiSandi ? t('documentBrowse:headerActions.konfirmasiSandi.judul') : t('documentBrowse:headerActions.konfirmasiSampah.judul')}
+                labelSetuju={konfirmasiSandi ? t('documentBrowse:headerActions.konfirmasiSandi.labelSetuju') : t('common:aksi.lanjutkan')}
                 ikon={konfirmasiSandi ? LockKeyhole : Trash2}
                 memproses={memproses}
             >
                 {konfirmasiSandi ? (
-                    <Field label="Kata Sandi" error={galatPassword} required>
+                    <Field label={t('documentBrowse:headerActions.konfirmasiSandi.labelKataSandi')} error={galatPassword} required>
                         {(input) => (
                             <Input
                                 {...input}
@@ -164,12 +166,11 @@ export function DocumentHeaderActions({
                 ) : (
                     <>
                         <p>
-                            <span className="font-medium text-ink">{judul}</span> akan hilang dari
-                            daftar dan hasil pencarian selama berada di Sampah.
+                            <span className="font-medium text-ink">{judul}</span>{' '}
+                            {t('documentBrowse:headerActions.konfirmasiSampah.teksUtama')}
                         </p>
                         <p>
-                            Anda dapat memulihkannya selama 30 hari. Setelah itu, berkas dan
-                            versinya dihapus permanen; ringkasan aktivitas audit tetap tersimpan.
+                            {t('documentBrowse:headerActions.konfirmasiSampah.teksLanjutan')}
                         </p>
                     </>
                 )}

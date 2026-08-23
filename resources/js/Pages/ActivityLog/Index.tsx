@@ -8,6 +8,7 @@ import { useFilters } from '@/hooks/useFilters';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { History, SearchX } from 'lucide-react';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface FilterActivity {
     cari: string | null;
@@ -23,25 +24,26 @@ interface ActivityIndexProps {
 }
 
 export default function Index({ aktivitas, filter, opsi }: ActivityIndexProps) {
+    const { t } = useTranslation(['activity', 'common']);
     const { ubah, bersihkan } = useFilters('/activity-log', filter);
 
     const definitions = useMemo<FilterDefinition[]>(() => [
-        { kunci: 'jenis', label: 'Jenis aktivitas', tipe: 'select', placeholder: 'Semua jenis', options: opsi },
-        { kunci: 'dari', label: 'Dari tanggal', tipe: 'date' },
-        { kunci: 'sampai', label: 'Sampai tanggal', tipe: 'date' },
-    ], [opsi]);
+        { kunci: 'jenis', label: t('activity:index.filters.typeLabel'), tipe: 'select', placeholder: t('activity:index.filters.typePlaceholder'), options: opsi },
+        { kunci: 'dari', label: t('activity:index.filters.fromLabel'), tipe: 'date' },
+        { kunci: 'sampai', label: t('activity:index.filters.toLabel'), tipe: 'date' },
+    ], [opsi, t]);
     const chips = useMemo<FilterChip[]>(() => [
-        ...(filter.cari ? [{ kunci: 'cari', label: `Kata kunci: ${filter.cari}` }] : []),
-        ...(filter.jenis ? [{ kunci: 'jenis', label: `Jenis: ${opsi.find((o) => o.value === filter.jenis)?.label ?? filter.jenis}` }] : []),
-        ...(filter.dari ? [{ kunci: 'dari', label: `Dari: ${filter.dari}` }] : []),
-        ...(filter.sampai ? [{ kunci: 'sampai', label: `Sampai: ${filter.sampai}` }] : []),
-    ], [filter, opsi]);
+        ...(filter.cari ? [{ kunci: 'cari', label: t('activity:index.chips.keyword', { value: filter.cari }) }] : []),
+        ...(filter.jenis ? [{ kunci: 'jenis', label: t('activity:index.chips.type', { value: opsi.find((o) => o.value === filter.jenis)?.label ?? filter.jenis }) }] : []),
+        ...(filter.dari ? [{ kunci: 'dari', label: t('activity:index.chips.from', { value: filter.dari }) }] : []),
+        ...(filter.sampai ? [{ kunci: 'sampai', label: t('activity:index.chips.to', { value: filter.sampai }) }] : []),
+    ], [filter, opsi, t]);
 
     return (
-        <AppLayout title="Riwayat Aktivitas">
+        <AppLayout title={t('activity:index.pageTitle')}>
             <div className="space-y-4">
                 <FilterBar definisi={definitions} nilai={{ jenis: filter.jenis ?? '', dari: filter.dari ?? '', sampai: filter.sampai ?? '' }} onChange={ubah} onReset={bersihkan} chips={chips} onHapusChip={(key) => ubah(key, '')}>
-                    <SearchInput value={filter.cari ?? ''} onChange={(value) => ubah('cari', value)} placeholder="Cari aktivitas…" className="flex-1" />
+                    <SearchInput value={filter.cari ?? ''} onChange={(value) => ubah('cari', value)} placeholder={t('activity:index.searchPlaceholder')} className="flex-1" />
                 </FilterBar>
                 <Card>
                     {aktivitas.data.length > 0 ? (
@@ -49,19 +51,19 @@ export default function Index({ aktivitas, filter, opsi }: ActivityIndexProps) {
                     ) : chips.length > 0 ? (
                         <EmptyState
                             icon={SearchX}
-                            title="Tidak ada aktivitas yang cocok"
-                            description="Tidak ada aktivitas yang sesuai dengan penyaring yang sedang aktif. Coba longgarkan atau bersihkan penyaringnya."
+                            title={t('activity:index.emptyFiltered.title')}
+                            description={t('activity:index.emptyFiltered.description')}
                             action={
                                 <button type="button" onClick={bersihkan} className="text-sm font-medium text-brand-700 hover:text-brand-800">
-                                    Bersihkan semua filter
+                                    {t('activity:index.emptyFiltered.clearFilters')}
                                 </button>
                             }
                         />
                     ) : (
                         <EmptyState
                             icon={History}
-                            title="Belum ada aktivitas"
-                            description="Aktivitas yang dapat Anda akses akan muncul di sini."
+                            title={t('activity:index.emptyNone.title')}
+                            description={t('activity:index.emptyNone.description')}
                         />
                     )}
                     {aktivitas.total > 0 && <CardFooter><Pagination meta={aktivitas} labelItem="aktivitas" /></CardFooter>}

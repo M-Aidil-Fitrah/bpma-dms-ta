@@ -1,0 +1,122 @@
+{
+    "create": {
+        "pageTitle": "Tambah Pengguna",
+        "breadcrumbUsers": "Pengguna"
+    },
+    "edit": {
+        "pageTitle": "Ubah — {{name}}",
+        "breadcrumbUsers": "Pengguna"
+    },
+    "index": {
+        "pageTitle": "Pengguna",
+        "addUser": "Tambah Pengguna",
+        "filters": {
+            "jabatanLabel": "Jabatan",
+            "jabatanPlaceholder": "Semua jabatan",
+            "unitLabel": "Unit Kerja",
+            "unitPlaceholder": "Semua unit",
+            "statusLabel": "Status",
+            "statusPlaceholder": "Semua status",
+            "statusActive": "Aktif",
+            "statusInactive": "Nonaktif"
+        },
+        "searchPlaceholder": "Cari nama atau surel…",
+        "chips": {
+            "keyword": "Kata kunci: {{value}}",
+            "jabatan": "Jabatan: {{value}}",
+            "unit": "Unit: {{value}}",
+            "status": "Status: {{value}}"
+        },
+        "emptyFiltered": {
+            "title": "Tidak ada pengguna yang cocok",
+            "description": "Tidak ada akun yang sesuai dengan penyaring yang sedang aktif. Coba longgarkan atau bersihkan penyaringnya.",
+            "clearFilters": "Bersihkan semua filter"
+        },
+        "emptyNoUsers": {
+            "title": "Belum ada pengguna",
+            "description": "Tidak ada registrasi publik — tambahkan akun pertama lewat tombol di atas."
+        }
+    },
+    "table": {
+        "colNameEmail": "Nama & Surel",
+        "colJabatan": "Jabatan",
+        "colUnit": "Unit Kerja",
+        "colStatus": "Status",
+        "colActions": "Aksi",
+        "you": "(Anda)",
+        "statusActive": "Aktif",
+        "statusInactive": "Nonaktif"
+    },
+    "form": {
+        "accountInfoTitle": "Informasi Akun",
+        "nameLabel": "Nama",
+        "emailLabel": "Surel",
+        "jabatanLabel": "Jabatan",
+        "jabatanPlaceholder": "Pilih jabatan",
+        "unitLabel": "Unit Kerja",
+        "unitPlaceholder": "Pilih unit",
+        "unitPlaceholderTopLevel": "Tidak ditempatkan pada unit kerja",
+        "unitHintTopLevel": "Pimpinan tingkat tertinggi tidak ditempatkan pada unit kerja.",
+        "initialPasswordTitle": "Kata Sandi Awal",
+        "initialPasswordDescription": "Sampaikan langsung kepada pemilik akun. Tidak ada tautan surel — aplikasi ini tidak mengirim surel apa pun.",
+        "passwordLabel": "Kata Sandi",
+        "passwordConfirmLabel": "Konfirmasi Kata Sandi",
+        "saving": "Menyimpan…",
+        "submitCreate": "Tambah Pengguna",
+        "submitUpdate": "Simpan Perubahan",
+        "cancel": "Batal"
+    },
+    "actions": {
+        "editUser": "Ubah pengguna",
+        "moreActions": "Aksi lainnya",
+        "resetPassword": "Atur ulang kata sandi",
+        "deactivate": "Nonaktifkan",
+        "reactivate": "Aktifkan kembali",
+        "deactivateConfirm": {
+            "title": "Nonaktifkan {{name}}?",
+            "confirmLabel": "Ya, nonaktifkan",
+            "line1Before": "Akun",
+            "line1After": "tidak akan bisa masuk lagi, dan sesi yang sedang berjalan langsung terputus.",
+            "line2Before": "Akunnya",
+            "line2Bold": "tidak dihapus",
+            "line2After": "Riwayat dan dokumen yang pernah diunggahnya tetap tersimpan, dan dapat diaktifkan kembali kapan saja."
+        }
+    },
+    "resetPasswordDialog": {
+        "title": "Atur ulang kata sandi {{name}}",
+        "description": "Sampaikan kata sandi baru ini langsung kepada pemiliknya — tidak ada tautan surel yang dikirim.",
+        "newPasswordLabel": "Kata Sandi Baru",
+        "confirmPasswordLabel": "Konfirmasi Kata Sandi",
+        "cancel": "Batal",
+        "submit": "Atur Ulang"
+    },
+    "filterSelect": {
+        "allUsers": "Semua pengguna",
+        "searchPlaceholder": "Ketik nama, minimal 2 huruf…",
+        "searchAriaLabel": "Cari pengguna",
+        "noResults": "Tidak ada pengguna yang cocok."
+    },
+    "settings": {
+        "pageTitle": "Pengaturan",
+        "phpLimitWarning": "Lingkungan PHP saat ini membatasi unggahan lebih ketat. Nilai efektifnya {{value}}, meski setelan aplikasi dapat lebih besar.",
+        "filesSection": {
+            "title": "Berkas dan Daftar Dokumen",
+            "uploadLimitLabel": "Batas unggah aplikasi",
+            "uploadLimitHint": "Dalam KB. Bawaan: {{value}}.",
+            "docsPerPageLabel": "Dokumen per halaman",
+            "docsPerPageHint": "Bawaan: {{value}}.",
+            "docsUnit": "{{value}} dokumen"
+        },
+        "dashboardSection": {
+            "title": "Dasbor",
+            "evalRangeLabel": "Rentang awal masa evaluasi",
+            "evalRangeHint": "Dipakai saat pengguna belum memilih rentang sendiri. Bawaan: {{value}} hari.",
+            "daysUnit": "{{value}} hari"
+        },
+        "saving": "Menyimpan…",
+        "save": "Simpan Pengaturan",
+        "useDefault": "Gunakan Nilai Bawaan",
+        "resetNote": "Nilai bawaan berarti override dihapus; aplikasi kembali membaca `config/dms.php`.",
+        "unlimited": "tanpa batas"
+    }
+}

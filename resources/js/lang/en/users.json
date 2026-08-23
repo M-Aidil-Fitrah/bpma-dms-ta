@@ -1,0 +1,122 @@
+{
+    "create": {
+        "pageTitle": "Add User",
+        "breadcrumbUsers": "Users"
+    },
+    "edit": {
+        "pageTitle": "Edit — {{name}}",
+        "breadcrumbUsers": "Users"
+    },
+    "index": {
+        "pageTitle": "Users",
+        "addUser": "Add User",
+        "filters": {
+            "jabatanLabel": "Position",
+            "jabatanPlaceholder": "All positions",
+            "unitLabel": "Work Unit",
+            "unitPlaceholder": "All units",
+            "statusLabel": "Status",
+            "statusPlaceholder": "All statuses",
+            "statusActive": "Active",
+            "statusInactive": "Inactive"
+        },
+        "searchPlaceholder": "Search name or email…",
+        "chips": {
+            "keyword": "Keyword: {{value}}",
+            "jabatan": "Position: {{value}}",
+            "unit": "Unit: {{value}}",
+            "status": "Status: {{value}}"
+        },
+        "emptyFiltered": {
+            "title": "No matching users",
+            "description": "No accounts match the currently active filters. Try loosening or clearing them.",
+            "clearFilters": "Clear all filters"
+        },
+        "emptyNoUsers": {
+            "title": "No users yet",
+            "description": "There is no public registration — add the first account using the button above."
+        }
+    },
+    "table": {
+        "colNameEmail": "Name & Email",
+        "colJabatan": "Position",
+        "colUnit": "Work Unit",
+        "colStatus": "Status",
+        "colActions": "Actions",
+        "you": "(You)",
+        "statusActive": "Active",
+        "statusInactive": "Inactive"
+    },
+    "form": {
+        "accountInfoTitle": "Account Information",
+        "nameLabel": "Name",
+        "emailLabel": "Email",
+        "jabatanLabel": "Position",
+        "jabatanPlaceholder": "Select a position",
+        "unitLabel": "Work Unit",
+        "unitPlaceholder": "Select a unit",
+        "unitPlaceholderTopLevel": "Not assigned to a work unit",
+        "unitHintTopLevel": "Top-level leadership positions are not assigned to a work unit.",
+        "initialPasswordTitle": "Initial Password",
+        "initialPasswordDescription": "Share it directly with the account owner. There is no email link — this application never sends any email.",
+        "passwordLabel": "Password",
+        "passwordConfirmLabel": "Confirm Password",
+        "saving": "Saving…",
+        "submitCreate": "Add User",
+        "submitUpdate": "Save Changes",
+        "cancel": "Cancel"
+    },
+    "actions": {
+        "editUser": "Edit user",
+        "moreActions": "More actions",
+        "resetPassword": "Reset password",
+        "deactivate": "Deactivate",
+        "reactivate": "Reactivate",
+        "deactivateConfirm": {
+            "title": "Deactivate {{name}}?",
+            "confirmLabel": "Yes, deactivate",
+            "line1Before": "The account",
+            "line1After": "will no longer be able to sign in, and its active session is immediately terminated.",
+            "line2Before": "The account is",
+            "line2Bold": "not deleted",
+            "line2After": "Its history and previously uploaded documents remain stored, and it can be reactivated at any time."
+        }
+    },
+    "resetPasswordDialog": {
+        "title": "Reset password for {{name}}",
+        "description": "Share this new password directly with its owner — no email link is sent.",
+        "newPasswordLabel": "New Password",
+        "confirmPasswordLabel": "Confirm Password",
+        "cancel": "Cancel",
+        "submit": "Reset"
+    },
+    "filterSelect": {
+        "allUsers": "All users",
+        "searchPlaceholder": "Type a name, at least 2 letters…",
+        "searchAriaLabel": "Search users",
+        "noResults": "No matching users."
+    },
+    "settings": {
+        "pageTitle": "Settings",
+        "phpLimitWarning": "The current PHP environment restricts uploads more strictly. Its effective value is {{value}}, even though the application setting can be higher.",
+        "filesSection": {
+            "title": "Files and Document List",
+            "uploadLimitLabel": "Application upload limit",
+            "uploadLimitHint": "In KB. Default: {{value}}.",
+            "docsPerPageLabel": "Documents per page",
+            "docsPerPageHint": "Default: {{value}}.",
+            "docsUnit": "{{value}} documents"
+        },
+        "dashboardSection": {
+            "title": "Dashboard",
+            "evalRangeLabel": "Initial evaluation period range",
+            "evalRangeHint": "Used when a user has not chosen their own range. Default: {{value}} days.",
+            "daysUnit": "{{value}} days"
+        },
+        "saving": "Saving…",
+        "save": "Save Settings",
+        "useDefault": "Use Default Values",
+        "resetNote": "Default values mean the override is removed; the application goes back to reading `config/dms.php`.",
+        "unlimited": "no limit"
+    }
+}

@@ -1,5 +1,6 @@
 import { Badge } from '@/Components/ui/Badge';
 import { Globe, Lock, ShieldCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface AccessSummaryProps {
     /** Dihitung backend dari mekanisme yang benar-benar aktif. */
@@ -16,6 +17,8 @@ export interface AccessSummaryProps {
  * bertentangan dengan kenyataan. Frontend tidak pernah menyimpulkannya sendiri.
  */
 export function AccessSummary({ ringkasan, ringkas = false }: AccessSummaryProps) {
+    const { t } = useTranslation('documentForm');
+
     if (ringkasan === null || ringkasan.length === 0) {
         return <span className="text-sm text-ink-subtle">—</span>;
     }

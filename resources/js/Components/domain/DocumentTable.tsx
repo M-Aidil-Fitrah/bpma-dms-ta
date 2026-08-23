@@ -6,7 +6,7 @@ import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
 import { Avatar } from '@/Components/ui/Avatar';
 import { formatTanggal, formatUkuranBerkas } from '@/lib/format';
 import { Link } from '@inertiajs/react';
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export interface DocumentTableProps {
@@ -14,6 +14,8 @@ export interface DocumentTableProps {
     kunciUrut: string;
     arahUrut: 'asc' | 'desc';
     onSort: (kunci: string, arah: 'asc' | 'desc') => void;
+    /** Menimpa `DocumentActions` baku — dipakai halaman workspace yang butuh aksi berbeda (mis. lepas bintang, pulihkan). */
+    aksi?: (document: App.Data.DocumentListData) => ReactNode;
 }
 
 /**
@@ -28,6 +30,7 @@ export function DocumentTable({
     kunciUrut,
     arahUrut,
     onSort,
+    aksi,
 }: DocumentTableProps) {
     const { t } = useTranslation('documentBrowse');
 
@@ -72,7 +75,7 @@ export function DocumentTable({
 
                 <tbody className="divide-y divide-line">
                     {dokumen.map((item) => (
-                        <DocumentTableRow key={item.id} document={item} />
+                        <DocumentTableRow key={item.id} document={item} aksi={aksi} />
                     ))}
                 </tbody>
             </table>
@@ -86,8 +89,10 @@ export function DocumentTable({
  */
 const DocumentTableRow = memo(function DocumentTableRow({
     document,
+    aksi,
 }: {
     document: App.Data.DocumentListData;
+    aksi?: (document: App.Data.DocumentListData) => ReactNode;
 }) {
     return (
         <tr className="transition-colors hover:bg-surface-sunken">
@@ -166,7 +171,7 @@ const DocumentTableRow = memo(function DocumentTableRow({
                 tersaji utuh di halaman detail. Ruangnya dipakai tombol aksi
                 yang jauh lebih sering dibutuhkan. */}
             <td className="px-4 py-3">
-                <DocumentActions document={document} />
+                {aksi ? aksi(document) : <DocumentActions document={document} />}
             </td>
         </tr>
     );

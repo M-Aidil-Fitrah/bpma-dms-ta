@@ -6,11 +6,13 @@ import { Avatar } from '@/Components/ui/Avatar';
 import { formatTanggal, formatUkuranBerkas } from '@/lib/format';
 import { Link } from '@inertiajs/react';
 import { Eye } from 'lucide-react';
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export interface DocumentCardListProps {
     dokumen: readonly App.Data.DocumentListData[];
+    /** Menimpa `DocumentActions` baku — dipakai halaman workspace yang butuh aksi berbeda (mis. lepas bintang, pulihkan). */
+    aksi?: (document: App.Data.DocumentListData) => ReactNode;
 }
 
 /**
@@ -20,12 +22,12 @@ export interface DocumentCardListProps {
  * mendatar. Kolom yang berada di luar layar praktis tidak pernah dilihat orang,
  * jadi informasinya disusun ulang menurun sesuai kepentingannya.
  */
-export function DocumentCardList({ dokumen }: DocumentCardListProps) {
+export function DocumentCardList({ dokumen, aksi }: DocumentCardListProps) {
     return (
         <ul className="divide-y divide-line lg:hidden">
             {dokumen.map((item) => (
                 <li key={item.id}>
-                    <DocumentCard document={item} />
+                    <DocumentCard document={item} aksi={aksi} />
                 </li>
             ))}
         </ul>
@@ -34,16 +36,21 @@ export function DocumentCardList({ dokumen }: DocumentCardListProps) {
 
 const DocumentCard = memo(function DocumentCard({
     document,
+    aksi,
 }: {
     document: App.Data.DocumentListData;
+    aksi?: (document: App.Data.DocumentListData) => ReactNode;
 }) {
     const { t } = useTranslation('documentBrowse');
 
-    return (
-        <Link
-            href={`/documents/${document.id}`}
-            className="block px-4 py-3.5 transition-colors hover:bg-surface-sunken focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-700"
-        >
+    // Tanpa `aksi`: seluruh kartu tetap satu `<Link>`, persis seperti semula
+    // (Jelajahi Dokumen tidak butuh aksi cepat di kartu ponsel). Dengan
+    // `aksi`: kartu dibungkus `<div>` dan tautannya "diregangkan" penuh lewat
+    // `absolute inset-0`, sehingga tombol aksi dapat berdiri di atasnya
+    // (`relative z-10`) tanpa menaruh elemen interaktif di dalam `<a>` —
+    // menaruh tombol di dalam tautan membuat keduanya berebut klik yang sama.
+    const isi = (
+        <>
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-ink">{document.judul}</p>
@@ -103,6 +110,29 @@ const DocumentCard = memo(function DocumentCard({
                     {t('documentBrowse:shared.terlihatKarena', { alasan: document.alasan_terlihat })}
                 </p>
             )}
-        </Link>
+        </>
+    );
+
+    if (!aksi) {
+        return (
+            <Link
+                href={`/documents/${document.id}`}
+                className="block px-4 py-3.5 transition-colors hover:bg-surface-sunken focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-700"
+            >
+                {isi}
+            </Link>
+        );
+    }
+
+    return (
+        <div className="relative px-4 py-3.5 transition-colors hover:bg-surface-sunken">
+            <Link
+                href={`/documents/${document.id}`}
+                className="absolute inset-0 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-700"
+                aria-label={document.judul}
+            />
+            {isi}
+            <div className="relative z-10 mt-2.5 flex justify-end">{aksi(document)}</div>
+        </div>
     );
 });

@@ -7,11 +7,13 @@ import { Avatar } from '@/Components/ui/Avatar';
 import { formatTanggal, formatUkuranBerkas } from '@/lib/format';
 import { Link } from '@inertiajs/react';
 import { Eye } from 'lucide-react';
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export interface DocumentGridProps {
     dokumen: readonly App.Data.DocumentListData[];
+    /** Menimpa `DocumentActions` baku — dipakai halaman workspace yang butuh aksi berbeda (mis. lepas bintang, pulihkan). */
+    aksi?: (document: App.Data.DocumentListData) => ReactNode;
 }
 
 /**
@@ -23,12 +25,12 @@ export interface DocumentGridProps {
  * pengunggah antar dokumen. Keduanya disediakan karena keduanya punya
  * kegunaannya sendiri.
  */
-export function DocumentGrid({ dokumen }: DocumentGridProps) {
+export function DocumentGrid({ dokumen, aksi }: DocumentGridProps) {
     return (
         <ul className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {dokumen.map((item) => (
                 <li key={item.id}>
-                    <DocumentGridCard document={item} />
+                    <DocumentGridCard document={item} aksi={aksi} />
                 </li>
             ))}
         </ul>
@@ -37,8 +39,10 @@ export function DocumentGrid({ dokumen }: DocumentGridProps) {
 
 const DocumentGridCard = memo(function DocumentGridCard({
     document,
+    aksi,
 }: {
     document: App.Data.DocumentListData;
+    aksi?: (document: App.Data.DocumentListData) => ReactNode;
 }) {
     const { t } = useTranslation('documentBrowse');
 
@@ -109,7 +113,7 @@ const DocumentGridCard = memo(function DocumentGridCard({
                     panjang judulnya berbeda-beda. */}
                 <div className="mt-auto flex items-center justify-between gap-2 pt-3">
                     <DocumentStatusBadge status={document.status} size="sm" />
-                    <DocumentActions document={document} />
+                    {aksi ? aksi(document) : <DocumentActions document={document} />}
                 </div>
             </div>
         </article>

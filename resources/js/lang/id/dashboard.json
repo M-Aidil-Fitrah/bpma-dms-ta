@@ -18,7 +18,8 @@
         "ariaRentang": "Rentang masa evaluasi",
         "hari": "{{hari}} hari",
         "kosongJudul": "Tidak ada yang mendekati masa evaluasi",
-        "kosongDeskripsi": "Tidak ada dokumen yang masa berlakunya berakhir dalam {{hari}} hari ke depan."
+        "kosongDeskripsi": "Tidak ada dokumen yang masa berlakunya berakhir dalam {{hari}} hari ke depan.",
+        "lihatSemua": "Lihat semua di Jelajahi Dokumen"
     },
     "kategori": {
         "judul": "Komposisi Kategori",

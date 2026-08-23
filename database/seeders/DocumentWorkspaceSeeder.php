@@ -10,6 +10,7 @@ use App\Models\DocumentPlacement;
 use App\Models\DocumentRecent;
 use App\Models\DocumentStar;
 use App\Models\User;
+use Database\Seeders\Support\TanggalSeed;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -52,9 +53,9 @@ final class DocumentWorkspaceSeeder extends Seeder
             ['owner_id' => $pimpinan->id, 'parent_id' => null, 'name_normalized' => 'arsip sementara'],
             [
                 'name' => 'Arsip Sementara',
-                'trashed_at' => now()->subDays(3),
+                'trashed_at' => TanggalSeed::sekarang()->subDays(3),
                 'trashed_by' => $pimpinan->id,
-                'purge_after' => now()->addDays(27),
+                'purge_after' => TanggalSeed::sekarang()->addDays(27),
                 'trash_token' => (string) Str::uuid(),
             ],
         );
@@ -72,15 +73,15 @@ final class DocumentWorkspaceSeeder extends Seeder
             DocumentStar::query()->firstOrCreate(['user_id' => $pimpinan->id, 'document_id' => $document->id]);
             DocumentRecent::query()->updateOrCreate(
                 ['user_id' => $pimpinan->id, 'document_id' => $document->id],
-                ['last_opened_at' => now()->subMinutes($document->id)],
+                ['last_opened_at' => TanggalSeed::sekarang()->subMinutes($document->id)],
             );
         }
 
         $trashed = $documents[4];
         $trashed->update([
-            'trashed_at' => now()->subDays(2),
+            'trashed_at' => TanggalSeed::sekarang()->subDays(2),
             'trashed_by' => $pimpinan->id,
-            'purge_after' => now()->addDays(28),
+            'purge_after' => TanggalSeed::sekarang()->addDays(28),
             'trash_token' => (string) Str::uuid(),
         ]);
     }

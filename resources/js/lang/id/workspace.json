@@ -1,6 +1,5 @@
 {
     "index": {
-        "viewToggle": { "tabel": "Tampilan daftar", "grid": "Tampilan grid" },
         "tombolBaru": { "label": "Baru", "srLabel": "Buat baru" },
         "menu": { "unggahDokumen": "Unggah dokumen", "buatFolder": "Buat folder" },
         "ariaLokasiFolder": "Lokasi folder",
@@ -40,9 +39,7 @@
     },
     "documentCard": {
         "bintang": { "beri": "Beri bintang {{judul}}", "hapus": "Hapus bintang {{judul}}" },
-        "hanyaSaya": "Hanya saya",
         "pindahkanKeSampah": {
-            "label": "Pindahkan {{judul}} ke Sampah",
             "dialog": {
                 "judul": "Pindahkan dokumen ke Sampah?",
                 "labelSetuju": "Pindahkan ke Sampah",
@@ -53,7 +50,6 @@
         },
         "pindahkan": {
             "label": "Pindahkan",
-            "labelDenganNama": "Pindahkan {{judul}}",
             "dialog": {
                 "judul": "Pindahkan dokumen",
                 "keterangan": "Pilih folder penyimpanan, atau tampilkan dokumen langsung di halaman Dokumen Saya.",

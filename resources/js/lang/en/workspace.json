@@ -1,6 +1,5 @@
 {
     "index": {
-        "viewToggle": { "tabel": "List view", "grid": "Grid view" },
         "tombolBaru": { "label": "New", "srLabel": "Create new" },
         "menu": { "unggahDokumen": "Upload document", "buatFolder": "Create folder" },
         "ariaLokasiFolder": "Folder location",
@@ -40,9 +39,7 @@
     },
     "documentCard": {
         "bintang": { "beri": "Star {{judul}}", "hapus": "Unstar {{judul}}" },
-        "hanyaSaya": "Only me",
         "pindahkanKeSampah": {
-            "label": "Move {{judul}} to Trash",
             "dialog": {
                 "judul": "Move document to Trash?",
                 "labelSetuju": "Move to Trash",
@@ -53,7 +50,6 @@
         },
         "pindahkan": {
             "label": "Move",
-            "labelDenganNama": "Move {{judul}}",
             "dialog": {
                 "judul": "Move document",
                 "keterangan": "Choose a destination folder, or show the document directly on the My Documents page.",

@@ -41,6 +41,11 @@ export function WorkspaceDocumentActions({
     const { t } = useTranslation(['documentBrowse', 'workspace', 'common']);
     const [dialogPindahkan, setDialogPindahkan] = useState(false);
     const [dialogSampah, setDialogSampah] = useState(false);
+    const bisaPindahkan = folderOptions !== undefined;
+    // Terbaru/Berbintang dapat memuat dokumen orang lain yang dibagikan —
+    // `bisa_dibuang` null berarti backend belum menghitungnya (di luar
+    // konteks workspace), jadi diperlakukan sebagai tidak boleh.
+    const bisaDibuang = document.bisa_dibuang === true;
 
     function toggleStar() {
         if (document.starred) {
@@ -73,41 +78,45 @@ export function WorkspaceDocumentActions({
                 onClick={toggleStar}
             />
 
-            <Dropdown
-                trigger={<IconButton icon={MoreHorizontal} label={t('documentBrowse:actions.aksiLainnya')} size="sm" />}
-                panelClassName="w-52"
-            >
-                {folderOptions !== undefined && (
-                    <DropdownItem>
-                        <button
-                            type="button"
-                            onClick={() => setDialogPindahkan(true)}
-                            className="flex min-h-touch w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-muted data-[focus]:bg-surface-sunken data-[focus]:text-ink sm:min-h-0"
-                        >
-                            <FolderInput className="size-4" aria-hidden />
-                            {t('workspace:documentCard.pindahkan.label')}
-                        </button>
-                    </DropdownItem>
-                )}
+            {(bisaPindahkan || bisaDibuang) && (
+                <Dropdown
+                    trigger={<IconButton icon={MoreHorizontal} label={t('documentBrowse:actions.aksiLainnya')} size="sm" />}
+                    panelClassName="w-52"
+                >
+                    {bisaPindahkan && (
+                        <DropdownItem>
+                            <button
+                                type="button"
+                                onClick={() => setDialogPindahkan(true)}
+                                className="flex min-h-touch w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-muted data-[focus]:bg-surface-sunken data-[focus]:text-ink sm:min-h-0"
+                            >
+                                <FolderInput className="size-4" aria-hidden />
+                                {t('workspace:documentCard.pindahkan.label')}
+                            </button>
+                        </DropdownItem>
+                    )}
 
-                <DropdownItem>
-                    <button
-                        type="button"
-                        onClick={() => setDialogSampah(true)}
-                        className="flex min-h-touch w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-danger data-[focus]:bg-danger-soft sm:min-h-0"
-                    >
-                        <Trash2 className="size-4" aria-hidden />
-                        {t('common:aksi.buang')}
-                    </button>
-                </DropdownItem>
-            </Dropdown>
+                    {bisaDibuang && (
+                        <DropdownItem>
+                            <button
+                                type="button"
+                                onClick={() => setDialogSampah(true)}
+                                className="flex min-h-touch w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-danger data-[focus]:bg-danger-soft sm:min-h-0"
+                            >
+                                <Trash2 className="size-4" aria-hidden />
+                                {t('common:aksi.buang')}
+                            </button>
+                        </DropdownItem>
+                    )}
+                </Dropdown>
+            )}
 
-            {folderOptions !== undefined && (
+            {bisaPindahkan && (
                 <DialogPindahkan
                     terbuka={dialogPindahkan}
                     onTutup={() => setDialogPindahkan(false)}
                     document={document}
-                    folderOptions={folderOptions}
+                    folderOptions={folderOptions ?? []}
                     currentFolderId={currentFolderId}
                 />
             )}

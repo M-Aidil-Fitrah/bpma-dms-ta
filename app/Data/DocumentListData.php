@@ -58,8 +58,13 @@ final class DocumentListData extends Data
         public ?int $jumlah_frasa_pencarian,
         /** Hanya diisi oleh halaman workspace (Dokumen Saya/Terbaru/Berbintang); null di tempat lain. */
         public ?bool $starred = null,
-        /** Hanya diisi oleh Sampah; null di tempat lain. */
-        public ?string $trashed_at = null,
+        /**
+         * Hanya diisi oleh halaman workspace. Terbaru/Berbintang dapat memuat
+         * dokumen orang lain yang dibagikan (bukan hanya milik pengguna
+         * sendiri), sehingga aksi merusak seperti Buang ke Sampah tidak boleh
+         * ditampilkan begitu saja hanya karena dokumennya terlihat.
+         */
+        public ?bool $bisa_dibuang = null,
         /** Hanya diisi oleh Sampah; null di tempat lain. */
         public ?string $purge_after = null,
     ) {}
@@ -83,7 +88,8 @@ final class DocumentListData extends Data
     /**
      * Bentuk untuk halaman workspace (Dokumen Saya, Terbaru, Berbintang,
      * Sampah) — sama seperti {@see self::fromModel()}, ditambah status
-     * bintang dan (bila dokumennya ada di Sampah) info retensi.
+     * bintang, penanda kepemilikan, dan (bila dokumennya ada di Sampah)
+     * info retensi.
      *
      * `$distarai` dihitung sekali oleh pemanggil untuk seluruh halaman
      * (satu kueri `IN`), bukan per baris di sini — menghitungnya per baris
@@ -97,7 +103,11 @@ final class DocumentListData extends Data
             alasanTerlihat: $document->alasanTerlihat($user),
             jabatanPengunggah: $document->uploader?->jabatan?->nama,
             starred: $distarai,
-            trashedAt: $document->trashed_at?->toIso8601String(),
+            // Terbaru dan Berbintang bisa memuat dokumen orang lain yang
+            // dibagikan — aksi Buang ke Sampah hanya boleh tampil untuk
+            // dokumen yang benar-benar dapat dibuang pengguna ini, meniru
+            // persis DocumentPolicy::trash().
+            bisaDibuang: $user->isSuperadmin() || $document->uploaded_by === $user->id,
             purgeAfter: $document->purge_after?->toIso8601String(),
         );
     }
@@ -126,7 +136,7 @@ final class DocumentListData extends Data
         ?string $alasanTerlihat,
         ?string $jabatanPengunggah,
         ?bool $starred = null,
-        ?string $trashedAt = null,
+        ?bool $bisaDibuang = null,
         ?string $purgeAfter = null,
     ): self {
         $konteksPencarian = self::konteksPencarian($document);
@@ -155,7 +165,7 @@ final class DocumentListData extends Data
             cuplikan_pencarian: $konteksPencarian['cuplikan_pencarian'],
             jumlah_frasa_pencarian: $konteksPencarian['jumlah_frasa_pencarian'],
             starred: $starred,
-            trashed_at: $trashedAt,
+            bisa_dibuang: $bisaDibuang,
             purge_after: $purgeAfter,
         );
     }

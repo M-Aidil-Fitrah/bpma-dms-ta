@@ -140,7 +140,7 @@ kecocokan_pencarian: string[] | null,
 cuplikan_pencarian: string | null,
 jumlah_frasa_pencarian: number | null,
 starred: boolean | null,
-trashed_at: string | null,
+bisa_dibuang: boolean | null,
 purge_after: string | null,
 };
 export type DocumentVersionData = {

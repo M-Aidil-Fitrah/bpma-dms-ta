@@ -53,6 +53,10 @@ final class DocumentIndexRequest extends FormRequest
             'tipe' => ['nullable', Rule::in(['pdf', 'gambar', 'word', 'teks', 'lainnya'])],
             'dari' => ['nullable', 'date'],
             'sampai' => ['nullable', 'date', 'after_or_equal:dari'],
+            // Dokumen yang masa berlakunya jatuh dalam sekian hari ke depan
+            // (FR-04) — pilihannya sama dengan picker di Dasbor, bukan angka
+            // bebas, supaya cache/URL yang dibagikan tetap masuk akal.
+            'evaluasi' => ['nullable', 'integer', Rule::in(config('dms.dokumen.rentang_evaluasi_pilihan'))],
             'urut' => ['nullable', Rule::in(array_keys(self::URUTAN))],
             'arah' => ['nullable', Rule::in(['asc', 'desc'])],
             // `urut` selalu ikut dalam state antarmuka agar ikon kolom stabil.
@@ -105,6 +109,7 @@ final class DocumentIndexRequest extends FormRequest
             'tipe' => $this->string('tipe')->toString() ?: null,
             'dari' => $this->string('dari')->toString() ?: null,
             'sampai' => $this->string('sampai')->toString() ?: null,
+            'evaluasi' => $this->integer('evaluasi') ?: null,
             'urut' => $this->string('urut')->toString() ?: 'tanggal',
             'urut_manual' => $this->boolean('urut_manual'),
             'tampilan' => $this->string('tampilan')->toString() === 'grid' ? 'grid' : 'tabel',

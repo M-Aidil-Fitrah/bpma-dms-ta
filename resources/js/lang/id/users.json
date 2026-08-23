@@ -107,12 +107,6 @@
             "docsPerPageHint": "Bawaan: {{value}}.",
             "docsUnit": "{{value}} dokumen"
         },
-        "dashboardSection": {
-            "title": "Dasbor",
-            "evalRangeLabel": "Rentang awal masa evaluasi",
-            "evalRangeHint": "Dipakai saat pengguna belum memilih rentang sendiri. Bawaan: {{value}} hari.",
-            "daysUnit": "{{value}} hari"
-        },
         "saving": "Menyimpan…",
         "save": "Simpan Pengaturan",
         "useDefault": "Gunakan Nilai Bawaan",

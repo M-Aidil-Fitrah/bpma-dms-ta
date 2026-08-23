@@ -4,7 +4,8 @@ import { UserFilterSelect, type PenggunaFilterPilihan } from '@/Components/domai
 import { Button } from '@/Components/ui/Button';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
-import { Select, type SelectOption } from '@/Components/ui/Select';
+import { PopoverSelect } from '@/Components/ui/PopoverSelect';
+import { type SelectOption } from '@/Components/ui/Select';
 import { cn } from '@/lib/cn';
 import { Filter, RotateCcw, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
@@ -18,7 +19,7 @@ export interface FilterChip {
 export interface FilterDefinition {
     kunci: string;
     label: string;
-    tipe: 'select' | 'date' | 'tree' | 'user';
+    tipe: 'select' | 'date' | 'tree' | 'user' | 'segmented';
     options?: readonly SelectOption[];
     placeholder?: string;
     /** Wajib diisi saat `tipe: 'tree'`. */
@@ -31,6 +32,12 @@ export interface FilterDefinition {
      * klien) karena `nilai[kunci]` hanya menyimpan id, bukan nama.
      */
     userValue?: PenggunaFilterPilihan | null;
+    /**
+     * Wajib diisi saat `tipe: 'segmented'` — pilihan tombol pil, dipakai
+     * untuk filter dengan sedikit opsi tetap (mis. rentang hari) di mana
+     * seluruh pilihan sebaiknya langsung terlihat tanpa membuka dropdown.
+     */
+    segmentedOptions?: readonly SelectOption[];
 }
 
 export interface FilterBarProps {
@@ -104,12 +111,12 @@ export function FilterBar({
                             {(props) => {
                                 if (filter.tipe === 'select') {
                                     return (
-                                        <Select
+                                        <PopoverSelect
                                             {...props}
                                             options={filter.options ?? []}
                                             placeholder={filter.placeholder ?? t('ui.semua')}
                                             value={nilai[filter.kunci] ?? ''}
-                                            onChange={(e) => onChange(filter.kunci, e.target.value)}
+                                            onChange={(nilaiBaru) => onChange(filter.kunci, nilaiBaru)}
                                         />
                                     );
                                 }
@@ -128,6 +135,33 @@ export function FilterBar({
                                                 onChange(filter.kunci, id === null ? '' : String(id))
                                             }
                                         />
+                                    );
+                                }
+
+                                if (filter.tipe === 'segmented') {
+                                    return (
+                                        <div role="group" aria-label={filter.label} className="flex rounded-lg border border-line p-0.5">
+                                            {(filter.segmentedOptions ?? []).map((opsi) => {
+                                                const aktif = String(opsi.value) === (nilai[filter.kunci] ?? '');
+
+                                                return (
+                                                    <button
+                                                        key={opsi.value}
+                                                        type="button"
+                                                        onClick={() => onChange(filter.kunci, aktif ? '' : String(opsi.value))}
+                                                        aria-pressed={aktif}
+                                                        className={cn(
+                                                            'min-h-touch flex-1 rounded-md px-3 text-sm font-medium transition-colors sm:min-h-0 sm:py-1.5',
+                                                            aktif
+                                                                ? 'bg-brand-700 text-white'
+                                                                : 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
+                                                        )}
+                                                    >
+                                                        {opsi.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                     );
                                 }
 

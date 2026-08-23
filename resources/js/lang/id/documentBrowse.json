@@ -13,16 +13,7 @@
                 "placeholder": "Semua tipe",
                 "options": { "pdf": "PDF", "gambar": "Gambar", "word": "Word", "teks": "Teks", "lainnya": "Lainnya" }
             },
-            "statusEkstraksi": {
-                "label": "Pencarian Isi",
-                "placeholder": "Semua status",
-                "options": {
-                    "completed": "Dapat dicari",
-                    "reviewRequired": "Perlu ditinjau",
-                    "pending": "Memproses",
-                    "notApplicable": "Lampiran biasa"
-                }
-            },
+            "evaluasi": { "label": "Masa Berlaku", "hari": "{{hari}} hari" },
             "status": { "label": "Status", "placeholder": "Semua status" },
             "dari": { "label": "Tanggal Mulai" },
             "sampai": { "label": "Tanggal Akhir" }
@@ -34,7 +25,7 @@
             "status": "Status: {{nilai}}",
             "pengunggah": "Pengunggah: {{nilai}}",
             "tipe": "Tipe: {{nilai}}",
-            "statusEkstraksi": "Ekstraksi: {{nilai}}",
+            "evaluasi": "Masa Berlaku: {{nilai}}",
             "sejak": "Sejak {{nilai}}",
             "hingga": "Hingga {{nilai}}"
         },
@@ -141,6 +132,10 @@
     "searchMatch": {
         "cocokDi": "Cocok di:",
         "ditemukanKali": "Ditemukan {{jumlah}} kali di isi dokumen"
+    },
+    "evaluasiBadge": {
+        "hariLagi": "{{hari}} hari lagi",
+        "hariIni": "Hari ini"
     },
     "table": {
         "headers": {

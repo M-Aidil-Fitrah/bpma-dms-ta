@@ -66,6 +66,7 @@ const DocumentCard = memo(function DocumentCard({
                 kecocokan={document.kecocokan_pencarian}
                 cuplikan={document.cuplikan_pencarian}
                 jumlahFrasa={document.jumlah_frasa_pencarian}
+                masaBerlaku={document.masa_berlaku}
             />
 
             <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-ink-muted">

@@ -11,6 +11,7 @@ export interface FilterDokumen {
     tipe: string | null;
     dari: string | null;
     sampai: string | null;
+    evaluasi: number | null;
     urut: string;
     urut_manual: boolean;
     arah: 'asc' | 'desc';

@@ -1,5 +1,6 @@
 import type { UnitPilihan } from '@/Components/domain/UnitTreePicker';
 import { UnitTreeSelect } from '@/Components/domain/UnitTreeSelect';
+import { UserFilterSelect, type PenggunaFilterPilihan } from '@/Components/domain/UserFilterSelect';
 import { Button } from '@/Components/ui/Button';
 import { Field } from '@/Components/ui/Field';
 import { Input } from '@/Components/ui/Input';
@@ -7,6 +8,7 @@ import { Select, type SelectOption } from '@/Components/ui/Select';
 import { cn } from '@/lib/cn';
 import { Filter, RotateCcw, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface FilterChip {
     kunci: string;
@@ -16,11 +18,19 @@ export interface FilterChip {
 export interface FilterDefinition {
     kunci: string;
     label: string;
-    tipe: 'select' | 'date' | 'tree';
+    tipe: 'select' | 'date' | 'tree' | 'user';
     options?: readonly SelectOption[];
     placeholder?: string;
     /** Wajib diisi saat `tipe: 'tree'`. */
     treeUnits?: readonly UnitPilihan[];
+    /** Wajib diisi saat `tipe: 'user'` — sumber pencarian pengguna. */
+    userSearchUrl?: string;
+    /**
+     * Wajib diisi saat `tipe: 'user'` — pengguna yang sedang aktif
+     * sebagai nilai filter. Diresolusi di server (bukan dicari ulang di
+     * klien) karena `nilai[kunci]` hanya menyimpan id, bukan nama.
+     */
+    userValue?: PenggunaFilterPilihan | null;
 }
 
 export interface FilterBarProps {
@@ -51,6 +61,7 @@ export function FilterBar({
     onHapusChip,
     children,
 }: FilterBarProps) {
+    const { t } = useTranslation('common');
     const [terbuka, setTerbuka] = useState(false);
 
     return (
@@ -65,7 +76,7 @@ export function FilterBar({
                     aria-expanded={terbuka}
                     className={cn('shrink-0', chips.length > 0 && 'border-brand-700 text-brand-700')}
                 >
-                    Filter
+                    {t('aksi.filter')}
                     {chips.length > 0 && (
                         <span className="ml-1 inline-flex size-5 items-center justify-center rounded-full bg-brand-700 text-xs text-white">
                             {chips.length}
@@ -81,7 +92,7 @@ export function FilterBar({
                         onClick={onReset}
                         className="shrink-0"
                     >
-                        Reset filter
+                        {t('aksi.resetFilter')}
                     </Button>
                 )}
             </div>
@@ -96,7 +107,7 @@ export function FilterBar({
                                         <Select
                                             {...props}
                                             options={filter.options ?? []}
-                                            placeholder={filter.placeholder ?? 'Semua'}
+                                            placeholder={filter.placeholder ?? t('ui.semua')}
                                             value={nilai[filter.kunci] ?? ''}
                                             onChange={(e) => onChange(filter.kunci, e.target.value)}
                                         />
@@ -115,6 +126,19 @@ export function FilterBar({
                                             nilai={nilaiUnit}
                                             onChange={(id) =>
                                                 onChange(filter.kunci, id === null ? '' : String(id))
+                                            }
+                                        />
+                                    );
+                                }
+
+                                if (filter.tipe === 'user') {
+                                    return (
+                                        <UserFilterSelect
+                                            {...props}
+                                            searchUrl={filter.userSearchUrl ?? ''}
+                                            nilai={filter.userValue ?? null}
+                                            onChange={(pengguna) =>
+                                                onChange(filter.kunci, pengguna === null ? '' : String(pengguna.id))
                                             }
                                         />
                                     );

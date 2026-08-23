@@ -93,7 +93,15 @@ final class DocumentPolicy
             return false;
         }
 
-        if ($user->bypassesDocumentAccess()) {
+        if ($user->isSuperadmin()) {
+            return true;
+        }
+
+        if ($document->is_private) {
+            return $document->uploaded_by === $user->id;
+        }
+
+        if ($user->isPimpinanTertinggi()) {
             return true;
         }
 
@@ -114,6 +122,18 @@ final class DocumentPolicy
     public function delete(User $user, Document $document): bool
     {
         return $this->update($user, $document);
+    }
+
+    /** Memindahkan satu rantai versi ke Sampah adalah wewenang pemiliknya. */
+    public function trash(User $user, Document $document): bool
+    {
+        return $user->isSuperadmin() || $document->uploaded_by === $user->id;
+    }
+
+    /** Pemulihan Sampah mengikuti kepemilikan yang sama dengan membuangnya. */
+    public function restoreTrash(User $user, Document $document): bool
+    {
+        return $this->trash($user, $document);
     }
 
     /**

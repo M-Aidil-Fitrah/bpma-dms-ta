@@ -1,5 +1,6 @@
 import { ReferenceResourceActions, type ReferenceResourceKind } from '@/Components/domain/ReferenceResourceActions';
 import { Badge } from '@/Components/ui/Badge';
+import { useTranslation } from 'react-i18next';
 
 interface ReferenceResourceCardsProps {
     jenis: ReferenceResourceKind;
@@ -8,6 +9,8 @@ interface ReferenceResourceCardsProps {
 
 /** Versi ponsel daftar referensi — tanpa tabel yang harus digeser mendatar. */
 export function ReferenceResourceCards({ jenis, referensi }: ReferenceResourceCardsProps) {
+    const { t } = useTranslation('common');
+
     return (
         <ul className="divide-y divide-line lg:hidden">
             {referensi.map((item) => (
@@ -24,7 +27,7 @@ export function ReferenceResourceCards({ jenis, referensi }: ReferenceResourceCa
                             {item.keterangan && <p className="mt-1 text-xs text-ink-muted">{item.keterangan}</p>}
                         </div>
                         <Badge variant={item.is_active ? 'success' : 'neutral'} size="sm">
-                            {item.is_active ? 'Aktif' : 'Nonaktif'}
+                            {item.is_active ? t('status.aktif') : t('status.nonaktif')}
                         </Badge>
                     </div>
                     <div className="mt-2">

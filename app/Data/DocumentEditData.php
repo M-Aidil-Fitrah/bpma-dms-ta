@@ -40,6 +40,7 @@ final class DocumentEditData extends Data
 
         // -- Mekanisme akses yang sedang berlaku ------------------------------
         public bool $is_shared_to_all,
+        public bool $is_private,
         public ?int $min_tingkat_akses,
         public array $unit_ids,
         public array $orang_tertentu,
@@ -65,6 +66,7 @@ final class DocumentEditData extends Data
             masa_berlaku: $document->masa_berlaku?->toDateString(),
 
             is_shared_to_all: $document->is_shared_to_all,
+            is_private: $document->is_private,
             min_tingkat_akses: $document->min_tingkat_akses,
             unit_ids: $document->targetUnits->pluck('id')->map(intval(...))->all(),
             orang_tertentu: $document->sharedUsers

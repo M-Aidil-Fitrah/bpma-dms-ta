@@ -8,6 +8,7 @@ use App\Enums\ActivityLogName;
 use App\Enums\AuditEvent;
 use App\Models\Category;
 use App\Models\Document;
+use App\Models\DocumentFolder;
 use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
@@ -45,8 +46,10 @@ final class ActivityLogService
             ->withProperties([
                 ...$properties,
                 'subjek' => $this->subjectSummary($subject),
-                // Dipakai oleh query riwayat biasa untuk menjamin kegiatan
-                // non-dokumen tidak lolos ke pengguna yang bukan Superadmin.
+                // Dipakai frontend untuk menautkan baris riwayat ke halaman
+                // detail dokumennya. Batas akses non-dokumen ke pengguna
+                // bukan-Superadmin ditegakkan lewat `subject_type`/
+                // `subject_id` di `ActivityLogQuery`, bukan properti ini.
                 'dokumen_id' => $subject instanceof Document ? $subject->id : null,
             ]);
 
@@ -84,6 +87,11 @@ final class ActivityLogService
                 'tipe' => 'Dokumen',
                 'id' => $subject->id,
                 'label' => $subject->judul,
+            ],
+            $subject instanceof DocumentFolder => [
+                'tipe' => 'Folder',
+                'id' => $subject->id,
+                'label' => $subject->name,
             ],
             $subject instanceof User => [
                 'tipe' => 'Pengguna',

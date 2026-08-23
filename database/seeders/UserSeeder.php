@@ -42,8 +42,8 @@ final class UserSeeder extends Seeder
      */
     private const AKUN = [
         // -- Pimpinan tertinggi: tanpa unit, melihat seluruh dokumen ----------
-        ['nama' => 'Budi Santoso', 'jabatan' => 'Kepala BPMA', 'unit' => null],
-        ['nama' => 'Siti Aminah', 'jabatan' => 'Wakil Kepala BPMA', 'unit' => null],
+        ['nama' => 'Budi Santoso', 'jabatan' => 'Pimpinan BPMA', 'unit' => null],
+        ['nama' => 'Siti Aminah', 'jabatan' => 'Pimpinan BPMA', 'unit' => null],
 
         // -- Sekretaris & Deputi ---------------------------------------------
         ['nama' => 'Andi Wijaya', 'jabatan' => 'Sekretaris', 'unit' => 'Sekretaris BPMA'],

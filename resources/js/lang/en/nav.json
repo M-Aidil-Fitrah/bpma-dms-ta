@@ -1,0 +1,30 @@
+{
+    "ariaNavigasiUtama": "Main navigation",
+    "bukaNavigasi": "Open navigation",
+    "tutupNavigasi": "Close navigation",
+    "grup": {
+        "menuUtama": "Main Menu",
+        "pengelolaan": "Management"
+    },
+    "item": {
+        "beranda": "Home",
+        "dokumenSaya": "My Documents",
+        "jelajahiDokumen": "Browse Documents",
+        "terbaru": "Recent",
+        "berbintang": "Starred",
+        "sampah": "Trash",
+        "riwayatAktivitas": "Activity History",
+        "logAktivitas": "Activity Log",
+        "pengguna": "Users",
+        "unitKerja": "Work Units",
+        "jabatan": "Positions",
+        "kategori": "Categories",
+        "pengaturan": "Settings"
+    },
+    "penggunaMenu": {
+        "profilSaya": "My Profile",
+        "keluar": "Log Out",
+        "superadmin": "Superadmin",
+        "pengguna": "User"
+    }
+}

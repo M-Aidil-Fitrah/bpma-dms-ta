@@ -35,8 +35,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'extraction_estimated_seconds', 'extraction_message', 'extraction_started_at',
     'nomor_normalized', 'replaces_document_id', 'version_root_id',
     'version_major', 'version_minor', 'version_kind', 'version_note',
-    'is_shared_to_all', 'min_tingkat_akses', 'edit_scope',
-    'uploaded_by', 'is_active',
+    'is_shared_to_all', 'is_private', 'min_tingkat_akses', 'edit_scope',
+    'uploaded_by', 'is_active', 'trashed_at', 'trashed_by', 'purge_after', 'trash_token',
 ])]
 class Document extends Model
 {
@@ -87,8 +87,12 @@ class Document extends Model
         'id', 'nomor', 'judul', 'category_id', 'origin_unit_id',
         'tanggal', 'masa_berlaku', 'status', 'extraction_status',
         'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path',
-        'is_shared_to_all', 'min_tingkat_akses',
+        'is_shared_to_all', 'is_private', 'min_tingkat_akses',
         'uploaded_by', 'is_active', 'created_at',
+        // Dipakai halaman Sampah lewat DocumentListData::untukWorkspace() —
+        // tanpanya `$document->purge_after` selalu null walau kolomnya
+        // terisi di database, karena baris ini tidak pernah ikut ter-SELECT.
+        'trashed_at', 'purge_after',
     ];
 
     protected function casts(): array
@@ -101,7 +105,10 @@ class Document extends Model
             'edit_scope' => DocumentEditScope::class,
             'version_kind' => DocumentVersionKind::class,
             'is_shared_to_all' => 'boolean',
+            'is_private' => 'boolean',
             'is_active' => 'boolean',
+            'trashed_at' => 'datetime',
+            'purge_after' => 'datetime',
             'min_tingkat_akses' => 'integer',
             'file_size' => 'integer',
             'extraction_pages_total' => 'integer',
@@ -164,6 +171,24 @@ class Document extends Model
         return $this->hasMany(self::class, 'version_root_id');
     }
 
+    /** @return HasMany<DocumentPlacement, $this> */
+    public function placements(): HasMany
+    {
+        return $this->hasMany(DocumentPlacement::class);
+    }
+
+    /** @return HasMany<DocumentStar, $this> */
+    public function stars(): HasMany
+    {
+        return $this->hasMany(DocumentStar::class);
+    }
+
+    /** @return HasMany<DocumentRecent, $this> */
+    public function recents(): HasMany
+    {
+        return $this->hasMany(DocumentRecent::class);
+    }
+
     public function versionLabel(): string
     {
         return "v{$this->version_major}.{$this->version_minor}";
@@ -214,6 +239,10 @@ class Document extends Model
      */
     public function accessSummary(): array
     {
+        if ($this->is_private) {
+            return ['Hanya saya (Superadmin untuk audit)'];
+        }
+
         if ($this->is_shared_to_all) {
             return ['Semua pengguna'];
         }
@@ -245,7 +274,8 @@ class Document extends Model
      */
     public function jumlahMekanismeAktif(): int
     {
-        return (int) $this->is_shared_to_all
+        return (int) $this->is_private
+            + (int) $this->is_shared_to_all
             + (int) ($this->min_tingkat_akses !== null)
             + (int) $this->targetUnits->isNotEmpty()
             + (int) $this->sharedUsers->isNotEmpty();
@@ -274,12 +304,16 @@ class Document extends Model
             return 'Superadmin';
         }
 
-        if ($user->isPimpinanTertinggi()) {
-            return 'Jabatan tingkat 1';
-        }
-
         if ($this->uploaded_by === $user->id) {
             return 'Anda pengunggahnya';
+        }
+
+        if ($this->is_private) {
+            return 'Tidak diketahui';
+        }
+
+        if ($user->isPimpinanTertinggi()) {
+            return 'Jabatan tingkat 1';
         }
 
         if ($this->is_shared_to_all) {
@@ -335,10 +369,23 @@ class Document extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        // Superadmin dan jabatan tingkat 1 melihat seluruh dokumen tanpa
-        // terikat mekanisme apa pun (FR-44).
-        if ($user->bypassesDocumentAccess()) {
+        $query->notTrashed();
+
+        // Superadmin tetap dapat mengaudit dokumen pribadi. Jabatan tingkat 1
+        // hanya mem-bypass empat mekanisme berbagi, bukan keputusan eksplisit
+        // "Hanya saya" milik pengunggah.
+        if ($user->isSuperadmin()) {
             return $query;
+        }
+
+        if ($user->isPimpinanTertinggi()) {
+            // Bypass keempat mekanisme berbagi, tapi pemilik dokumen tetap
+            // harus dapat melihat dokumennya sendiri — termasuk yang ia
+            // tandai "Hanya saya" — sama seperti jabatan lain mana pun.
+            return $query->where(function (Builder $group) use ($user): void {
+                $group->where('documents.uploaded_by', $user->id)
+                    ->orWhere('documents.is_private', false);
+            });
         }
 
         $tingkatAkses = $user->jabatan?->tingkat_akses;
@@ -351,40 +398,49 @@ class Document extends Model
             // Jaminan bawaan — bukan salah satu dari empat mekanisme.
             $group->where('documents.uploaded_by', $user->id);
 
-            // Mekanisme 1: bagikan ke semua pengguna internal.
-            $group->orWhere('documents.is_shared_to_all', true);
+            // Dokumen pribadi hanya berhenti pada pengunggah (di atas) atau
+            // Superadmin (dikembalikan lebih awal), sekalipun request palsu
+            // masih menyisakan data mekanisme akses lama.
+            $group->orWhere(function (Builder $dibagikan) use ($user, $tingkatAkses): void {
+                $dibagikan->where('documents.is_private', false);
 
-            // Mekanisme 2: jenjang jabatan. Angka tingkat yang lebih kecil
-            // berarti jenjang yang lebih tinggi, sehingga dokumen ber-ambang 2
-            // terlihat oleh tingkat 1 dan 2.
-            if ($tingkatAkses !== null) {
-                $group->orWhere(function (Builder $q) use ($tingkatAkses): void {
-                    $q->whereNotNull('documents.min_tingkat_akses')
-                        ->where('documents.min_tingkat_akses', '>=', $tingkatAkses);
+                // Mekanisme 1: bagikan ke semua pengguna internal.
+                $dibagikan->where(function (Builder $mekanisme) use ($user, $tingkatAkses): void {
+                    $mekanisme->where('documents.is_shared_to_all', true);
+
+                    // Mekanisme 2: jenjang jabatan. Angka tingkat yang lebih kecil
+                    // berarti jenjang yang lebih tinggi, sehingga dokumen ber-ambang 2
+                    // terlihat oleh tingkat 1 dan 2.
+                    if ($tingkatAkses !== null) {
+                        $mekanisme->orWhere(function (Builder $q) use ($tingkatAkses): void {
+                            $q->whereNotNull('documents.min_tingkat_akses')
+                                ->where('documents.min_tingkat_akses', '>=', $tingkatAkses);
+                        });
+                    }
+
+                    // Mekanisme 3: unit kerja.
+                    //
+                    // Hanya kecocokan langsung. Cascade ke divisi bawahan sudah
+                    // diselesaikan saat menyimpan oleh `DocumentUnitResolver`, sehingga
+                    // isi `document_units` selalu mencerminkan persis siapa yang
+                    // berhak. Menambahkan kondisi `units.parent_id` di sini akan
+                    // menjalankan cascade untuk kedua kalinya dan membuat pengurangan
+                    // unit secara manual oleh pengunggah diam-diam tidak berlaku —
+                    // bertentangan dengan FR-39 (`Catatan_Audit.md` isu #15).
+                    if ($user->unit_id !== null) {
+                        $mekanisme->orWhereHas(
+                            'targetUnits',
+                            fn (Builder $q) => $q->where('units.id', $user->unit_id),
+                        );
+                    }
+
+                    // Mekanisme 4: orang tertentu.
+                    $mekanisme->orWhereHas(
+                        'sharedUsers',
+                        fn (Builder $q) => $q->where('users.id', $user->id),
+                    );
                 });
-            }
-
-            // Mekanisme 3: unit kerja.
-            //
-            // Hanya kecocokan langsung. Cascade ke divisi bawahan sudah
-            // diselesaikan saat menyimpan oleh `DocumentUnitResolver`, sehingga
-            // isi `document_units` selalu mencerminkan persis siapa yang
-            // berhak. Menambahkan kondisi `units.parent_id` di sini akan
-            // menjalankan cascade untuk kedua kalinya dan membuat pengurangan
-            // unit secara manual oleh pengunggah diam-diam tidak berlaku —
-            // bertentangan dengan FR-39 (`Catatan_Audit.md` isu #15).
-            if ($user->unit_id !== null) {
-                $group->orWhereHas(
-                    'targetUnits',
-                    fn (Builder $q) => $q->where('units.id', $user->unit_id),
-                );
-            }
-
-            // Mekanisme 4: orang tertentu.
-            $group->orWhereHas(
-                'sharedUsers',
-                fn (Builder $q) => $q->where('users.id', $user->id),
-            );
+            });
         });
     }
 
@@ -398,6 +454,12 @@ class Document extends Model
         // punya `is_active`, sehingga scope ini akan ambigu begitu dipakai
         // bersama join — galat yang baru muncul jauh setelah scope ditulis.
         return $query->where($query->qualifyColumn('is_active'), true);
+    }
+
+    /** @param Builder<Document> $query @return Builder<Document> */
+    public function scopeNotTrashed(Builder $query): Builder
+    {
+        return $query->whereNull($query->qualifyColumn('trashed_at'));
     }
 
     /**

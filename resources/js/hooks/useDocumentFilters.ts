@@ -22,9 +22,13 @@ export interface FilterDokumen {
  * `ubahTampilan`. Daftar dimuat ulang lengkap saat filter berubah; jumlah
  * opsi kecil, sedangkan ini menghindari partial reload yang dapat membuat
  * umpan balik filter terasa diam bila state halaman lama tertinggal.
+ *
+ * `alamat` dapat diisi halaman lain yang memakai bentuk daftar dokumen yang
+ * sama (Dokumen Saya, Terbaru, Berbintang, Sampah) — bawaannya `/documents`
+ * untuk Jelajahi Dokumen sendiri.
  */
-export function useDocumentFilters(filter: FilterDokumen) {
-    const { terapkan, ubah, bersihkan } = useFilters('/documents', filter, {
+export function useDocumentFilters(filter: FilterDokumen, alamat: string = '/documents') {
+    const { terapkan, ubah, bersihkan } = useFilters(alamat, filter, {
         // Mode tampilan bukan penyaring — dipertahankan supaya "bersihkan
         // filter" tidak diam-diam melemparkan pengguna ke tampilan yang
         // tidak ia pilih.

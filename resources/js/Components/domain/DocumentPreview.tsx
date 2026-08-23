@@ -3,6 +3,7 @@ import { IconButton } from '@/Components/ui/IconButton';
 import { formatUkuranBerkas } from '@/lib/format';
 import { Download, FileQuestion, Loader2, Maximize, Minimize, ZoomIn, ZoomOut } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * pdf.js dimuat hanya saat berkasnya memang PDF.
@@ -101,10 +102,12 @@ function BingkaiPratinjau({ children }: { children: (opsi: KendaliLayarPenuh) =>
 type KendaliLayarPenuh = { layarPenuh: boolean; onUbahLayarPenuh: () => void };
 
 function MenyiapkanPratinjau() {
+    const { t } = useTranslation('documentBrowse');
+
     return (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
             <Loader2 className="size-6 animate-spin text-ink-subtle" aria-hidden />
-            <p className="text-sm text-ink-muted">Pratinjau sedang disiapkan di latar belakang…</p>
+            <p className="text-sm text-ink-muted">{t('documentBrowse:preview.sedangDisiapkan')}</p>
         </div>
     );
 }
@@ -214,25 +217,30 @@ function PratinjauGambar({ url, dokumen, layarPenuh, onUbahLayarPenuh }: { url: 
 }
 
 function PratinjauVideo({ url }: { url: string }) {
+    const { t } = useTranslation('documentBrowse');
+
     return (
         <div className="flex h-full min-h-0 items-center justify-center bg-ink p-4">
-            <video src={url} controls className="max-h-full w-full rounded">Peramban Anda tidak mendukung pemutaran video.</video>
+            <video src={url} controls className="max-h-full w-full rounded">{t('documentBrowse:preview.videoTidakDidukung')}</video>
         </div>
     );
 }
 
 function PratinjauAudio({ url, layarPenuh, onUbahLayarPenuh }: { url: string } & KendaliLayarPenuh) {
+    const { t } = useTranslation('documentBrowse');
+
     return (
         <div className="flex h-full min-h-0 flex-col">
             <KendaliPratinjau layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />
             <div className="flex min-h-0 flex-1 items-center justify-center p-8">
-                <audio src={url} controls className="w-full max-w-md">Peramban Anda tidak mendukung pemutaran audio.</audio>
+                <audio src={url} controls className="w-full max-w-md">{t('documentBrowse:preview.audioTidakDidukung')}</audio>
             </div>
         </div>
     );
 }
 
 function PanelTeks({ teks, mime, layarPenuh, onUbahLayarPenuh }: { teks: string; mime: string } & KendaliLayarPenuh) {
+    const { t } = useTranslation('documentBrowse');
     const dariEkstraksi = mime !== 'text/plain';
 
     return (
@@ -240,8 +248,7 @@ function PanelTeks({ teks, mime, layarPenuh, onUbahLayarPenuh }: { teks: string;
             <KendaliPratinjau layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />
             {dariEkstraksi && (
                 <p className="border-b border-line bg-warning-soft px-4 py-2 text-xs text-warning-strong">
-                    Yang ditampilkan adalah isi teks hasil pembacaan berkas, bukan tata
-                    letak aslinya. Unduh berkas untuk melihat format sesungguhnya.
+                    {t('documentBrowse:preview.peringatanTeksEkstraksi')}
                 </p>
             )}
 
@@ -255,21 +262,25 @@ function PanelTeks({ teks, mime, layarPenuh, onUbahLayarPenuh }: { teks: string;
 }
 
 function KendaliPratinjau({ skala, onPerkecil, onPerbesar, layarPenuh, onUbahLayarPenuh }: Partial<{ skala: number; onPerkecil: () => void; onPerbesar: () => void }> & KendaliLayarPenuh) {
+    const { t } = useTranslation('documentBrowse');
+
     return (
         <div className="flex items-center justify-end gap-1 border-b border-line bg-surface px-3 py-2">
             {skala !== undefined && onPerkecil && onPerbesar && (
                 <>
-                    <IconButton icon={ZoomOut} label="Perkecil" size="sm" disabled={skala <= 0.5} onClick={onPerkecil} />
+                    <IconButton icon={ZoomOut} label={t('documentBrowse:preview.perkecil')} size="sm" disabled={skala <= 0.5} onClick={onPerkecil} />
                     <span className="w-12 text-center font-mono text-xs text-ink-muted">{Math.round(skala * 100)}%</span>
-                    <IconButton icon={ZoomIn} label="Perbesar" size="sm" disabled={skala >= 3} onClick={onPerbesar} />
+                    <IconButton icon={ZoomIn} label={t('documentBrowse:preview.perbesar')} size="sm" disabled={skala >= 3} onClick={onPerbesar} />
                 </>
             )}
-            <IconButton icon={layarPenuh ? Minimize : Maximize} label={layarPenuh ? 'Keluar dari layar penuh' : 'Layar penuh'} size="sm" onClick={onUbahLayarPenuh} />
+            <IconButton icon={layarPenuh ? Minimize : Maximize} label={layarPenuh ? t('documentBrowse:preview.keluarLayarPenuh') : t('documentBrowse:preview.layarPenuh')} size="sm" onClick={onUbahLayarPenuh} />
         </div>
     );
 }
 
 function TanpaPratinjau({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
+    const { t } = useTranslation('documentBrowse');
+
     return (
         <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
             <span className="inline-flex size-14 items-center justify-center rounded-full bg-surface-sunken text-ink-subtle">
@@ -278,7 +289,7 @@ function TanpaPratinjau({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
 
             <div>
                 <p className="text-sm font-medium text-ink">
-                    Tipe berkas ini tidak dapat ditampilkan di peramban
+                    {t('documentBrowse:preview.tipeTidakDapatDitampilkan')}
                 </p>
                 <p className="mt-1 text-sm text-ink-muted">
                     {dokumen.nama_berkas} · {formatUkuranBerkas(dokumen.ukuran_berkas)}
@@ -286,16 +297,18 @@ function TanpaPratinjau({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
             </div>
 
             <a href={`/documents/${dokumen.id}/file`} download>
-                <Button icon={Download}>Unduh Berkas</Button>
+                <Button icon={Download}>{t('documentBrowse:preview.unduhBerkas')}</Button>
             </a>
         </div>
     );
 }
 
 function Memuat() {
+    const { t } = useTranslation('documentBrowse');
+
     return (
         <div className="flex h-full items-center justify-center">
-            <span className="text-sm text-ink-muted">Menyiapkan pratinjau…</span>
+            <span className="text-sm text-ink-muted">{t('documentBrowse:preview.menyiapkanPratinjau')}</span>
         </div>
     );
 }

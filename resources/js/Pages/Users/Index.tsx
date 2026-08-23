@@ -12,6 +12,7 @@ import { wajibPenggunaTerautentikasi } from '@/types/auth';
 import { Link, usePage } from '@inertiajs/react';
 import { UserPlus, UserSearch, Users } from 'lucide-react';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface FilterPengguna {
     cari: string | null;
@@ -31,65 +32,70 @@ interface UsersIndexProps {
     opsi?: OpsiPengguna;
 }
 
-const STATUS_OPTIONS = [
-    { value: 'aktif', label: 'Aktif' },
-    { value: 'nonaktif', label: 'Nonaktif' },
-] as const;
-
 export default function Index({ pengguna, filter, opsi }: UsersIndexProps) {
+    const { t } = useTranslation(['users', 'common']);
     const penggunaSaatIni = wajibPenggunaTerautentikasi(usePage().props);
 
     const { ubah, bersihkan } = useFilters('/admin/users', filter);
+
+    const STATUS_OPTIONS = useMemo(
+        () =>
+            [
+                { value: 'aktif', label: t('users:index.filters.statusActive') },
+                { value: 'nonaktif', label: t('users:index.filters.statusInactive') },
+            ] as const,
+        [t],
+    );
 
     const definisi = useMemo<FilterDefinition[]>(
         () => [
             {
                 kunci: 'jabatan',
-                label: 'Jabatan',
+                label: t('users:index.filters.jabatanLabel'),
                 tipe: 'select',
-                placeholder: 'Semua jabatan',
+                placeholder: t('users:index.filters.jabatanPlaceholder'),
                 options: (opsi?.jabatan ?? []).map((j) => ({ value: j.id, label: j.nama })),
             },
             {
                 kunci: 'unit',
-                label: 'Unit Kerja',
+                label: t('users:index.filters.unitLabel'),
                 tipe: 'select',
-                placeholder: 'Semua unit',
+                placeholder: t('users:index.filters.unitPlaceholder'),
                 options: (opsi?.unit ?? []).map((u) => ({ value: u.id, label: u.nama })),
             },
             {
                 kunci: 'status',
-                label: 'Status',
+                label: t('users:index.filters.statusLabel'),
                 tipe: 'select',
-                placeholder: 'Semua status',
+                placeholder: t('users:index.filters.statusPlaceholder'),
                 options: STATUS_OPTIONS,
             },
         ],
-        [opsi],
+        [opsi, t, STATUS_OPTIONS],
     );
 
     const chips = useMemo<FilterChip[]>(() => {
         const daftar: FilterChip[] = [];
 
-        if (filter.cari) daftar.push({ kunci: 'cari', label: `Kata kunci: ${filter.cari}` });
+        if (filter.cari) daftar.push({ kunci: 'cari', label: t('users:index.chips.keyword', { value: filter.cari }) });
 
         if (filter.jabatan) {
             const nama = opsi?.jabatan.find((j) => j.id === filter.jabatan)?.nama;
-            daftar.push({ kunci: 'jabatan', label: `Jabatan: ${nama ?? filter.jabatan}` });
+            daftar.push({ kunci: 'jabatan', label: t('users:index.chips.jabatan', { value: nama ?? filter.jabatan }) });
         }
 
         if (filter.unit) {
             const nama = opsi?.unit.find((u) => u.id === filter.unit)?.nama;
-            daftar.push({ kunci: 'unit', label: `Unit: ${nama ?? filter.unit}` });
+            daftar.push({ kunci: 'unit', label: t('users:index.chips.unit', { value: nama ?? filter.unit }) });
         }
 
         if (filter.status) {
             const label = STATUS_OPTIONS.find((s) => s.value === filter.status)?.label;
-            daftar.push({ kunci: 'status', label: `Status: ${label ?? filter.status}` });
+            daftar.push({ kunci: 'status', label: t('users:index.chips.status', { value: label ?? filter.status }) });
         }
 
         return daftar;
-    }, [filter, opsi]);
+    }, [filter, opsi, t, STATUS_OPTIONS]);
 
     const nilaiFilter = useMemo<Record<string, string>>(
         () => ({
@@ -102,12 +108,12 @@ export default function Index({ pengguna, filter, opsi }: UsersIndexProps) {
 
     return (
         <AppLayout
-            title="Pengguna"
+            title={t('users:index.pageTitle')}
             actions={
                 <Link href="/admin/users/create">
                     <Button icon={UserPlus}>
-                        <span className="hidden sm:inline">Tambah Pengguna</span>
-                        <span className="sr-only sm:hidden">Tambah Pengguna</span>
+                        <span className="hidden sm:inline">{t('users:index.addUser')}</span>
+                        <span className="sr-only sm:hidden">{t('users:index.addUser')}</span>
                     </Button>
                 </Link>
             }
@@ -124,7 +130,7 @@ export default function Index({ pengguna, filter, opsi }: UsersIndexProps) {
                     <SearchInput
                         value={filter.cari ?? ''}
                         onChange={(nilai) => ubah('cari', nilai)}
-                        placeholder="Cari nama atau surel…"
+                        placeholder={t('users:index.searchPlaceholder')}
                         className="flex-1"
                     />
                 </FilterBar>
@@ -152,19 +158,21 @@ export default function Index({ pengguna, filter, opsi }: UsersIndexProps) {
 
 
 function KeadaanKosong({ adaPenyaring, onReset }: { adaPenyaring: boolean; onReset: () => void }) {
+    const { t } = useTranslation(['users', 'common']);
+
     if (adaPenyaring) {
         return (
             <EmptyState
                 icon={UserSearch}
-                title="Tidak ada pengguna yang cocok"
-                description="Tidak ada akun yang sesuai dengan penyaring yang sedang aktif. Coba longgarkan atau bersihkan penyaringnya."
+                title={t('users:index.emptyFiltered.title')}
+                description={t('users:index.emptyFiltered.description')}
                 action={
                     <button
                         type="button"
                         onClick={onReset}
                         className="text-sm font-medium text-brand-700 hover:text-brand-800"
                     >
-                        Bersihkan semua filter
+                        {t('users:index.emptyFiltered.clearFilters')}
                     </button>
                 }
             />
@@ -174,11 +182,11 @@ function KeadaanKosong({ adaPenyaring, onReset }: { adaPenyaring: boolean; onRes
     return (
         <EmptyState
             icon={Users}
-            title="Belum ada pengguna"
-            description="Tidak ada registrasi publik — tambahkan akun pertama lewat tombol di atas."
+            title={t('users:index.emptyNoUsers.title')}
+            description={t('users:index.emptyNoUsers.description')}
             action={
                 <Link href="/admin/users/create">
-                    <Button icon={UserPlus}>Tambah Pengguna</Button>
+                    <Button icon={UserPlus}>{t('users:index.addUser')}</Button>
                 </Link>
             }
         />

@@ -1,0 +1,39 @@
+{
+    "judulHalaman": "Beranda",
+    "sambutan": {
+        "kembali": "Selamat datang kembali,",
+        "tombolUnggah": "Unggah Dokumen",
+        "tombolJelajahi": "Jelajahi Dokumen"
+    },
+    "statistik": {
+        "judul": "Statistik Dokumen",
+        "totalDokumen": "Total Dokumen",
+        "captionTotal": "dapat Anda akses",
+        "berlaku": "Berlaku",
+        "kadaluarsa": "Kadaluarsa",
+        "mendekatiEvaluasi": "Mendekati Masa Evaluasi",
+        "captionRentang": "dalam {{hari}} hari"
+    },
+    "masaEvaluasi": {
+        "ariaRentang": "Rentang masa evaluasi",
+        "hari": "{{hari}} hari",
+        "kosongJudul": "Tidak ada yang mendekati masa evaluasi",
+        "kosongDeskripsi": "Tidak ada dokumen yang masa berlakunya berakhir dalam {{hari}} hari ke depan."
+    },
+    "kategori": {
+        "judul": "Komposisi Kategori",
+        "kosongDeskripsi": "Kategori akan tampil di sini setelah ada dokumen yang dapat Anda akses.",
+        "ariaChart": "Komposisi dokumen per kategori"
+    },
+    "terbaru": {
+        "judul": "Dokumen Terbaru",
+        "lihatSemua": "Lihat semua",
+        "kosongJudul": "Belum ada dokumen",
+        "kosongDeskripsi": "Dokumen yang dapat Anda akses akan tampil di sini."
+    },
+    "aktivitas": {
+        "judul": "Aktivitas Terbaru",
+        "kosongJudul": "Belum ada aktivitas",
+        "kosongDeskripsi": "Aktivitas yang dapat Anda akses akan muncul di sini."
+    }
+}

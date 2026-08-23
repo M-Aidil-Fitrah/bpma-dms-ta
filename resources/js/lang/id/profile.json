@@ -1,0 +1,22 @@
+{
+    "halaman": {
+        "judul": "Profil Saya"
+    },
+    "informasiProfil": {
+        "judul": "Informasi Profil",
+        "deskripsi": "Perbarui nama dan alamat surel akun Anda.",
+        "namaLabel": "Nama",
+        "emailLabel": "Surel",
+        "jabatanLabel": "Jabatan",
+        "unitKerjaLabel": "Unit Kerja"
+    },
+    "ubahPassword": {
+        "judul": "Ubah Kata Sandi",
+        "deskripsi": "Gunakan kata sandi yang panjang dan tidak dipakai di tempat lain.",
+        "passwordSaatIniLabel": "Kata Sandi Saat Ini",
+        "passwordBaruLabel": "Kata Sandi Baru",
+        "ulangiPasswordLabel": "Ulangi Kata Sandi Baru",
+        "tombolPerbarui": "Perbarui Kata Sandi"
+    },
+    "tersimpan": "Tersimpan"
+}

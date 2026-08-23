@@ -6,6 +6,10 @@ namespace Tests\Feature;
 
 use App\Enums\ExtractionStatus;
 use App\Models\Document;
+use App\Models\DocumentFolder;
+use App\Models\DocumentRecent;
+use App\Models\DocumentStar;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -32,6 +36,15 @@ final class DocumentSeedTest extends TestCase
 
         // -- Jumlah -----------------------------------------------------------
         $this->assertSame(220, Document::count());
+
+        // -- Ruang kerja Pimpinan BPMA --------------------------------------
+        $pimpinan = User::query()->where('email', 'budi.santoso@bpma.internal')->firstOrFail();
+        $this->assertSame('Pimpinan BPMA', $pimpinan->jabatan?->nama);
+        $this->assertTrue(DocumentFolder::query()->where('owner_id', $pimpinan->id)->whereNull('trashed_at')->exists());
+        $this->assertTrue(DocumentFolder::query()->where('owner_id', $pimpinan->id)->whereNotNull('trashed_at')->exists());
+        $this->assertGreaterThan(0, DocumentStar::query()->where('user_id', $pimpinan->id)->count());
+        $this->assertGreaterThan(0, DocumentRecent::query()->where('user_id', $pimpinan->id)->count());
+        $this->assertTrue(Document::query()->where('uploaded_by', $pimpinan->id)->whereNotNull('trashed_at')->exists());
 
         // -- Setiap mekanisme akses punya bahan uji ---------------------------
         $this->assertGreaterThan(0, Document::where('is_shared_to_all', true)->count());

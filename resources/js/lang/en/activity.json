@@ -1,0 +1,56 @@
+{
+    "index": {
+        "pageTitle": "Activity Log",
+        "filters": {
+            "typeLabel": "Activity type",
+            "typePlaceholder": "All types",
+            "fromLabel": "From date",
+            "toLabel": "To date"
+        },
+        "searchPlaceholder": "Search activity…",
+        "chips": {
+            "keyword": "Keyword: {{value}}",
+            "type": "Type: {{value}}",
+            "from": "From: {{value}}",
+            "to": "To: {{value}}"
+        },
+        "emptyFiltered": {
+            "title": "No matching activity",
+            "description": "No activity matches the currently active filters. Try loosening or clearing them.",
+            "clearFilters": "Clear all filters"
+        },
+        "emptyNone": {
+            "title": "No activity yet",
+            "description": "Activity you can access will appear here."
+        }
+    },
+    "adminIndex": {
+        "pageTitle": "Activity Log",
+        "filters": {
+            "typeLabel": "Activity type",
+            "typePlaceholder": "All types",
+            "userLabel": "User",
+            "unitLabel": "User's work unit",
+            "fromLabel": "From date",
+            "toLabel": "To date"
+        },
+        "searchPlaceholder": "Search activity…",
+        "chips": {
+            "keyword": "Keyword: {{value}}",
+            "type": "Type: {{value}}",
+            "user": "User: {{value}}",
+            "unit": "Unit: {{value}}",
+            "from": "From: {{value}}",
+            "to": "To: {{value}}"
+        },
+        "emptyFiltered": {
+            "title": "No matching activity",
+            "description": "No activity matches the currently active filters. Try loosening or clearing them.",
+            "clearFilters": "Clear all filters"
+        },
+        "emptyNone": {
+            "title": "No activity yet",
+            "description": "Activity from all users will appear here."
+        }
+    }
+}

@@ -170,19 +170,19 @@ final class DocumentActivityLogTest extends TestCase
         ]);
     }
 
-    public function test_unduh_nonaktifkan_dan_aktifkan_kembali_dicatat_dengan_pelaku_sebenarnya(): void
+    public function test_unduh_pindah_ke_sampah_dan_pulihkan_dicatat_dengan_pelaku_sebenarnya(): void
     {
         $document = $this->buatDokumen();
         Storage::disk('local')->put($document->file_path, 'isi berkas uji');
 
         $this->actingAs($this->pemilik)->get("/documents/{$document->id}/file")->assertOk();
         $this->actingAs($this->pemilik)->delete("/documents/{$document->id}")->assertRedirect();
-        $this->actingAs($this->superadmin)->patch("/documents/{$document->id}/restore")->assertRedirect();
+        $this->actingAs($this->superadmin)->patch("/documents/{$document->id}/restore-trash")->assertRedirect();
 
         $this->assertSame([
             AuditEvent::DocumentDownloaded->value,
-            AuditEvent::DocumentDeactivated->value,
-            AuditEvent::DocumentRestored->value,
+            AuditEvent::DocumentTrashed->value,
+            AuditEvent::DocumentTrashRestored->value,
         ], Activity::query()->orderBy('id')->pluck('event')->all());
         $this->assertSame($this->pemilik->id, Activity::query()->orderBy('id')->first()->causer_id);
         $this->assertSame($this->superadmin->id, Activity::query()->orderByDesc('id')->first()->causer_id);

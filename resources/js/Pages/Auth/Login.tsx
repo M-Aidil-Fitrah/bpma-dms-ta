@@ -7,12 +7,14 @@ import { useToast } from '@/Components/ui/Toast';
 import { useForm } from '@inertiajs/react';
 import { LogIn, Lock, Mail } from 'lucide-react';
 import { useEffect, useRef, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface LoginProps {
     status?: string;
 }
 
 export default function Login({ status }: LoginProps) {
+    const { t } = useTranslation('auth');
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -34,10 +36,10 @@ export default function Login({ status }: LoginProps) {
         terakhirDiberitahukan.current = pesanAutentikasi;
         tampilkan({
             status: galatPembatasan ? 'warning' : 'error',
-            judul: galatPembatasan ? 'Percobaan masuk dibatasi' : 'Masuk belum berhasil',
+            judul: galatPembatasan ? t('masuk.toast.dibatasiJudul') : t('masuk.toast.gagalJudul'),
             keterangan: pesanAutentikasi,
         });
-    }, [galatPembatasan, pesanAutentikasi, tampilkan]);
+    }, [galatPembatasan, pesanAutentikasi, t, tampilkan]);
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
@@ -46,8 +48,8 @@ export default function Login({ status }: LoginProps) {
 
     return (
         <AuthLayout
-            title="Masuk ke DMS BPMA"
-            subtitle="Gunakan akun yang dibuatkan administrator sistem"
+            title={t('masuk.judul')}
+            subtitle={t('masuk.subjudul')}
         >
             {status && (
                 <Alert variant="success" className="mb-5">
@@ -56,7 +58,7 @@ export default function Login({ status }: LoginProps) {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-                <Field label="Surel" error={errors.email} required>
+                <Field label={t('masuk.emailLabel')} error={errors.email} required>
                     {(props) => (
                         <Input
                             {...props}
@@ -66,14 +68,14 @@ export default function Login({ status }: LoginProps) {
                             value={data.email}
                             autoComplete="username"
                             autoFocus
-                            placeholder="nama@bpma.internal"
+                            placeholder={t('masuk.emailPlaceholder')}
                             invalid={Boolean(errors.email)}
                             onChange={(e) => setData('email', e.target.value)}
                         />
                     )}
                 </Field>
 
-                <Field label="Kata Sandi" error={errors.password} required>
+                <Field label={t('masuk.passwordLabel')} error={errors.password} required>
                     {(props) => (
                         <Input
                             {...props}
@@ -98,7 +100,7 @@ export default function Login({ status }: LoginProps) {
                         onChange={(e) => setData('remember', e.target.checked)}
                         className="size-4 rounded border-line text-brand-700 focus:ring-brand-700"
                     />
-                    Ingat saya
+                    {t('masuk.ingatSaya')}
                 </label>
 
                 <Button
@@ -108,7 +110,7 @@ export default function Login({ status }: LoginProps) {
                     className="w-full"
                     size="lg"
                 >
-                    Masuk
+                    {t('masuk.tombolMasuk')}
                 </Button>
             </form>
         </AuthLayout>

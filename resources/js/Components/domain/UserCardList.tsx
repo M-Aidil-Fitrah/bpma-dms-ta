@@ -2,6 +2,7 @@ import { UserActions } from '@/Components/domain/UserActions';
 import { Avatar } from '@/Components/ui/Avatar';
 import { Badge } from '@/Components/ui/Badge';
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface UserCardListProps {
     pengguna: readonly App.Data.UserListData[];
@@ -28,6 +29,8 @@ const UserCard = memo(function UserCard({
     pengguna: App.Data.UserListData;
     diriSendiri: boolean;
 }) {
+    const { t } = useTranslation(['users', 'common']);
+
     return (
         <div className="flex items-start gap-3 px-4 py-3.5">
             <Avatar initials={pengguna.inisial} name={pengguna.name} size="sm" className="mt-0.5" />
@@ -37,13 +40,13 @@ const UserCard = memo(function UserCard({
                     <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-ink">
                             {pengguna.name}
-                            {diriSendiri && <span className="ml-1.5 text-xs text-ink-subtle">(Anda)</span>}
+                            {diriSendiri && <span className="ml-1.5 text-xs text-ink-subtle">{t('users:table.you')}</span>}
                         </p>
                         <p className="truncate text-xs text-ink-subtle">{pengguna.email}</p>
                     </div>
 
                     <Badge variant={pengguna.is_active ? 'success' : 'neutral'} size="sm">
-                        {pengguna.is_active ? 'Aktif' : 'Nonaktif'}
+                        {pengguna.is_active ? t('users:table.statusActive') : t('users:table.statusInactive')}
                     </Badge>
                 </div>
 

@@ -6,6 +6,7 @@ import axios from 'axios';
 import { LockKeyhole, ShieldCheck } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 type KonfirmasiAksi = (aksi: () => void) => void;
 
@@ -18,6 +19,7 @@ const KonteksKonfirmasiPassword = createContext<KonfirmasiAksi | null>(null);
  * pada rute tetap menjadi penjaga akhir bila request dikirim tanpa antarmuka.
  */
 export function PasswordConfirmationProvider({ children }: { children: ReactNode }) {
+    const { t } = useTranslation(['auth', 'common']);
     const { props } = usePage();
     const batasDariServer = props.auth.password_confirmed_until;
     const [berlakuSampai, setBerlakuSampai] = useState(waktu(batasDariServer));
@@ -71,9 +73,9 @@ export function PasswordConfirmationProvider({ children }: { children: ReactNode
             aksi?.();
         } catch (error) {
             if (axios.isAxiosError<{ errors?: { password?: string[] } }>(error)) {
-                setGalat(error.response?.data.errors?.password?.[0] ?? 'Kata sandi tidak dapat dikonfirmasi.');
+                setGalat(error.response?.data.errors?.password?.[0] ?? t('auth:modalKonfirmasiPassword.galatDefault'));
             } else {
-                setGalat('Konfirmasi kata sandi tidak dapat diproses. Coba lagi.');
+                setGalat(t('auth:modalKonfirmasiPassword.galatProses'));
             }
         } finally {
             setMemproses(false);
@@ -86,17 +88,17 @@ export function PasswordConfirmationProvider({ children }: { children: ReactNode
             <Modal
                 terbuka={terbuka}
                 onTutup={tutup}
-                judul="Konfirmasi kata sandi"
-                keterangan="Masukkan kembali kata sandi Anda untuk melanjutkan aksi sensitif ini."
+                judul={t('auth:modalKonfirmasiPassword.judul')}
+                keterangan={t('auth:modalKonfirmasiPassword.keterangan')}
                 footer={
                     <>
-                        <Button type="button" variant="secondary" onClick={tutup} disabled={memproses} className="w-full sm:w-auto">Batal</Button>
-                        <Button type="submit" form="konfirmasi-password-aksi" icon={ShieldCheck} loading={memproses} className="w-full sm:w-auto">Konfirmasi</Button>
+                        <Button type="button" variant="secondary" onClick={tutup} disabled={memproses} className="w-full sm:w-auto">{t('common:aksi.batal')}</Button>
+                        <Button type="submit" form="konfirmasi-password-aksi" icon={ShieldCheck} loading={memproses} className="w-full sm:w-auto">{t('auth:modalKonfirmasiPassword.tombolKonfirmasi')}</Button>
                     </>
                 }
             >
                 <form id="konfirmasi-password-aksi" onSubmit={kirim}>
-                    <Field label="Kata Sandi" error={galat} required>
+                    <Field label={t('auth:modalKonfirmasiPassword.label')} error={galat} required>
                         {(input) => <Input {...input} type="password" autoComplete="current-password" icon={LockKeyhole} value={password} autoFocus invalid={Boolean(galat)} onChange={(event) => setPassword(event.target.value)} />}
                     </Field>
                 </form>

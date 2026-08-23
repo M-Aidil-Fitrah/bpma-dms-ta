@@ -9,6 +9,8 @@ import { AppLayout } from '@/Layouts/AppLayout';
 import { useForm } from '@inertiajs/react';
 import { RotateCcw, Save } from 'lucide-react';
 import { type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 interface SettingsProps {
     pengaturan: App.Data.PengaturanFormData;
@@ -16,6 +18,7 @@ interface SettingsProps {
 
 /** Pengaturan yang memang dapat diubah Superadmin, dibatasi allowlist backend. */
 export default function Index({ pengaturan }: SettingsProps) {
+    const { t } = useTranslation(['users', 'common']);
     const konfirmasikan = usePasswordConfirmation();
     const { data, setData, patch, processing, errors } = useForm({
         unggah_batas_kb: String(pengaturan.unggah_batas_kb),
@@ -36,47 +39,47 @@ export default function Index({ pengaturan }: SettingsProps) {
     }
 
     return (
-        <AppLayout title="Pengaturan">
+        <AppLayout title={t('users:settings.pageTitle')}>
             <form onSubmit={submit} className="max-w-2xl space-y-5">
                 {pengaturan.unggah_dibatasi_php && (
                     <Alert variant="warning">
-                        Lingkungan PHP saat ini membatasi unggahan lebih ketat. Nilai efektifnya {formatKilobyte(pengaturan.unggah_batas_efektif_kb)}, meski setelan aplikasi dapat lebih besar.
+                        {t('users:settings.phpLimitWarning', { value: formatKilobyte(pengaturan.unggah_batas_efektif_kb, t) })}
                     </Alert>
                 )}
 
                 <Card>
-                    <CardHeader><CardTitle>Berkas dan Daftar Dokumen</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t('users:settings.filesSection.title')}</CardTitle></CardHeader>
                     <CardBody className="space-y-4">
-                        <Field label="Batas unggah aplikasi" required error={errors.unggah_batas_kb} hint={`Dalam KB. Bawaan: ${formatKilobyte(pengaturan.unggah_batas_kb_bawaan)}.`}>
+                        <Field label={t('users:settings.filesSection.uploadLimitLabel')} required error={errors.unggah_batas_kb} hint={t('users:settings.filesSection.uploadLimitHint', { value: formatKilobyte(pengaturan.unggah_batas_kb_bawaan, t) })}>
                             {(props) => <Input {...props} type="number" min="1024" max="1048576" value={data.unggah_batas_kb} placeholder={String(pengaturan.unggah_batas_kb_bawaan)} invalid={Boolean(errors.unggah_batas_kb)} onChange={(event) => setData('unggah_batas_kb', event.target.value)} />}
                         </Field>
-                        <Field label="Dokumen per halaman" required error={errors.dokumen_per_halaman} hint={`Bawaan: ${pengaturan.dokumen_per_halaman_bawaan}.`}>
-                            {(props) => <Select {...props} placeholder={String(pengaturan.dokumen_per_halaman_bawaan)} value={data.dokumen_per_halaman} invalid={Boolean(errors.dokumen_per_halaman)} options={[10, 20, 50, 100].map((nilai) => ({ value: nilai, label: `${nilai} dokumen` }))} onChange={(event) => setData('dokumen_per_halaman', event.target.value)} />}
+                        <Field label={t('users:settings.filesSection.docsPerPageLabel')} required error={errors.dokumen_per_halaman} hint={t('users:settings.filesSection.docsPerPageHint', { value: pengaturan.dokumen_per_halaman_bawaan })}>
+                            {(props) => <Select {...props} placeholder={String(pengaturan.dokumen_per_halaman_bawaan)} value={data.dokumen_per_halaman} invalid={Boolean(errors.dokumen_per_halaman)} options={[10, 20, 50, 100].map((nilai) => ({ value: nilai, label: t('users:settings.filesSection.docsUnit', { value: nilai }) }))} onChange={(event) => setData('dokumen_per_halaman', event.target.value)} />}
                         </Field>
                     </CardBody>
                 </Card>
 
                 <Card>
-                    <CardHeader><CardTitle>Dasbor</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t('users:settings.dashboardSection.title')}</CardTitle></CardHeader>
                     <CardBody>
-                        <Field label="Rentang awal masa evaluasi" required error={errors.dokumen_rentang_evaluasi_awal} hint={`Dipakai saat pengguna belum memilih rentang sendiri. Bawaan: ${pengaturan.dokumen_rentang_evaluasi_awal_bawaan} hari.`}>
-                            {(props) => <Select {...props} placeholder={String(pengaturan.dokumen_rentang_evaluasi_awal_bawaan)} value={data.dokumen_rentang_evaluasi_awal} invalid={Boolean(errors.dokumen_rentang_evaluasi_awal)} options={pengaturan.rentang_evaluasi_pilihan.map((nilai) => ({ value: nilai, label: `${nilai} hari` }))} onChange={(event) => setData('dokumen_rentang_evaluasi_awal', event.target.value)} />}
+                        <Field label={t('users:settings.dashboardSection.evalRangeLabel')} required error={errors.dokumen_rentang_evaluasi_awal} hint={t('users:settings.dashboardSection.evalRangeHint', { value: pengaturan.dokumen_rentang_evaluasi_awal_bawaan })}>
+                            {(props) => <Select {...props} placeholder={String(pengaturan.dokumen_rentang_evaluasi_awal_bawaan)} value={data.dokumen_rentang_evaluasi_awal} invalid={Boolean(errors.dokumen_rentang_evaluasi_awal)} options={pengaturan.rentang_evaluasi_pilihan.map((nilai) => ({ value: nilai, label: t('users:settings.dashboardSection.daysUnit', { value: nilai }) }))} onChange={(event) => setData('dokumen_rentang_evaluasi_awal', event.target.value)} />}
                         </Field>
                     </CardBody>
                 </Card>
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    <Button type="submit" icon={Save} loading={processing} className="w-full sm:w-auto">{processing ? 'Menyimpan…' : 'Simpan Pengaturan'}</Button>
-                    <Button type="button" variant="secondary" icon={RotateCcw} onClick={kembaliKeBawaan} disabled={processing} className="w-full sm:w-auto">Gunakan Nilai Bawaan</Button>
+                    <Button type="submit" icon={Save} loading={processing} className="w-full sm:w-auto">{processing ? t('users:settings.saving') : t('users:settings.save')}</Button>
+                    <Button type="button" variant="secondary" icon={RotateCcw} onClick={kembaliKeBawaan} disabled={processing} className="w-full sm:w-auto">{t('users:settings.useDefault')}</Button>
                 </div>
-                <p className="text-sm text-ink-muted">Nilai bawaan berarti override dihapus; aplikasi kembali membaca `config/dms.php`.</p>
+                <p className="text-sm text-ink-muted">{t('users:settings.resetNote')}</p>
             </form>
         </AppLayout>
     );
 }
 
-function formatKilobyte(nilai: number | null): string {
-    if (nilai === null) return 'tanpa batas';
+function formatKilobyte(nilai: number | null, t: TFunction): string {
+    if (nilai === null) return t('users:settings.unlimited');
     if (nilai >= 1024 * 1024) return `${nilai / 1024 / 1024} GB`;
     if (nilai >= 1024) return `${nilai / 1024} MB`;
     return `${nilai} KB`;

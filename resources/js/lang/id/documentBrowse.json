@@ -1,0 +1,208 @@
+{
+    "index": {
+        "title": "Semua Dokumen",
+        "uploadButton": "Unggah Dokumen",
+        "searchPlaceholder": "Cari nomor, judul, deskripsi, atau isi dokumen…",
+        "labelItemDokumen": "dokumen",
+        "filter": {
+            "kategori": { "label": "Kategori", "placeholder": "Semua kategori" },
+            "pengunggah": { "label": "Pengunggah", "placeholder": "Semua pengunggah" },
+            "unit": { "label": "Unit Asal" },
+            "tipe": {
+                "label": "Tipe Berkas",
+                "placeholder": "Semua tipe",
+                "options": { "pdf": "PDF", "gambar": "Gambar", "word": "Word", "teks": "Teks", "lainnya": "Lainnya" }
+            },
+            "statusEkstraksi": {
+                "label": "Pencarian Isi",
+                "placeholder": "Semua status",
+                "options": {
+                    "completed": "Dapat dicari",
+                    "reviewRequired": "Perlu ditinjau",
+                    "pending": "Memproses",
+                    "notApplicable": "Lampiran biasa"
+                }
+            },
+            "status": { "label": "Status", "placeholder": "Semua status" },
+            "dari": { "label": "Tanggal Mulai" },
+            "sampai": { "label": "Tanggal Akhir" }
+        },
+        "chip": {
+            "kataKunci": "Kata kunci: {{nilai}}",
+            "kategori": "Kategori: {{nilai}}",
+            "unit": "Unit: {{nilai}}",
+            "status": "Status: {{nilai}}",
+            "pengunggah": "Pengunggah: {{nilai}}",
+            "tipe": "Tipe: {{nilai}}",
+            "statusEkstraksi": "Ekstraksi: {{nilai}}",
+            "sejak": "Sejak {{nilai}}",
+            "hingga": "Hingga {{nilai}}"
+        },
+        "kosong": {
+            "tanpaHasil": {
+                "judul": "Tidak ada dokumen yang cocok",
+                "deskripsi": "Tidak ada dokumen yang sesuai dengan penyaring yang sedang aktif. Coba longgarkan atau bersihkan penyaringnya.",
+                "aksi": "Bersihkan semua filter"
+            },
+            "belumAdaDokumen": {
+                "judul": "Belum ada dokumen",
+                "deskripsi": "Belum ada dokumen yang dapat Anda akses. Dokumen akan tampil di sini setelah diunggah dan dibagikan kepada Anda.",
+                "aksi": "Unggah Dokumen Pertama"
+            }
+        }
+    },
+    "actions": {
+        "lihatDetail": "Lihat detail",
+        "unduhBerkas": "Unduh berkas",
+        "aksiLainnya": "Aksi lainnya",
+        "pratinjauTabBaru": "Pratinjau di tab baru",
+        "lihatPengaturanAkses": "Lihat pengaturan akses"
+    },
+    "headerActions": {
+        "pindahkanKeSampah": "Pindahkan ke Sampah",
+        "aktifkanKembali": "Aktifkan Kembali",
+        "errorPasswordKosong": "Masukkan kata sandi Anda untuk melanjutkan.",
+        "errorPasswordTidakValid": "Kata sandi tidak dapat dikonfirmasi.",
+        "errorPasswordGagalProses": "Konfirmasi kata sandi tidak dapat diproses. Coba lagi.",
+        "konfirmasiSandi": {
+            "judul": "Konfirmasi kata sandi",
+            "labelSetuju": "Konfirmasi dan pindahkan",
+            "labelKataSandi": "Kata Sandi"
+        },
+        "konfirmasiSampah": {
+            "judul": "Pindahkan dokumen ke Sampah?",
+            "teksUtama": "akan hilang dari daftar dan hasil pencarian selama berada di Sampah.",
+            "teksLanjutan": "Anda dapat memulihkannya selama 30 hari. Setelah itu, berkas dan versinya dihapus permanen; ringkasan aktivitas audit tetap tersimpan."
+        }
+    },
+    "preview": {
+        "sedangDisiapkan": "Pratinjau sedang disiapkan di latar belakang…",
+        "videoTidakDidukung": "Peramban Anda tidak mendukung pemutaran video.",
+        "audioTidakDidukung": "Peramban Anda tidak mendukung pemutaran audio.",
+        "perkecil": "Perkecil",
+        "perbesar": "Perbesar",
+        "keluarLayarPenuh": "Keluar dari layar penuh",
+        "layarPenuh": "Layar penuh",
+        "peringatanTeksEkstraksi": "Yang ditampilkan adalah isi teks hasil pembacaan berkas, bukan tata letak aslinya. Unduh berkas untuk melihat format sesungguhnya.",
+        "tipeTidakDapatDitampilkan": "Tipe berkas ini tidak dapat ditampilkan di peramban",
+        "unduhBerkas": "Unduh Berkas",
+        "menyiapkanPratinjau": "Menyiapkan pratinjau…"
+    },
+    "versionHistory": {
+        "terbaru": "Terbaru",
+        "versiTerbaru": "Versi terbaru",
+        "jenis": {
+            "content": "Perubahan isi berkas",
+            "metadata": "Perubahan metadata atau akses",
+            "restoration": "Pemulihan versi arsip"
+        },
+        "penggunaTidakDiketahui": "Pengguna tidak diketahui",
+        "lihat": "Lihat",
+        "jadikanVersiTerbaru": "Jadikan {{label}} versi terbaru",
+        "keteranganPemulihan": "Sistem membuat major baru dari snapshot ini. Arsip {{label}} tidak berubah.",
+        "labelCatatanPemulihan": "Catatan pemulihan",
+        "placeholderCatatanPemulihan": "Alasan menjadikan versi ini sebagai versi terbaru",
+        "submitJadikanVersiTerbaru": "Jadikan versi terbaru",
+        "belumAdaVersi": "Belum ada versi dokumen.",
+        "tampilkanLagi": "Tampilkan {{jumlah}} lagi",
+        "tampilkanSemua": "Tampilkan semua"
+    },
+    "extractionStatus": {
+        "notApplicable": { "label": "Lampiran biasa", "keterangan": "Tipe berkas ini tidak mendukung pencarian isi." },
+        "pending": { "label": "Memproses", "keterangan": "Isi dokumen sedang dibaca di latar belakang." },
+        "completed": { "label": "Dapat dicari", "keterangan": "Isi dokumen sudah terbaca dan dapat ditemukan lewat pencarian." },
+        "reviewRequired": { "label": "Perlu ditinjau", "keterangan": "OCR selesai, tetapi hasilnya tidak cukup meyakinkan untuk pencarian isi." },
+        "failed": { "label": "Ekstraksi gagal", "keterangan": "Isi tidak terbaca. Berkas tetap dapat diunduh seperti biasa." },
+        "progres": "OCR halaman {{selesai}} dari {{total}}",
+        "progresDenganEstimasi": "OCR halaman {{selesai}} dari {{total}} · sekitar {{durasi}} lagi",
+        "durasi": {
+            "kurangSatuMenit": "kurang dari 1 menit",
+            "menit": "{{menit}} menit",
+            "menitDetik": "{{menit}} menit {{detik}} detik"
+        }
+    },
+    "fileType": {
+        "pdf": "PDF",
+        "word": "Word",
+        "excel": "Excel",
+        "ppt": "PPT",
+        "gambar": "Gambar",
+        "video": "Video",
+        "audio": "Audio",
+        "teks": "Teks",
+        "zip": "ZIP",
+        "berkas": "Berkas"
+    },
+    "pdfViewer": {
+        "tidakDapatDitampilkan": "Berkas PDF ini tidak dapat ditampilkan di peramban.",
+        "halamanDari": "Halaman {{halaman}} dari {{total}}",
+        "halamanAriaLabel": "Halaman {{nomor}} dari {{judul}}"
+    },
+    "searchMatch": {
+        "cocokDi": "Cocok di:",
+        "ditemukanKali": "Ditemukan {{jumlah}} kali di isi dokumen"
+    },
+    "table": {
+        "headers": {
+            "namaDokumen": "Nama Dokumen",
+            "tipe": "Tipe",
+            "tanggal": "Tanggal",
+            "pengunggahUnitAsal": "Pengunggah & Unit Asal",
+            "status": "Status",
+            "aksi": "Aksi"
+        }
+    },
+    "shared": {
+        "terlihatKarena": "Terlihat karena: {{alasan}}"
+    },
+    "grid": {
+        "pengunggah": "Pengunggah",
+        "unitAsal": "Unit asal"
+    },
+    "show": {
+        "tabs": {
+            "detail": "Detail",
+            "akses": "Akses",
+            "riwayat": "Riwayat",
+            "ariaLabel": "Bagian dokumen"
+        },
+        "nonaktif": {
+            "judul": "Dokumen ini nonaktif",
+            "deskripsi": "Disembunyikan dari daftar dokumen dan hasil pencarian. Anda membukanya lewat riwayat versi. Arsip tidak dapat diubah; pemilik rantai dapat menjadikannya versi terbaru dari panel Riwayat."
+        },
+        "detail": {
+            "nomorDokumen": "Nomor Dokumen",
+            "judul": "Judul",
+            "versiDokumen": "Versi Dokumen",
+            "deskripsiPerubahan": "Deskripsi perubahan: {{catatan}}",
+            "deskripsi": "Deskripsi",
+            "kategori": "Kategori",
+            "unitAsal": "Unit Asal",
+            "tanggalDokumen": "Tanggal Dokumen",
+            "masaBerlaku": "Masa Berlaku",
+            "tanpaBatasWaktu": "Tanpa batas waktu",
+            "status": "Status",
+            "namaBerkas": "Nama Berkas",
+            "tipeUkuran": "Tipe & Ukuran",
+            "pencarianIsi": "Pencarian Isi",
+            "lihatTeksEkstraksi": "Lihat teks hasil ekstraksi",
+            "diunggahOleh": "Diunggah Oleh",
+            "diunggahPada": "Diunggah Pada",
+            "terakhirDiperbarui": "Terakhir Diperbarui"
+        },
+        "modal": {
+            "judul": "Teks hasil ekstraksi",
+            "salinTeks": "Salin teks hasil ekstraksi",
+            "sudahDisalin": "Teks hasil ekstraksi sudah disalin",
+            "keterangan": "Teks ini dipakai untuk pencarian isi dan dapat berbeda dari tata letak berkas asli."
+        },
+        "riwayat": {
+            "tabVersi": "Versi ({{jumlah}})",
+            "tabAktivitas": "Aktivitas",
+            "kosong": {
+                "judul": "Belum ada aktivitas",
+                "deskripsi": "Aktivitas yang dapat Anda akses akan muncul di sini."
+            }
+        }
+    }
+}

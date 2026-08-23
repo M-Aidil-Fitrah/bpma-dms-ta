@@ -5,6 +5,7 @@ import {
 import { AppLayout } from '@/Layouts/AppLayout';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface EditProps {
     dokumen: App.Data.DocumentEditData;
@@ -12,9 +13,11 @@ interface EditProps {
 }
 
 export default function Edit({ dokumen, opsi }: EditProps) {
+    const { t } = useTranslation(['documentForm', 'common']);
+
     return (
         <AppLayout
-            title={`Ubah — ${dokumen.judul}`}
+            title={t('documentForm:halamanUbah.judul', { judul: dokumen.judul })}
             header={
                 <div className="flex min-w-0 items-center gap-2 text-sm">
                     <Link
@@ -22,8 +25,8 @@ export default function Edit({ dokumen, opsi }: EditProps) {
                         className="flex shrink-0 items-center gap-1.5 font-medium text-ink-muted hover:text-ink"
                     >
                         <ArrowLeft className="size-4" aria-hidden />
-                        <span className="hidden sm:inline">Detail Dokumen</span>
-                        <span className="sm:hidden">Kembali</span>
+                        <span className="hidden sm:inline">{t('documentForm:halamanUbah.detailDokumen')}</span>
+                        <span className="sm:hidden">{t('common:aksi.kembali')}</span>
                     </Link>
                     <span className="text-ink-subtle" aria-hidden>
                         /
@@ -59,6 +62,7 @@ export default function Edit({ dokumen, opsi }: EditProps) {
                     version_note: '',
                 }}
                 aksesAwal={{
+                    is_private: dokumen.is_private,
                     is_shared_to_all: dokumen.is_shared_to_all,
                     min_tingkat_akses: dokumen.min_tingkat_akses,
                     unit_ids: dokumen.unit_ids,

@@ -19,6 +19,7 @@ enum ActivityLogName: string
     case Kategori = 'kategori';
     case DocumentShare = 'document_share';
     case DocumentUnit = 'document_unit';
+    case DocumentWorkspace = 'document_workspace';
 
     public function label(): string
     {
@@ -30,6 +31,7 @@ enum ActivityLogName: string
             self::Kategori => 'Kategori',
             self::DocumentShare => 'Akses orang tertentu',
             self::DocumentUnit => 'Akses unit',
+            self::DocumentWorkspace => 'Ruang kerja dokumen',
         };
     }
 }

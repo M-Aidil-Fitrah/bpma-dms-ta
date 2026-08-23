@@ -3,6 +3,7 @@ import { Modal } from '@/Components/ui/Modal';
 import { cn } from '@/lib/cn';
 import { TriangleAlert, type LucideIcon } from 'lucide-react';
 import { type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface ConfirmDialogProps {
     terbuka: boolean;
@@ -38,16 +39,20 @@ export function ConfirmDialog({
     judul,
     children,
     labelSetuju,
-    labelBatal = 'Batal',
+    labelBatal,
     ikon: Ikon = TriangleAlert,
     nada = 'danger',
     memproses = false,
 }: ConfirmDialogProps) {
+    const { t } = useTranslation('common');
+
     return (
         <Modal
             terbuka={terbuka}
             onTutup={onTutup}
             judul={judul}
+            teksTerpusat
+            className="max-w-xl"
             footer={
                 <>
                     <Button
@@ -57,7 +62,7 @@ export function ConfirmDialog({
                         disabled={memproses}
                         className="w-full sm:w-auto"
                     >
-                        {labelBatal}
+                        {labelBatal ?? t('aksi.batal')}
                     </Button>
                     <Button
                         type="button"
@@ -71,7 +76,7 @@ export function ConfirmDialog({
                 </>
             }
         >
-            <div className="flex gap-3">
+            <div className="flex flex-col items-center gap-3">
                 <span
                     aria-hidden
                     className={cn(
@@ -86,7 +91,7 @@ export function ConfirmDialog({
                         )}
                     />
                 </span>
-                <div className="space-y-2 text-sm text-ink-muted">{children}</div>
+                <div className="w-full space-y-2 text-sm text-ink-muted">{children}</div>
             </div>
         </Modal>
     );

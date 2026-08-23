@@ -2,6 +2,7 @@ import { UserForm, type OpsiFormulirPengguna } from '@/Components/domain/UserFor
 import { AppLayout } from '@/Layouts/AppLayout';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface EditProps {
     pengguna: App.Data.UserEditData;
@@ -9,9 +10,11 @@ interface EditProps {
 }
 
 export default function Edit({ pengguna, opsi }: EditProps) {
+    const { t } = useTranslation(['users', 'common']);
+
     return (
         <AppLayout
-            title={`Ubah — ${pengguna.name}`}
+            title={t('users:edit.pageTitle', { name: pengguna.name })}
             header={
                 <div className="flex min-w-0 items-center gap-2 text-sm">
                     <Link
@@ -19,7 +22,7 @@ export default function Edit({ pengguna, opsi }: EditProps) {
                         className="flex shrink-0 items-center gap-1.5 font-medium text-ink-muted hover:text-ink"
                     >
                         <ArrowLeft className="size-4" aria-hidden />
-                        Pengguna
+                        {t('users:edit.breadcrumbUsers')}
                     </Link>
                     <span className="text-ink-subtle" aria-hidden>
                         /

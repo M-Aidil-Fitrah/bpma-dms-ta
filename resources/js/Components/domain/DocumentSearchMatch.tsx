@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
+import { useTranslation } from 'react-i18next';
 
 interface DocumentSearchMatchProps {
     kecocokan: string[] | null;
@@ -17,6 +18,7 @@ export function DocumentSearchMatch({
     cuplikan,
     jumlahFrasa,
 }: DocumentSearchMatchProps) {
+    const { t } = useTranslation('documentBrowse');
     const kataKunci = usePage<PageProps<{ filter?: { cari?: string | null } }>>().props.filter?.cari ?? '';
 
     if (!kecocokan?.length) {
@@ -26,12 +28,12 @@ export function DocumentSearchMatch({
     return (
         <div className="mt-1.5 space-y-1 text-xs text-ink-muted">
             <p>
-                Cocok di: <span className="font-medium text-ink-muted">{kecocokan.join(' · ')}</span>
+                {t('documentBrowse:searchMatch.cocokDi')} <span className="font-medium text-ink-muted">{kecocokan.join(' · ')}</span>
             </p>
 
             {jumlahFrasa && (
                 <p className="font-medium text-brand-700">
-                    Ditemukan {jumlahFrasa} kali di isi dokumen
+                    {t('documentBrowse:searchMatch.ditemukanKali', { jumlah: jumlahFrasa })}
                 </p>
             )}
 

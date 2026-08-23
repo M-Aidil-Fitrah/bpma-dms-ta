@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\JabatanController;
 use App\Http\Controllers\Admin\PengaturanController;
@@ -10,6 +11,8 @@ use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\DocumentWorkspaceController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +37,17 @@ Route::get('/', static fn () => redirect()->route(
 
 /*
 |--------------------------------------------------------------------------
+| Bahasa — dua bahasa (id/en)
+|--------------------------------------------------------------------------
+|
+| Sengaja di luar middleware `auth`: halaman masuk juga butuh pemilih bahasa.
+|
+*/
+
+Route::put('/locale', [LocaleController::class, 'update'])->name('locale.update');
+
+/*
+|--------------------------------------------------------------------------
 | Modul: Dasbor — FEAT-06
 |--------------------------------------------------------------------------
 */
@@ -51,6 +65,16 @@ Route::middleware(['auth'])->group(function (): void {
 
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
+    Route::get('/documents/mine', [DocumentWorkspaceController::class, 'mine'])->name('documents.mine');
+    Route::get('/documents/starred', [DocumentWorkspaceController::class, 'starred'])->name('documents.starred');
+    Route::get('/documents/recent', [DocumentWorkspaceController::class, 'recent'])->name('documents.recent');
+    Route::get('/trash', [DocumentWorkspaceController::class, 'trash'])->name('documents.trash');
+
+    Route::post('/folders', [DocumentWorkspaceController::class, 'storeFolder'])->name('folders.store');
+    Route::patch('/folders/{folder}', [DocumentWorkspaceController::class, 'updateFolder'])->name('folders.update');
+    Route::delete('/folders/{folder}', [DocumentWorkspaceController::class, 'trashFolder'])->name('folders.destroy');
+    Route::patch('/folders/{folder}/restore', [DocumentWorkspaceController::class, 'restoreFolder'])->name('folders.restore');
+    Route::get('/folders/{folder}', [DocumentWorkspaceController::class, 'folder'])->name('folders.show');
 
     // Rute pembuatan didaftarkan SEBELUM `/documents/{document}`. Tanpa urutan
     // ini, "create" akan ditangkap sebagai id dokumen dan berakhir 404.
@@ -58,6 +82,10 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/documents/cari-pengguna', [DocumentController::class, 'cariPengguna'])
         ->name('documents.cari-pengguna');
     Route::post('/documents', [DocumentController::class, 'store'])->name('documents.store');
+    Route::put('/documents/{document}/star', [DocumentWorkspaceController::class, 'star'])->name('documents.star');
+    Route::delete('/documents/{document}/star', [DocumentWorkspaceController::class, 'unstar'])->name('documents.unstar');
+    Route::put('/documents/{document}/folder', [DocumentWorkspaceController::class, 'place'])->name('documents.folder');
+    Route::delete('/documents/{document}/folder', [DocumentWorkspaceController::class, 'moveToRoot'])->name('documents.folder-root');
     Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
 
     // Ubah, nonaktifkan, dan aktifkan kembali — FEAT-10.
@@ -68,10 +96,13 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('/documents/{document}/restore-version', [DocumentController::class, 'restoreVersion'])
         ->middleware('password.confirm')
         ->name('documents.restore-version');
-    // `delete` di sini berarti MENONAKTIFKAN, bukan menghapus baris (FR-10).
+    // `delete` di sini memindahkan dokumen ke Sampah, bukan menghapus baris.
     Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])
         ->middleware('password.confirm')
         ->name('documents.destroy');
+    Route::patch('/documents/{document}/restore-trash', [DocumentController::class, 'restoreTrash'])
+        ->middleware('password.confirm')
+        ->name('documents.restore-trash');
     Route::patch('/documents/{document}/restore', [DocumentController::class, 'restore'])
         ->middleware('password.confirm')
         ->name('documents.restore');
@@ -97,6 +128,12 @@ Route::middleware(['auth'])->group(function (): void {
 */
 
 Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->group(function (): void {
+    // Pemantauan lintas pengguna (FEAT-15b) — beda dari `/activity-log`
+    // biasa yang dibatasi ke aktivitas yang dapat diakses masing-masing.
+    Route::get('/activity-log', [AdminActivityLogController::class, 'index'])->name('activity-log.index');
+    Route::get('/activity-log/cari-pengguna', [AdminActivityLogController::class, 'cariPengguna'])
+        ->name('activity-log.cari-pengguna');
+
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
     Route::post('/users', [UserController::class, 'store'])->middleware('password.confirm')->name('users.store');

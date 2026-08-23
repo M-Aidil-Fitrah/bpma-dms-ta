@@ -13,6 +13,8 @@ export interface ModalProps {
     footer?: ReactNode;
     /** Aksi kontekstual di dekat tombol tutup, mis. salin isi teks. */
     aksiHeader?: ReactNode;
+    /** Dialog konfirmasi memakai hierarki terpusat; formulir tetap rata kiri. */
+    teksTerpusat?: boolean;
     className?: string;
     contentClassName?: string;
 }
@@ -32,6 +34,7 @@ export function Modal({
     children,
     footer,
     aksiHeader,
+    teksTerpusat = false,
     className,
     contentClassName,
 }: ModalProps) {
@@ -46,7 +49,7 @@ export function Modal({
                         className,
                     )}
                 >
-                    <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+                    <div className={cn('flex items-start gap-4 border-b border-line px-5 py-4', teksTerpusat ? 'justify-center text-center' : 'justify-between')}>
                         <div className="min-w-0">
                             <DialogTitle className="text-base font-semibold text-ink">{judul}</DialogTitle>
                             {keterangan && <div className="mt-1 text-sm text-ink-muted">{keterangan}</div>}
@@ -57,15 +60,16 @@ export function Modal({
                                 icon={X}
                                 label={`Tutup ${judul}`}
                                 variant="ghost"
+                                className={teksTerpusat ? 'absolute right-4 top-3' : undefined}
                                 onClick={() => onTutup(false)}
                             />
                         </div>
                     </div>
 
-                    <div className={cn('min-h-0 flex-1 overflow-auto p-5', contentClassName)}>{children}</div>
+                    <div className={cn('min-h-0 flex-1 overflow-auto p-5', teksTerpusat && 'text-center', contentClassName)}>{children}</div>
 
                     {footer && (
-                        <div className="flex flex-col-reverse gap-2 border-t border-line px-5 py-4 sm:flex-row sm:justify-end">
+                        <div className={cn('flex flex-col-reverse gap-2 border-t border-line px-5 py-4 sm:flex-row', teksTerpusat ? 'sm:justify-center' : 'sm:justify-end')}>
                             {footer}
                         </div>
                     )}

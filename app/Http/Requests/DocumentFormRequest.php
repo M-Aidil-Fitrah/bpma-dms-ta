@@ -64,6 +64,7 @@ abstract class DocumentFormRequest extends FormRequest
 
             // -- Mekanisme akses (FR-37 s.d. FR-41) ---------------------------
             'is_shared_to_all' => ['boolean'],
+            'is_private' => ['boolean'],
 
             'min_tingkat_akses' => [
                 'nullable', 'integer',
@@ -119,6 +120,7 @@ abstract class DocumentFormRequest extends FormRequest
         // kolomnya berakhir null alih-alih false.
         $this->merge([
             'is_shared_to_all' => $this->boolean('is_shared_to_all'),
+            'is_private' => $this->boolean('is_private'),
         ]);
     }
 
@@ -150,7 +152,7 @@ abstract class DocumentFormRequest extends FormRequest
         return $this->safe()->only([
             'nomor', 'judul', 'deskripsi', 'category_id',
             'origin_unit_id', 'tanggal', 'masa_berlaku',
-            'is_shared_to_all', 'min_tingkat_akses', 'edit_scope',
+            'is_shared_to_all', 'is_private', 'min_tingkat_akses', 'edit_scope',
         ]);
     }
 
@@ -189,6 +191,22 @@ abstract class DocumentFormRequest extends FormRequest
      */
     private function pastikanAdaMekanismeAkses(Validator $v): void
     {
+        if ($this->boolean('is_private')) {
+            $adaMekanismeBerbagi = $this->boolean('is_shared_to_all')
+                || $this->filled('min_tingkat_akses')
+                || filled($this->input('unit_ids'))
+                || filled($this->input('shared_user_ids'));
+
+            if ($adaMekanismeBerbagi) {
+                $v->errors()->add(
+                    'akses',
+                    'Akses Hanya saya tidak dapat digabungkan dengan mekanisme berbagi lain.',
+                );
+            }
+
+            return;
+        }
+
         $adaSalahSatu = $this->boolean('is_shared_to_all')
             || $this->filled('min_tingkat_akses')
             || filled($this->input('unit_ids'))
@@ -197,8 +215,7 @@ abstract class DocumentFormRequest extends FormRequest
         if (! $adaSalahSatu) {
             $v->errors()->add(
                 'akses',
-                'Aktifkan minimal satu mekanisme akses. Tanpa itu, dokumen hanya '
-                .'dapat dilihat oleh Anda sendiri.',
+                'Aktifkan minimal satu mekanisme akses atau pilih Hanya saya.',
             );
         }
     }

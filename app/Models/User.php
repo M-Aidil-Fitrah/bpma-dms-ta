@@ -15,7 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'jabatan_id', 'unit_id', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'jabatan_id', 'unit_id', 'is_active', 'locale'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -91,8 +91,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Jabatan tingkat 1 (Kepala dan Wakil Kepala BPMA) melihat seluruh dokumen
-     * tanpa terikat mekanisme akses mana pun (FR-44).
+     * Pimpinan BPMA tingkat 1 melihat seluruh dokumen tanpa terikat mekanisme
+     * akses mana pun (FR-44).
      */
     public function isPimpinanTertinggi(): bool
     {

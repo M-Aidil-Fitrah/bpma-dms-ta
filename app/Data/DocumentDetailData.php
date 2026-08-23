@@ -76,6 +76,7 @@ final class DocumentDetailData extends Data
 
         // -- Mekanisme akses --------------------------------------------------
         public array $ringkasan_akses,
+        public bool $is_private,
         public bool $dibagikan_ke_semua,
         public ?int $min_tingkat_akses,
         public array $unit_tujuan,
@@ -98,7 +99,7 @@ final class DocumentDetailData extends Data
         /** Dokumen nonaktif hanya terlihat lewat riwayat versi atau Superadmin. */
         public bool $aktif,
         public bool $boleh_ubah,
-        public bool $boleh_nonaktifkan,
+        public bool $boleh_pindah_ke_sampah,
         public bool $boleh_aktifkan,
         public bool $boleh_pulihkan_versi,
     ) {}
@@ -106,6 +107,7 @@ final class DocumentDetailData extends Data
     public static function fromModel(
         Document $document,
         bool $bolehUbah,
+        bool $bolehPindahKeSampah = false,
         bool $bolehAktifkan = false,
         bool $bolehPulihkanVersi = false,
         array $jabatanTujuan = [],
@@ -146,6 +148,7 @@ final class DocumentDetailData extends Data
             version_note: $document->version_note,
 
             ringkasan_akses: $document->accessSummary(),
+            is_private: $document->is_private,
             dibagikan_ke_semua: $document->is_shared_to_all,
             min_tingkat_akses: $document->min_tingkat_akses,
             unit_tujuan: $document->targetUnits->pluck('nama')->all(),
@@ -169,7 +172,7 @@ final class DocumentDetailData extends Data
 
             aktif: $document->is_active,
             boleh_ubah: $bolehUbah,
-            boleh_nonaktifkan: $bolehUbah,
+            boleh_pindah_ke_sampah: $bolehPindahKeSampah,
             boleh_aktifkan: $bolehAktifkan,
             boleh_pulihkan_versi: $bolehPulihkanVersi,
         );

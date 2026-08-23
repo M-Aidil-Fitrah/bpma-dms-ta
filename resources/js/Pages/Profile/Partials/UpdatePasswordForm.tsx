@@ -5,8 +5,10 @@ import { Input } from '@/Components/ui/Input';
 import { useForm } from '@inertiajs/react';
 import { Check, KeyRound } from 'lucide-react';
 import { type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function UpdatePasswordForm() {
+    const { t } = useTranslation('profile');
     const { data, setData, put, processing, errors, reset, recentlySuccessful } =
         useForm({
             current_password: '',
@@ -33,16 +35,16 @@ export function UpdatePasswordForm() {
         <Card>
             <CardHeader>
                 <div>
-                    <CardTitle>Ubah Kata Sandi</CardTitle>
+                    <CardTitle>{t('ubahPassword.judul')}</CardTitle>
                     <p className="mt-0.5 text-sm text-ink-muted">
-                        Gunakan kata sandi yang panjang dan tidak dipakai di tempat lain.
+                        {t('ubahPassword.deskripsi')}
                     </p>
                 </div>
             </CardHeader>
 
             <CardBody>
                 <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
-                    <Field label="Kata Sandi Saat Ini" error={errors.current_password} required>
+                    <Field label={t('ubahPassword.passwordSaatIniLabel')} error={errors.current_password} required>
                         {(props) => (
                             <Input
                                 {...props}
@@ -55,7 +57,7 @@ export function UpdatePasswordForm() {
                         )}
                     </Field>
 
-                    <Field label="Kata Sandi Baru" error={errors.password} required>
+                    <Field label={t('ubahPassword.passwordBaruLabel')} error={errors.password} required>
                         {(props) => (
                             <Input
                                 {...props}
@@ -69,7 +71,7 @@ export function UpdatePasswordForm() {
                     </Field>
 
                     <Field
-                        label="Ulangi Kata Sandi Baru"
+                        label={t('ubahPassword.ulangiPasswordLabel')}
                         error={errors.password_confirmation}
                         required
                     >
@@ -89,13 +91,13 @@ export function UpdatePasswordForm() {
 
                     <div className="flex items-center gap-3">
                         <Button type="submit" icon={KeyRound} loading={processing}>
-                            Perbarui Kata Sandi
+                            {t('ubahPassword.tombolPerbarui')}
                         </Button>
 
                         {recentlySuccessful && (
                             <span className="flex items-center gap-1.5 text-sm text-success">
                                 <Check className="size-4" aria-hidden />
-                                Tersimpan
+                                {t('tersimpan')}
                             </span>
                         )}
                     </div>

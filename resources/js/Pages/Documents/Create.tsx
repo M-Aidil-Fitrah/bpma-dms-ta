@@ -5,6 +5,7 @@ import {
 import { AppLayout } from '@/Layouts/AppLayout';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface CreateProps {
     opsi: OpsiFormulirDokumen;
@@ -12,9 +13,14 @@ interface CreateProps {
 }
 
 export default function Create({ opsi, pengganti }: CreateProps) {
+    const { t } = useTranslation('documentForm');
+    const judulHalaman = pengganti
+        ? t('documentForm:halamanBuat.judulVersiBaru')
+        : t('documentForm:halamanBuat.judulUnggah');
+
     return (
         <AppLayout
-            title={pengganti ? 'Unggah Versi Baru' : 'Unggah Dokumen'}
+            title={judulHalaman}
             header={
                 <div className="flex min-w-0 items-center gap-2 text-sm">
                     <Link
@@ -22,13 +28,13 @@ export default function Create({ opsi, pengganti }: CreateProps) {
                         className="flex shrink-0 items-center gap-1.5 font-medium text-ink-muted hover:text-ink"
                     >
                         <ArrowLeft className="size-4" aria-hidden />
-                        Semua Dokumen
+                        {t('documentForm:halamanBuat.semuaDokumen')}
                     </Link>
                     <span className="text-ink-subtle" aria-hidden>
                         /
                     </span>
                     <span className="truncate font-semibold text-ink">
-                        {pengganti ? 'Unggah Versi Baru' : 'Unggah Dokumen'}
+                        {judulHalaman}
                     </span>
                 </div>
             }
@@ -50,6 +56,7 @@ export default function Create({ opsi, pengganti }: CreateProps) {
                     version_note: '',
                 }}
                 aksesAwal={{
+                    is_private: pengganti?.is_private ?? false,
                     is_shared_to_all: pengganti?.is_shared_to_all ?? false,
                     min_tingkat_akses: pengganti?.min_tingkat_akses ?? null,
                     unit_ids: pengganti?.unit_ids ?? [],

@@ -1,0 +1,77 @@
+{
+    "index": {
+        "tombolBaru": { "label": "New", "srLabel": "Create new" },
+        "menu": { "unggahDokumen": "Upload document", "buatFolder": "Create folder" },
+        "ariaLokasiFolder": "Folder location",
+        "kosong": {
+            "judul": "Nothing here yet",
+            "deskripsi": "Create a folder to organize the documents you upload, or upload a new document.",
+            "tombolUnggah": "Upload Document"
+        },
+        "bagian": { "folder": "Folder", "dokumen": "Documents" },
+        "dialogFolder": { "judul": "Create folder", "labelNama": "Folder name", "tombolBuat": "Create folder" }
+    },
+    "collection": {
+        "viewToggle": { "tabel": "List view", "grid": "Grid view" },
+        "kosong": { "judul": "No documents yet", "deskripsi": "Documents you star or open will appear here." },
+        "judulBerbintang": "Starred",
+        "judulTerbaruDibuka": "Recently Opened"
+    },
+    "trash": {
+        "judulHalaman": "Trash",
+        "banner": {
+            "judul": "Items in Trash are kept for 30 days",
+            "deskripsi": "Restore documents or folders before their permanent deletion date. Once that date passes, files cannot be recovered."
+        },
+        "jumlahItem": "{{jumlah}} items",
+        "kosong": {
+            "judul": "Trash is empty",
+            "deskripsi": "Documents and folders moved to Trash will stay here for 30 days."
+        },
+        "bagian": { "folder": "Folder", "dokumen": "Documents" },
+        "dihapusPermanen": "Permanently deleted {{tanggal}}",
+        "tombolPulihkan": { "label": "Restore", "srLabel": "Restore {{nama}}" },
+        "retensi": {
+            "tersisa": "{{hari}} days left to restore",
+            "hariIni": "Deleted today",
+            "belumTersedia": "Deletion date not yet available"
+        }
+    },
+    "documentCard": {
+        "bintang": { "beri": "Star {{judul}}", "hapus": "Unstar {{judul}}" },
+        "pindahkanKeSampah": {
+            "dialog": {
+                "judul": "Move document to Trash?",
+                "labelSetuju": "Move to Trash",
+                "isiSebelum": "Document",
+                "isiSesudah": "will no longer appear in My Documents or search results.",
+                "isiKedua": "You can still restore it from Trash within 30 days."
+            }
+        },
+        "pindahkan": {
+            "label": "Move",
+            "dialog": {
+                "judul": "Move document",
+                "keterangan": "Choose a destination folder, or show the document directly on the My Documents page.",
+                "labelFolder": "Destination folder",
+                "tanpaFolder": "No folder — show directly in My Documents",
+                "tombolPindahkan": "Move"
+            }
+        }
+    },
+    "folderCard": {
+        "ubahNama": {
+            "label": "Rename folder {{nama}}",
+            "dialog": { "judul": "Rename folder", "labelNama": "Folder name" }
+        },
+        "pindahkanKeSampah": {
+            "label": "Move folder {{nama}} to Trash",
+            "dialog": {
+                "judul": "Move folder to Trash?",
+                "labelSetuju": "Yes, move it",
+                "isiSebelum": "Folder",
+                "isiSesudah": "and all its subfolders can be restored within 30 days."
+            }
+        }
+    }
+}

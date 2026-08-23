@@ -1,0 +1,243 @@
+{
+    "form": {
+        "peringatanBatasUnggah": {
+            "judul": "Batas unggahan di bawah semestinya",
+            "keterangan": "Aplikasi menetapkan {{batasDijanjikan}}, tapi mesin ini hanya sanggup {{batasUnggah}}. Setelan PHP atau server web perlu dinaikkan — lihat README bagian Batas Ukuran Unggahan."
+        },
+        "kartuBerkas": {
+            "judul": "Berkas Dokumen"
+        },
+        "peringatanFormatVersi": {
+            "judul": "Format versi harus sama",
+            "keterangan": "Versi baru wajib menggunakan format {{format}} seperti versi terbaru saat ini."
+        },
+        "formatBerkas": {
+            "gambar": "gambar",
+            "pdf": "PDF",
+            "word": "dokumen Word"
+        },
+        "kartuInformasi": {
+            "judul": "Informasi Dokumen"
+        },
+        "nomor": {
+            "label": "Nomor Dokumen",
+            "placeholder": "042/BPMA/DPR-TPL/VIII/2026"
+        },
+        "unitPenerbit": {
+            "label": "Unit Penerbit",
+            "placeholderSelect": "Pilih unit kerja",
+            "keteranganDitentukan": "Ditentukan dari akun Anda dan tidak dapat diubah di formulir.",
+            "keteranganPilih": "Pilih unit kerja yang bertanggung jawab atas dokumen ini."
+        },
+        "masaBerlaku": {
+            "label": "Masa Berlaku",
+            "keterangan": "Kosongkan Masa Berlaku bila dokumen berlaku tanpa batas waktu."
+        },
+        "tanggal": {
+            "label": "Tanggal Dokumen"
+        },
+        "judul": {
+            "label": "Judul"
+        },
+        "kategori": {
+            "label": "Kategori",
+            "placeholder": "Pilih kategori"
+        },
+        "editScope": {
+            "label": "Siapa yang Boleh Mengubah",
+            "opsi": {
+                "pemilikSaja": "Hanya pemilik dokumen",
+                "samaSepertiAkses": "Sama seperti akses"
+            }
+        },
+        "deskripsi": {
+            "label": "Deskripsi"
+        },
+        "catatanVersi": {
+            "label": "Catatan Versi",
+            "hintUbah": "Jelaskan perubahan metadata atau akses pada revisi ini.",
+            "hintVersiBaru": "Jelaskan perubahan isi pada versi major baru ini.",
+            "placeholder": "Contoh: memperbaiki masa berlaku dan akses unit"
+        },
+        "kartuAkses": {
+            "judul": "Pengaturan Akses",
+            "keterangan": "Boleh mengaktifkan lebih dari satu sekaligus."
+        },
+        "tombol": {
+            "mengunggah": "Mengunggah…",
+            "unggahDokumen": "Unggah Dokumen",
+            "unggahVersiBaru": "Unggah versi baru",
+            "menyimpan": "Menyimpan…"
+        },
+        "berkasTerkunci": {
+            "keterangan": "Metadata dan akses dapat diubah di halaman ini. Bila isi berkas berubah, buat versi baru agar riwayat dokumen ini tetap utuh."
+        },
+        "versiTerbaru": {
+            "label": "Versi terbaru saat ini"
+        }
+    },
+    "aksesMekanisme": {
+        "galat": {
+            "judul": "Mekanisme akses belum diatur"
+        },
+        "hanyaSaya": {
+            "judul": "Hanya saya",
+            "keterangan": "Hanya Anda dan Superadmin untuk audit serta pemulihan yang dapat membuka dokumen ini."
+        },
+        "bagikanSemua": {
+            "judul": "Bagikan ke semua",
+            "keterangan": "Seluruh pengguna internal dapat melihat dokumen ini."
+        },
+        "bagikanJenjang": {
+            "judul": "Bagikan ke jabatan tertentu ke atas",
+            "keterangan": "Semua pengguna aktif pada jenjang yang dipilih dapat membuka, di seluruh unit kerja."
+        },
+        "bagikanUnit": {
+            "judul": "Bagikan ke unit",
+            "keteranganDipilih": "{{jumlah}} unit dipilih.",
+            "keteranganKosong": "Pilih unit kerja yang berhak melihat."
+        },
+        "bagikanOrang": {
+            "judul": "Bagikan ke orang tertentu",
+            "keteranganDipilih": "{{jumlah}} orang dipilih.",
+            "keteranganKosong": "Cari orang berdasarkan nama, lintas unit dan jabatan."
+        },
+        "jenjangPicker": {
+            "ariaLabel": "Jabatan minimum yang dapat melihat",
+            "opsiKeAtas": "{{nama}} ke atas",
+            "jumlahOrangMelihat": "{{jumlah}} orang akan dapat melihat dokumen ini:",
+            "tidakTermasuk": "Tidak termasuk:"
+        },
+        "ringkasJenjang": "{{jumlah}} orang berjabatan {{nama}}",
+        "pratinjau": {
+            "kosong": {
+                "judul": "Belum ada mekanisme akses yang aktif",
+                "keterangan": "Aktifkan minimal satu mekanisme berbagi atau pilih Hanya saya."
+            },
+            "pribadi": {
+                "judul": "Dokumen pribadi",
+                "keterangan": "Dokumen ini hanya dapat dilihat oleh Anda sebagai pengunggah dan Superadmin untuk audit serta pemulihan."
+            },
+            "keSemua": {
+                "judul": "Dokumen ini akan terlihat semua orang",
+                "keterangan": "Mekanisme lain yang aktif tidak menambah apa pun — semua pengguna internal sudah dapat melihatnya lewat mekanisme “bagikan ke semua”."
+            },
+            "judulDaftar": "Yang akan dapat melihat dokumen ini",
+            "jenjangDiUnitManaPun": "{{ringkasan}}, di unit mana pun",
+            "anggotaUnit": "Anggota {{jumlah}} unit: {{nama}}",
+            "orangTertentu": "{{jumlah}} orang tertentu: {{nama}}",
+            "andaSendiri": "Anda sendiri sebagai pengunggah, Superadmin, dan jabatan tingkat tertinggi"
+        }
+    },
+    "aksesRingkasan": {
+        "labelSemua": "Semua",
+        "labelTerbatas": "Terbatas",
+        "labelJumlahMekanisme": "{{jumlah}} mekanisme",
+        "labelUnitTertentu": "Unit tertentu",
+        "labelJenjangJabatan": "Jenjang jabatan"
+    },
+    "panelAkses": {
+        "mekanisme": {
+            "bagikanSemua": {
+                "judul": "Bagikan ke semua",
+                "keterangan": "Seluruh pengguna internal dapat melihat dokumen ini."
+            },
+            "bagikanJabatan": {
+                "judul": "Bagikan ke jabatan"
+            },
+            "bagikanUnit": {
+                "judul": "Bagikan ke unit",
+                "keterangan": "{{jumlah}} unit kerja dapat melihat dokumen ini."
+            },
+            "bagikanOrang": {
+                "judul": "Bagikan ke orang tertentu",
+                "keterangan": "{{jumlah}} orang mendapat akses langsung."
+            }
+        },
+        "ringkasan": {
+            "pribadi": "Hanya Anda sebagai pengunggah dan Superadmin untuk audit serta pemulihan yang dapat membuka dokumen ini.",
+            "tanpaMekanisme": "Hanya pemilik dokumen, Superadmin, dan Pimpinan BPMA yang dapat membuka dokumen ini.",
+            "labelAkses": "{{jumlah}} aktif"
+        },
+        "kartuUtama": {
+            "labelKategori": "Akses dokumen",
+            "hanyaSaya": "Hanya saya",
+            "siapaBolehMembuka": "Siapa yang dapat membuka",
+            "ariaRingkasan": "Ringkasan akses aktif"
+        },
+        "jalurAkses": {
+            "judul": "Jalur akses",
+            "jumlahAktif": "{{jumlah}} mekanisme aktif",
+            "aktif": "Aktif"
+        },
+        "wewenangUbah": {
+            "judul": "Wewenang mengubah",
+            "siapaBolehMengubah": "Siapa yang dapat mengubah",
+            "hanyaPengunggah": "Hanya pengunggah yang dapat mengubah dokumen ini.",
+            "samaSepertiAkses": "Pengguna yang dapat melihat dokumen ini juga dapat mengubahnya."
+        },
+        "daftarJabatan": {
+            "kosong": "Belum ada jabatan aktif yang sesuai dengan jalur ini.",
+            "keterangan": "Semua pengguna aktif pada jabatan berikut, di seluruh unit kerja:",
+            "ariaLabel": "Jabatan yang dapat membuka"
+        },
+        "keteranganJabatan": {
+            "kosong": "Tidak ada jabatan aktif yang termasuk dalam jenjang ini.",
+            "isi": "Semua pengguna aktif dengan jabatan {{daftar}} di seluruh unit kerja dapat membuka."
+        },
+        "daftarUnit": {
+            "ariaLabel": "Unit kerja yang dapat membuka"
+        },
+        "daftarOrang": {
+            "ariaLabel": "Orang yang dapat membuka"
+        },
+        "gabungkan": {
+            "dan": "dan"
+        }
+    },
+    "pohonUnit": {
+        "tutupDivisi": "Tutup divisi {{nama}}",
+        "bukaDivisi": "Buka divisi {{nama}}",
+        "jumlahDivisi": "{{jumlah}} divisi"
+    },
+    "pilihUnit": {
+        "semuaUnitAsal": "Semua unit asal",
+        "ariaLabelPohon": "Pilih unit asal",
+        "tutupDivisi": "Tutup divisi {{nama}}",
+        "bukaDivisi": "Buka divisi {{nama}}"
+    },
+    "pemilihPengguna": {
+        "placeholderCari": "Ketik nama, minimal 2 huruf…",
+        "ariaCari": "Cari pengguna",
+        "tidakAdaHasil": "Tidak ada pengguna aktif yang cocok.",
+        "hapusPengguna": "Hapus {{nama}}"
+    },
+    "unggahBerkas": {
+        "galatUkuran": "Ukuran berkas {{ukuran}} melebihi batas {{batas}}.",
+        "hapusBerkas": "Hapus berkas",
+        "seretKeSini": "Seret berkas ke sini, atau",
+        "pilihBerkas": "Pilih Berkas",
+        "ambilFoto": "Ambil Foto",
+        "keterangan": "Semua tipe berkas diterima. Batas ukuran {{batas}}.",
+        "ariaPilihBerkas": "Pilih berkas dokumen"
+    },
+    "progresUnggah": {
+        "ariaLabel": "Progres unggah",
+        "persenSelesai": "{{persen}}% selesai",
+        "perDetik": "{{kecepatan}}/detik",
+        "sisaWaktu": "sisa {{waktu}}",
+        "selesaiTersimpan": "Berkas selesai terkirim, sedang disimpan di server…",
+        "detik": "{{jumlah}} detik",
+        "menit": "{{jumlah}} menit",
+        "jam": "{{jumlah}} jam"
+    },
+    "halamanBuat": {
+        "judulVersiBaru": "Unggah Versi Baru",
+        "judulUnggah": "Unggah Dokumen",
+        "semuaDokumen": "Semua Dokumen"
+    },
+    "halamanUbah": {
+        "judul": "Ubah — {{judul}}",
+        "detailDokumen": "Detail Dokumen"
+    }
+}

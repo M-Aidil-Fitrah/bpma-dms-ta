@@ -1,16 +1,19 @@
 import { Button } from '@/Components/ui/Button';
-import { usePasswordConfirmation } from '@/Components/auth/PasswordConfirmationProvider';
 import { ConfirmDialog } from '@/Components/ui/ConfirmDialog';
+import { Field } from '@/Components/ui/Field';
+import { Input } from '@/Components/ui/Input';
 import { Link, router } from '@inertiajs/react';
-import { ArchiveRestore, Download, EyeOff, Pencil } from 'lucide-react';
+import axios from 'axios';
+import { ArchiveRestore, Download, LockKeyhole, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface DocumentHeaderActionsProps {
     dokumenId: number;
     judul: string;
     aktif: boolean;
     bolehUbah: boolean;
-    bolehNonaktifkan: boolean;
+    bolehPindahKeSampah: boolean;
     /** Hanya Superadmin yang dapat mengaktifkan kembali (FR-10). */
     bolehAktifkan: boolean;
 }
@@ -28,32 +31,50 @@ export function DocumentHeaderActions({
     judul,
     aktif,
     bolehUbah,
-    bolehNonaktifkan,
+    bolehPindahKeSampah,
     bolehAktifkan,
 }: DocumentHeaderActionsProps) {
-    const konfirmasikan = usePasswordConfirmation();
-    const [tanyaNonaktif, setTanyaNonaktif] = useState(false);
+    const { t } = useTranslation(['documentBrowse', 'common']);
+    const [tanyaSampah, setTanyaSampah] = useState(false);
+    const [konfirmasiSandi, setKonfirmasiSandi] = useState(false);
+    const [password, setPassword] = useState('');
+    const [galatPassword, setGalatPassword] = useState<string>();
     const [memproses, setMemproses] = useState(false);
 
-    function nonaktifkan() {
-        konfirmasikan(jalankanNonaktifkan);
+    function lanjutkanKeKonfirmasiSandi() {
+        setKonfirmasiSandi(true);
+        setGalatPassword(undefined);
     }
 
-    function jalankanNonaktifkan() {
+    async function pindahKeSampah() {
+        if (!password) {
+            setGalatPassword(t('documentBrowse:headerActions.errorPasswordKosong'));
+
+            return;
+        }
+
         setMemproses(true);
-        router.delete(`/documents/${dokumenId}`, {
-            onFinish: () => {
-                setMemproses(false);
-                setTanyaNonaktif(false);
-            },
-        });
+        setGalatPassword(undefined);
+
+        try {
+            await axios.post('/confirm-password', { password }, { headers: { Accept: 'application/json' } });
+            router.delete(`/documents/${dokumenId}`, {
+                onFinish: () => {
+                    setMemproses(false);
+                    tutupKonfirmasiSampah();
+                },
+            });
+        } catch (error) {
+            if (axios.isAxiosError<{ errors?: { password?: string[] } }>(error)) {
+                setGalatPassword(error.response?.data.errors?.password?.[0] ?? t('documentBrowse:headerActions.errorPasswordTidakValid'));
+            } else {
+                setGalatPassword(t('documentBrowse:headerActions.errorPasswordGagalProses'));
+            }
+            setMemproses(false);
+        }
     }
 
     function aktifkan() {
-        konfirmasikan(jalankanAktifkan);
-    }
-
-    function jalankanAktifkan() {
         setMemproses(true);
         router.patch(
             `/documents/${dokumenId}/restore`,
@@ -62,33 +83,47 @@ export function DocumentHeaderActions({
         );
     }
 
+    function tutupKonfirmasiSampah() {
+        if (memproses) return;
+
+        setTanyaSampah(false);
+        setKonfirmasiSandi(false);
+        setPassword('');
+        setGalatPassword(undefined);
+    }
+
     return (
         <>
             <a href={`/documents/${dokumenId}/file`} download>
                 <Button icon={Download} size="sm" variant="secondary">
-                    <span className="hidden md:inline">Unduh</span>
-                    <span className="sr-only md:hidden">Unduh</span>
+                    <span className="hidden md:inline">{t('common:aksi.unduh')}</span>
+                    <span className="sr-only md:hidden">{t('common:aksi.unduh')}</span>
                 </Button>
             </a>
 
             {bolehUbah && aktif && (
                 <Link href={`/documents/${dokumenId}/edit`}>
                     <Button icon={Pencil} size="sm">
-                    <span className="hidden md:inline">Ubah</span>
-                    <span className="sr-only md:hidden">Ubah</span>
+                    <span className="hidden md:inline">{t('common:aksi.ubah')}</span>
+                    <span className="sr-only md:hidden">{t('common:aksi.ubah')}</span>
                     </Button>
                 </Link>
             )}
 
-            {bolehNonaktifkan && aktif && (
+            {bolehPindahKeSampah && aktif && (
                 <Button
-                    icon={EyeOff}
+                    icon={Trash2}
                     size="sm"
                     variant="secondary"
-                    onClick={() => setTanyaNonaktif(true)}
+                    onClick={() => {
+                        setTanyaSampah(true);
+                        setKonfirmasiSandi(false);
+                        setPassword('');
+                        setGalatPassword(undefined);
+                    }}
                 >
-                    <span className="hidden md:inline">Nonaktifkan</span>
-                    <span className="sr-only md:hidden">Nonaktifkan</span>
+                    <span className="hidden md:inline">{t('documentBrowse:headerActions.pindahkanKeSampah')}</span>
+                    <span className="sr-only md:hidden">{t('documentBrowse:headerActions.pindahkanKeSampah')}</span>
                 </Button>
             )}
 
@@ -99,29 +134,46 @@ export function DocumentHeaderActions({
                     loading={memproses}
                     onClick={aktifkan}
                 >
-                    <span className="hidden md:inline">Aktifkan Kembali</span>
-                    <span className="sr-only md:hidden">Aktifkan Kembali</span>
+                    <span className="hidden md:inline">{t('documentBrowse:headerActions.aktifkanKembali')}</span>
+                    <span className="sr-only md:hidden">{t('documentBrowse:headerActions.aktifkanKembali')}</span>
                 </Button>
             )}
 
             <ConfirmDialog
-                terbuka={tanyaNonaktif}
-                onTutup={() => setTanyaNonaktif(false)}
-                onSetuju={nonaktifkan}
-                judul="Nonaktifkan dokumen ini?"
-                labelSetuju="Ya, nonaktifkan"
-                ikon={EyeOff}
+                terbuka={tanyaSampah}
+                onTutup={tutupKonfirmasiSampah}
+                onSetuju={konfirmasiSandi ? pindahKeSampah : lanjutkanKeKonfirmasiSandi}
+                judul={konfirmasiSandi ? t('documentBrowse:headerActions.konfirmasiSandi.judul') : t('documentBrowse:headerActions.konfirmasiSampah.judul')}
+                labelSetuju={konfirmasiSandi ? t('documentBrowse:headerActions.konfirmasiSandi.labelSetuju') : t('common:aksi.lanjutkan')}
+                ikon={konfirmasiSandi ? LockKeyhole : Trash2}
                 memproses={memproses}
             >
-                <p>
-                    <span className="font-medium text-ink">{judul}</span> akan hilang dari
-                    daftar dokumen dan hasil pencarian untuk semua orang.
-                </p>
-                <p>
-                    Dokumennya <span className="font-medium text-ink">tidak dihapus</span>.
-                    Berkas, riwayat, dan catatan aktivitasnya tetap tersimpan, dan
-                    Superadmin dapat mengaktifkannya kembali kapan saja.
-                </p>
+                {konfirmasiSandi ? (
+                    <Field label={t('documentBrowse:headerActions.konfirmasiSandi.labelKataSandi')} error={galatPassword} required>
+                        {(input) => (
+                            <Input
+                                {...input}
+                                type="password"
+                                autoComplete="current-password"
+                                icon={LockKeyhole}
+                                value={password}
+                                autoFocus
+                                invalid={Boolean(galatPassword)}
+                                onChange={(event) => setPassword(event.target.value)}
+                            />
+                        )}
+                    </Field>
+                ) : (
+                    <>
+                        <p>
+                            <span className="font-medium text-ink">{judul}</span>{' '}
+                            {t('documentBrowse:headerActions.konfirmasiSampah.teksUtama')}
+                        </p>
+                        <p>
+                            {t('documentBrowse:headerActions.konfirmasiSampah.teksLanjutan')}
+                        </p>
+                    </>
+                )}
             </ConfirmDialog>
         </>
     );

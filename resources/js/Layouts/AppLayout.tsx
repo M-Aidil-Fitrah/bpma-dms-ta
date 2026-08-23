@@ -1,5 +1,6 @@
 import { IconButton } from '@/Components/ui/IconButton';
 import { DmsBrand } from '@/Components/ui/DmsBrand';
+import { LanguageSwitcher } from '@/Components/domain/LanguageSwitcher';
 import { UserMenu } from '@/Layouts/Partials/UserMenu';
 import { SidebarNav } from '@/Layouts/Partials/SidebarNav';
 import { cn } from '@/lib/cn';
@@ -7,6 +8,7 @@ import { Dialog, DialogPanel } from '@headlessui/react';
 import { Head, usePage } from '@inertiajs/react';
 import { Menu, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface AppLayoutProps {
     title: string;
@@ -31,6 +33,7 @@ export interface AppLayoutProps {
  * platform (`Tentang_Project.md` §5c).
  */
 export function AppLayout({ title, header, actions, children }: AppLayoutProps) {
+    const { t } = useTranslation('nav');
     const { auth } = usePage().props;
 
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -64,16 +67,24 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
                 <div className="fixed inset-0 flex">
                     <DialogPanel className="flex w-sidebar max-w-[85vw] flex-col bg-surface">
                         <div className="flex h-20 items-center justify-between border-b border-line px-4">
-                            <DmsBrand />
+                            <DmsBrand className="flex-1" />
                             <IconButton
                                 icon={X}
-                                label="Tutup navigasi"
+                                label={t('tutupNavigasi')}
                                 variant="ghost"
                                 onClick={() => setDrawerOpen(false)}
                             />
                         </div>
 
                         <SidebarNav onNavigate={() => setDrawerOpen(false)} />
+
+                        {/* Duplikat sengaja: pemilih bahasa disembunyikan dari
+                            bilah atas di layar sempit karena ruangnya sudah
+                            padat, tapi tetap harus terjangkau — di sini,
+                            bukan hilang sama sekali. */}
+                        <div className="border-t border-line p-3">
+                            <LanguageSwitcher />
+                        </div>
                     </DialogPanel>
                 </div>
             </Dialog>
@@ -81,10 +92,10 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
             {/* -- Area konten ---------------------------------------------- */}
             <div className="lg:pl-sidebar">
                 <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
-                    <div className="flex min-h-20 items-center gap-3 px-4 py-3 sm:px-6">
+                    <div className="flex min-h-20 items-center gap-2 px-3 py-3 sm:gap-3 sm:px-6">
                         <IconButton
                             icon={Menu}
-                            label="Buka navigasi"
+                            label={t('bukaNavigasi')}
                             variant="ghost"
                             className="lg:hidden"
                             onClick={() => setDrawerOpen(true)}
@@ -101,6 +112,10 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
                         {actions && (
                             <div className="flex shrink-0 items-center gap-2">{actions}</div>
                         )}
+
+                        <div className="hidden shrink-0 sm:block">
+                            <LanguageSwitcher />
+                        </div>
 
                         {/* Satu-satunya tempat menu pengguna berada. Sempat
                             ada pula di kaki bilah sisi, tapi itu berarti dua
@@ -127,7 +142,7 @@ function SidebarBrand({ className }: { className?: string }) {
     return (
         <div
             className={cn(
-                'flex h-20 shrink-0 items-center border-b border-line px-4',
+                'flex h-20 shrink-0 items-center justify-center border-b border-line px-4',
                 className,
             )}
         >

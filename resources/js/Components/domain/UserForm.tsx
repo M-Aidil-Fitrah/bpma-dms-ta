@@ -7,6 +7,7 @@ import { Select } from '@/Components/ui/Select';
 import { Link, useForm } from '@inertiajs/react';
 import { Save, UserPlus } from 'lucide-react';
 import { type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface OpsiFormulirPengguna {
     jabatan: { id: number; nama: string; tingkat_akses: number }[];
@@ -42,6 +43,7 @@ export interface UserFormProps {
  * saat menambah, dan sama sekali tidak ada medannya saat menyunting.
  */
 export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
+    const { t } = useTranslation(['users', 'common']);
     const konfirmasikan = usePasswordConfirmation();
     const { data, setData, post, patch, processing, errors } = useForm<
         NilaiAwalPengguna & { password: string; password_confirmation: string }
@@ -70,10 +72,10 @@ export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
         <form onSubmit={handleSubmit} className="max-w-xl space-y-5">
             <Card>
                 <CardHeader>
-                    <CardTitle>Informasi Akun</CardTitle>
+                    <CardTitle>{t('users:form.accountInfoTitle')}</CardTitle>
                 </CardHeader>
                 <CardBody className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Nama" error={errors.name} required className="sm:col-span-2">
+                    <Field label={t('users:form.nameLabel')} error={errors.name} required className="sm:col-span-2">
                         {(props) => (
                             <Input
                                 {...props}
@@ -84,7 +86,7 @@ export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
                         )}
                     </Field>
 
-                    <Field label="Surel" error={errors.email} required className="sm:col-span-2">
+                    <Field label={t('users:form.emailLabel')} error={errors.email} required className="sm:col-span-2">
                         {(props) => (
                             <Input
                                 {...props}
@@ -96,11 +98,11 @@ export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
                         )}
                     </Field>
 
-                    <Field label="Jabatan" error={errors.jabatan_id} required>
+                    <Field label={t('users:form.jabatanLabel')} error={errors.jabatan_id} required>
                         {(props) => (
                             <Select
                                 {...props}
-                                placeholder="Pilih jabatan"
+                                placeholder={t('users:form.jabatanPlaceholder')}
                                 value={data.jabatan_id}
                                 invalid={Boolean(errors.jabatan_id)}
                                 options={opsi.jabatan.map((j) => ({ value: j.id, label: j.nama }))}
@@ -117,15 +119,15 @@ export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
                     </Field>
 
                     <Field
-                        label="Unit Kerja"
+                        label={t('users:form.unitLabel')}
                         error={errors.unit_id}
                         required={!jabatanTertinggi}
-                        hint={jabatanTertinggi ? 'Pimpinan tingkat tertinggi tidak ditempatkan pada unit kerja.' : undefined}
+                        hint={jabatanTertinggi ? t('users:form.unitHintTopLevel') : undefined}
                     >
                         {(props) => (
                             <Select
                                 {...props}
-                                placeholder={jabatanTertinggi ? 'Tidak ditempatkan pada unit kerja' : 'Pilih unit'}
+                                placeholder={jabatanTertinggi ? t('users:form.unitPlaceholderTopLevel') : t('users:form.unitPlaceholder')}
                                 value={data.unit_id}
                                 disabled={jabatanTertinggi}
                                 invalid={Boolean(errors.unit_id)}
@@ -141,15 +143,14 @@ export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
                 <Card>
                     <CardHeader>
                         <div>
-                            <CardTitle>Kata Sandi Awal</CardTitle>
+                            <CardTitle>{t('users:form.initialPasswordTitle')}</CardTitle>
                             <p className="mt-0.5 text-sm text-ink-muted">
-                                Sampaikan langsung kepada pemilik akun. Tidak ada tautan
-                                surel — aplikasi ini tidak mengirim surel apa pun.
+                                {t('users:form.initialPasswordDescription')}
                             </p>
                         </div>
                     </CardHeader>
                     <CardBody className="grid gap-4 sm:grid-cols-2">
-                        <Field label="Kata Sandi" error={errors.password} required>
+                        <Field label={t('users:form.passwordLabel')} error={errors.password} required>
                             {(props) => (
                                 <Input
                                     {...props}
@@ -161,7 +162,7 @@ export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
                             )}
                         </Field>
 
-                        <Field label="Konfirmasi Kata Sandi" error={errors.password_confirmation}>
+                        <Field label={t('users:form.passwordConfirmLabel')} error={errors.password_confirmation}>
                             {(props) => (
                                 <Input
                                     {...props}
@@ -184,16 +185,16 @@ export function UserForm({ opsi, awal, aksi, batal, mode }: UserFormProps) {
                 >
                     {mode === 'buat'
                         ? processing
-                            ? 'Menyimpan…'
-                            : 'Tambah Pengguna'
+                            ? t('users:form.saving')
+                            : t('users:form.submitCreate')
                         : processing
-                          ? 'Menyimpan…'
-                          : 'Simpan Perubahan'}
+                          ? t('users:form.saving')
+                          : t('users:form.submitUpdate')}
                 </Button>
 
                 <Link href={batal} className="w-full sm:w-auto">
                     <Button type="button" variant="secondary" className="w-full">
-                        Batal
+                        {t('users:form.cancel')}
                     </Button>
                 </Link>
             </div>

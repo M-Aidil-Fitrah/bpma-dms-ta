@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 import { Link, router } from '@inertiajs/react';
 import { KeyRound, MoreHorizontal, Pencil, UserCheck, UserX } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface UserActionsProps {
     userId: number;
@@ -27,6 +28,7 @@ export interface UserActionsProps {
  * `UserController::destroy()` (FR-43).
  */
 export function UserActions({ userId, nama, aktif, diriSendiri, className }: UserActionsProps) {
+    const { t } = useTranslation(['users', 'common']);
     const konfirmasikan = usePasswordConfirmation();
     const [tanyaNonaktif, setTanyaNonaktif] = useState(false);
     const [resetSandi, setResetSandi] = useState(false);
@@ -62,11 +64,11 @@ export function UserActions({ userId, nama, aktif, diriSendiri, className }: Use
     return (
         <div className={cn('flex items-center justify-end gap-1', className)}>
             <Link href={`/admin/users/${userId}/edit`} tabIndex={-1}>
-                <IconButton icon={Pencil} label="Ubah pengguna" size="sm" />
+                <IconButton icon={Pencil} label={t('users:actions.editUser')} size="sm" />
             </Link>
 
             <Dropdown
-                trigger={<IconButton icon={MoreHorizontal} label="Aksi lainnya" size="sm" />}
+                trigger={<IconButton icon={MoreHorizontal} label={t('users:actions.moreActions')} size="sm" />}
                 panelClassName="w-56"
             >
                     <DropdownItem>
@@ -76,7 +78,7 @@ export function UserActions({ userId, nama, aktif, diriSendiri, className }: Use
                             className="flex min-h-touch w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-muted data-[focus]:bg-surface-sunken data-[focus]:text-ink sm:min-h-0"
                         >
                             <KeyRound className="size-4" aria-hidden />
-                            Atur ulang kata sandi
+                            {t('users:actions.resetPassword')}
                         </button>
                     </DropdownItem>
 
@@ -89,7 +91,7 @@ export function UserActions({ userId, nama, aktif, diriSendiri, className }: Use
                                     className="flex min-h-touch w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-danger data-[focus]:bg-danger-soft sm:min-h-0"
                                 >
                                     <UserX className="size-4" aria-hidden />
-                                    Nonaktifkan
+                                    {t('users:actions.deactivate')}
                                 </button>
                             </DropdownItem>
                         )
@@ -101,7 +103,7 @@ export function UserActions({ userId, nama, aktif, diriSendiri, className }: Use
                                 className="flex min-h-touch w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-muted data-[focus]:bg-surface-sunken data-[focus]:text-ink sm:min-h-0"
                             >
                                 <UserCheck className="size-4" aria-hidden />
-                                Aktifkan kembali
+                                {t('users:actions.reactivate')}
                             </button>
                         </DropdownItem>
                     )}
@@ -111,19 +113,19 @@ export function UserActions({ userId, nama, aktif, diriSendiri, className }: Use
                 terbuka={tanyaNonaktif}
                 onTutup={() => setTanyaNonaktif(false)}
                 onSetuju={nonaktifkan}
-                judul={`Nonaktifkan ${nama}?`}
-                labelSetuju="Ya, nonaktifkan"
+                judul={t('users:actions.deactivateConfirm.title', { name: nama })}
+                labelSetuju={t('users:actions.deactivateConfirm.confirmLabel')}
                 ikon={UserX}
                 memproses={memproses}
             >
                 <p>
-                    Akun <span className="font-medium text-ink">{nama}</span> tidak akan
-                    bisa masuk lagi, dan sesi yang sedang berjalan langsung terputus.
+                    {t('users:actions.deactivateConfirm.line1Before')} <span className="font-medium text-ink">{nama}</span>{' '}
+                    {t('users:actions.deactivateConfirm.line1After')}
                 </p>
                 <p>
-                    Akunnya <span className="font-medium text-ink">tidak dihapus</span>.
-                    Riwayat dan dokumen yang pernah diunggahnya tetap tersimpan, dan dapat
-                    diaktifkan kembali kapan saja.
+                    {t('users:actions.deactivateConfirm.line2Before')}{' '}
+                    <span className="font-medium text-ink">{t('users:actions.deactivateConfirm.line2Bold')}</span>.{' '}
+                    {t('users:actions.deactivateConfirm.line2After')}
                 </p>
             </ConfirmDialog>
 

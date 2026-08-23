@@ -2,6 +2,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { cn } from '@/lib/cn';
 import { ChevronDown, Loader2, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface PenggunaFilterPilihan {
     id: number;
@@ -32,6 +33,7 @@ export function UserFilterSelect({
     'aria-describedby': describedBy,
     'aria-invalid': invalid = false,
 }: UserFilterSelectProps) {
+    const { t } = useTranslation(['users', 'common']);
     const [menuTerbuka, setMenuTerbuka] = useState(false);
     const [kata, setKata] = useState('');
     const [hasil, setHasil] = useState<PenggunaFilterPilihan[]>([]);
@@ -108,7 +110,7 @@ export function UserFilterSelect({
                     invalid ? 'border-danger focus:border-danger focus:ring-danger' : 'border-line',
                 )}
             >
-                <span className="truncate">{nilai?.nama ?? 'Semua pengguna'}</span>
+                <span className="truncate">{nilai?.nama ?? t('users:filterSelect.allUsers')}</span>
                 <ChevronDown
                     className={cn('size-4 shrink-0 text-ink-subtle transition-transform', menuTerbuka && 'rotate-180')}
                     aria-hidden
@@ -126,15 +128,15 @@ export function UserFilterSelect({
                             nilai === null ? 'bg-brand-50 text-brand-700' : 'text-ink-muted hover:bg-surface-sunken',
                         )}
                     >
-                        Semua pengguna
+                        {t('users:filterSelect.allUsers')}
                     </button>
 
                     <div className="relative">
                         <input
                             type="search"
                             value={kata}
-                            placeholder="Ketik nama, minimal 2 huruf…"
-                            aria-label="Cari pengguna"
+                            placeholder={t('users:filterSelect.searchPlaceholder')}
+                            aria-label={t('users:filterSelect.searchAriaLabel')}
                             onChange={(e) => setKata(e.target.value)}
                             className="h-9 w-full rounded-lg border border-line bg-surface px-8 text-sm text-ink focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 [&::-webkit-search-cancel-button]:appearance-none"
                         />
@@ -145,7 +147,7 @@ export function UserFilterSelect({
                     </div>
 
                     {kata.trim().length >= 2 && !mencari && hasil.length === 0 && (
-                        <p className="px-2 py-2 text-sm text-ink-subtle">Tidak ada pengguna yang cocok.</p>
+                        <p className="px-2 py-2 text-sm text-ink-subtle">{t('users:filterSelect.noResults')}</p>
                     )}
 
                     {hasil.length > 0 && (

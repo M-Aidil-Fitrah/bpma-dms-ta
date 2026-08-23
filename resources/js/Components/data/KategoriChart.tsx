@@ -2,6 +2,7 @@ import { Skeleton } from '@/Components/ui/Skeleton';
 import { formatAngka } from '@/lib/format';
 import { ArcElement, Chart, DoughnutController, Tooltip } from 'chart.js';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface KategoriChartProps {
     data: readonly App.Data.KategoriRingkasData[];
@@ -24,6 +25,7 @@ const WARNA = [
  * modul chart kedua secara dinamis setelah Dashboard sudah tampil.
  */
 export function KategoriChart({ data }: KategoriChartProps) {
+    const { t } = useTranslation('dashboard');
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [siap, setSiap] = useState(false);
 
@@ -73,7 +75,7 @@ export function KategoriChart({ data }: KategoriChartProps) {
     return (
         <div className="relative h-56">
             {!siap && <Skeleton className="absolute inset-0 rounded-full" />}
-            <canvas ref={canvasRef} role="img" aria-label="Komposisi dokumen per kategori" />
+            <canvas ref={canvasRef} role="img" aria-label={t('kategori.ariaChart')} />
         </div>
     );
 }

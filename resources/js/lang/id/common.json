@@ -44,6 +44,21 @@
         "indonesia": "Indonesia",
         "inggris": "Inggris"
     },
+    "format": {
+        "baruSaja": "Baru saja",
+        "menitLalu": "{{n}} menit lalu",
+        "jamLalu": "{{n}} jam lalu",
+        "kemarin": "Kemarin",
+        "hariLalu": "{{n}} hari lalu",
+        "tipeBerkas": {
+            "gambar": "Gambar",
+            "video": "Video",
+            "audio": "Audio",
+            "teks": "Teks",
+            "zip": "ZIP",
+            "berkas": "Berkas"
+        }
+    },
     "toastStatus": {
         "success": "Berhasil",
         "error": "Gagal",

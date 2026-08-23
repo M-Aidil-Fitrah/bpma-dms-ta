@@ -1,0 +1,39 @@
+{
+    "judulHalaman": "Home",
+    "sambutan": {
+        "kembali": "Welcome back,",
+        "tombolUnggah": "Upload Document",
+        "tombolJelajahi": "Browse Documents"
+    },
+    "statistik": {
+        "judul": "Document Statistics",
+        "totalDokumen": "Total Documents",
+        "captionTotal": "accessible to you",
+        "berlaku": "Valid",
+        "kadaluarsa": "Expired",
+        "mendekatiEvaluasi": "Nearing Review Date",
+        "captionRentang": "within {{hari}} days"
+    },
+    "masaEvaluasi": {
+        "ariaRentang": "Review period range",
+        "hari": "{{hari}} days",
+        "kosongJudul": "Nothing nearing its review date",
+        "kosongDeskripsi": "No documents expire within the next {{hari}} days."
+    },
+    "kategori": {
+        "judul": "Category Breakdown",
+        "kosongDeskripsi": "Categories will appear here once there are documents you can access.",
+        "ariaChart": "Document composition by category"
+    },
+    "terbaru": {
+        "judul": "Recent Documents",
+        "lihatSemua": "View all",
+        "kosongJudul": "No documents yet",
+        "kosongDeskripsi": "Documents you can access will appear here."
+    },
+    "aktivitas": {
+        "judul": "Recent Activity",
+        "kosongJudul": "No activity yet",
+        "kosongDeskripsi": "Activity you can access will appear here."
+    }
+}

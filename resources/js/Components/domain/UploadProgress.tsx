@@ -1,5 +1,7 @@
 import { formatUkuranBerkas } from '@/lib/format';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 export interface UploadProgressProps {
     /** Persentase dari Inertia; null berarti belum ada progres. */
@@ -28,6 +30,7 @@ export function UploadProgress({
     total,
     namaBerkas,
 }: UploadProgressProps) {
+    const { t } = useTranslation('documentForm');
     const [kecepatan, setKecepatan] = useState<number | null>(null);
     const [sisaDetik, setSisaDetik] = useState<number | null>(null);
     const sebelumnya = useRef<{ waktu: number; byte: number } | null>(null);
@@ -70,7 +73,7 @@ export function UploadProgress({
                 aria-valuenow={Math.round(nilai)}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-label="Progres unggah"
+                aria-label={t('documentForm:progresUnggah.ariaLabel')}
                 className="mt-3 h-2 overflow-hidden rounded-full bg-surface-sunken"
             >
                 <div
@@ -81,7 +84,7 @@ export function UploadProgress({
 
             <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs">
                 <span className="font-medium text-brand-700">
-                    {Math.round(nilai)}% selesai
+                    {t('documentForm:progresUnggah.persenSelesai', { persen: Math.round(nilai) })}
                 </span>
 
                 <span className="font-mono text-ink-muted">
@@ -91,23 +94,24 @@ export function UploadProgress({
 
             {!selesai && kecepatan !== null && (
                 <p className="mt-1.5 font-mono text-xs text-ink-subtle">
-                    {formatUkuranBerkas(kecepatan)}/detik
-                    {sisaDetik !== null && ` · sisa ${formatSisa(sisaDetik)}`}
+                    {t('documentForm:progresUnggah.perDetik', { kecepatan: formatUkuranBerkas(kecepatan) })}
+                    {sisaDetik !== null &&
+                        ` · ${t('documentForm:progresUnggah.sisaWaktu', { waktu: formatSisa(sisaDetik, t) })}`}
                 </p>
             )}
 
             {selesai && (
                 <p className="mt-1.5 text-xs text-ink-muted">
-                    Berkas selesai terkirim, sedang disimpan di server…
+                    {t('documentForm:progresUnggah.selesaiTersimpan')}
                 </p>
             )}
         </div>
     );
 }
 
-function formatSisa(detik: number): string {
-    if (detik < 60) return `${Math.ceil(detik)} detik`;
-    if (detik < 3600) return `${Math.ceil(detik / 60)} menit`;
+function formatSisa(detik: number, t: TFunction): string {
+    if (detik < 60) return t('documentForm:progresUnggah.detik', { jumlah: Math.ceil(detik) });
+    if (detik < 3600) return t('documentForm:progresUnggah.menit', { jumlah: Math.ceil(detik / 60) });
 
-    return `${(detik / 3600).toFixed(1)} jam`;
+    return t('documentForm:progresUnggah.jam', { jumlah: (detik / 3600).toFixed(1) });
 }

@@ -3,6 +3,7 @@ import { useUnitTree } from '@/hooks/useUnitTree';
 import { cn } from '@/lib/cn';
 import { Check, ChevronRight } from 'lucide-react';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface UnitPilihan {
     id: number;
@@ -26,6 +27,7 @@ export interface UnitTreePickerProps {
  * sebelum ia menyimpan.
  */
 export function UnitTreePicker({ units, terpilih, onChange }: UnitTreePickerProps) {
+    const { t } = useTranslation('documentForm');
     const { induk, anakDari, terbuka, toggleTerbuka } = useUnitTree(units);
     const dipilih = useMemo(() => new Set(terpilih), [terpilih]);
 
@@ -59,7 +61,10 @@ export function UnitTreePicker({ units, terpilih, onChange }: UnitTreePickerProp
                                 <button
                                     type="button"
                                     onClick={() => toggleTerbuka(unit.id)}
-                                    aria-label={`${isTerbuka ? 'Tutup' : 'Buka'} divisi ${unit.nama}`}
+                                    aria-label={t(
+                                        isTerbuka ? 'documentForm:pohonUnit.tutupDivisi' : 'documentForm:pohonUnit.bukaDivisi',
+                                        { nama: unit.nama },
+                                    )}
                                     aria-expanded={isTerbuka}
                                     className="flex size-6 shrink-0 items-center justify-center rounded text-ink-subtle hover:bg-surface-sunken"
                                 >
@@ -82,7 +87,7 @@ export function UnitTreePicker({ units, terpilih, onChange }: UnitTreePickerProp
 
                             {anakTerpilih > 0 && (
                                 <Badge variant="brand" size="sm">
-                                    {anakTerpilih} divisi
+                                    {t('documentForm:pohonUnit.jumlahDivisi', { jumlah: anakTerpilih })}
                                 </Badge>
                             )}
                         </div>

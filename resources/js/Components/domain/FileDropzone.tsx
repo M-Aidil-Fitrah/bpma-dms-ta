@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn';
 import { formatUkuranBerkas } from '@/lib/format';
 import { Camera, Upload, X } from 'lucide-react';
 import { useRef, useState, type DragEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface FileDropzoneProps {
     berkas: File | null;
@@ -29,6 +30,7 @@ export function FileDropzone({
     batasLabel,
     error,
 }: FileDropzoneProps) {
+    const { t } = useTranslation('documentForm');
     const inputRef = useRef<HTMLInputElement>(null);
     const [seret, setSeret] = useState(false);
     const [galatLokal, setGalatLokal] = useState<string | null>(null);
@@ -45,7 +47,10 @@ export function FileDropzone({
 
         if (batasKb !== null && dipilih.size > batasKb * 1024) {
             setGalatLokal(
-                `Ukuran berkas ${formatUkuranBerkas(dipilih.size)} melebihi batas ${batasLabel}.`,
+                t('documentForm:unggahBerkas.galatUkuran', {
+                    ukuran: formatUkuranBerkas(dipilih.size),
+                    batas: batasLabel,
+                }),
             );
             onChange(null);
 
@@ -78,7 +83,7 @@ export function FileDropzone({
 
                     <IconButton
                         icon={X}
-                        label="Hapus berkas"
+                        label={t('documentForm:unggahBerkas.hapusBerkas')}
                         variant="danger"
                         size="sm"
                         onClick={() => {
@@ -113,7 +118,7 @@ export function FileDropzone({
                 <Upload className="mx-auto size-8 text-ink-subtle" aria-hidden />
 
                 <p className="mt-3 text-sm text-ink">
-                    Seret berkas ke sini, atau
+                    {t('documentForm:unggahBerkas.seretKeSini')}
                 </p>
 
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
@@ -123,7 +128,7 @@ export function FileDropzone({
                         className="inline-flex min-h-touch items-center gap-2 rounded-lg bg-brand-700 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-800 sm:min-h-10"
                     >
                         <Upload className="size-4" aria-hidden />
-                        Pilih Berkas
+                        {t('documentForm:unggahBerkas.pilihBerkas')}
                     </button>
 
                     {/* Ambil foto langsung dari kamera (FR-06b). Tombolnya hanya
@@ -131,7 +136,7 @@ export function FileDropzone({
                         pun di desktop. */}
                     <label className="inline-flex min-h-touch cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-4 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-sunken sm:hidden sm:min-h-10">
                         <Camera className="size-4" aria-hidden />
-                        Ambil Foto
+                        {t('documentForm:unggahBerkas.ambilFoto')}
                         <input
                             type="file"
                             accept="image/*"
@@ -143,7 +148,7 @@ export function FileDropzone({
                 </div>
 
                 <p className="mt-3 text-xs text-ink-subtle">
-                    Semua tipe berkas diterima. Batas ukuran {batasLabel}.
+                    {t('documentForm:unggahBerkas.keterangan', { batas: batasLabel })}
                 </p>
             </div>
 
@@ -151,7 +156,7 @@ export function FileDropzone({
                 ref={inputRef}
                 type="file"
                 className="sr-only"
-                aria-label="Pilih berkas dokumen"
+                aria-label={t('documentForm:unggahBerkas.ariaPilihBerkas')}
                 onChange={(e) => terima(e.target.files)}
             />
 

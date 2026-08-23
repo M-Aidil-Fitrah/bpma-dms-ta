@@ -3,6 +3,7 @@ import { useUnitTree } from '@/hooks/useUnitTree';
 import { cn } from '@/lib/cn';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface UnitTreeSelectProps {
     units: readonly UnitPilihan[];
@@ -28,6 +29,7 @@ export function UnitTreeSelect({
     'aria-describedby': describedBy,
     'aria-invalid': invalid = false,
 }: UnitTreeSelectProps) {
+    const { t } = useTranslation('documentForm');
     const { induk, anakDari, terbuka, toggleTerbuka } = useUnitTree(units);
     const [menuTerbuka, setMenuTerbuka] = useState(false);
     const pembungkus = useRef<HTMLDivElement>(null);
@@ -69,7 +71,7 @@ export function UnitTreeSelect({
                     invalid ? 'border-danger focus:border-danger focus:ring-danger' : 'border-line',
                 )}
             >
-                <span className="truncate">{pilihan?.nama ?? 'Semua unit asal'}</span>
+                <span className="truncate">{pilihan?.nama ?? t('documentForm:pilihUnit.semuaUnitAsal')}</span>
                 <ChevronDown
                     className={cn('size-4 shrink-0 text-ink-subtle transition-transform', menuTerbuka && 'rotate-180')}
                     aria-hidden
@@ -79,10 +81,10 @@ export function UnitTreeSelect({
             {menuTerbuka && (
                 <div
                     role="tree"
-                    aria-label="Pilih unit asal"
+                    aria-label={t('documentForm:pilihUnit.ariaLabelPohon')}
                     className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-line bg-surface p-2 shadow-pop"
                 >
-                    <BarisPilih nama="Semua unit asal" terpilih={nilai === null} onClick={() => pilih(null)} tebal />
+                    <BarisPilih nama={t('documentForm:pilihUnit.semuaUnitAsal')} terpilih={nilai === null} onClick={() => pilih(null)} tebal />
 
                     {induk.map((unit) => {
                         const anak = anakDari.get(unit.id) ?? [];
@@ -95,7 +97,10 @@ export function UnitTreeSelect({
                                         <button
                                             type="button"
                                             onClick={() => toggleTerbuka(unit.id)}
-                                            aria-label={`${isTerbuka ? 'Tutup' : 'Buka'} divisi ${unit.nama}`}
+                                            aria-label={t(
+                                                isTerbuka ? 'documentForm:pilihUnit.tutupDivisi' : 'documentForm:pilihUnit.bukaDivisi',
+                                                { nama: unit.nama },
+                                            )}
                                             className="flex size-7 shrink-0 items-center justify-center rounded text-ink-subtle hover:bg-surface-sunken"
                                         >
                                             <ChevronRight

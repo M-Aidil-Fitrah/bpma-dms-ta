@@ -23,11 +23,6 @@ final class UpdatePengaturanRequest extends FormRequest
             // secara praktis tidak bisa dipakai untuk unggah dokumen.
             'unggah_batas_kb' => ['nullable', 'integer', 'min:1024', 'max:1048576'],
             'dokumen_per_halaman' => ['nullable', 'integer', Rule::in([10, 20, 50, 100])],
-            'dokumen_rentang_evaluasi_awal' => [
-                'nullable',
-                'integer',
-                Rule::in(config('dms.dokumen.rentang_evaluasi_pilihan')),
-            ],
         ];
     }
 }

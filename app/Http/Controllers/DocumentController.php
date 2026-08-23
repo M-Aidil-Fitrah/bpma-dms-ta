@@ -728,6 +728,7 @@ final class DocumentController extends Controller
             'unit' => UnitOptions::berlabel(),
             'unit_pohon' => UnitOptions::pohon(),
             'pengunggah' => User::query()->active()->orderBy('name')->get(['id', 'name']),
+            'evaluasi_pilihan' => config('dms.dokumen.rentang_evaluasi_pilihan'),
         ];
     }
 

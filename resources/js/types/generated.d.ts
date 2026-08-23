@@ -168,9 +168,6 @@ unggah_batas_efektif_kb: number | null,
 unggah_dibatasi_php: boolean,
 dokumen_per_halaman: number,
 dokumen_per_halaman_bawaan: number,
-dokumen_rentang_evaluasi_awal: number,
-dokumen_rentang_evaluasi_awal_bawaan: number,
-rentang_evaluasi_pilihan: number[],
 };
 export type ReferensiEditData = {
 id: number,

@@ -280,6 +280,61 @@ final class DocumentIndexTest extends TestCase
                 ->where('filter.status_ekstraksi', 'review_required'));
     }
 
+    public function test_penyaring_evaluasi_hanya_menampilkan_dokumen_dalam_rentang(): void
+    {
+        $dalamRentang = $this->buatDokumen([
+            'judul' => 'Segera Evaluasi',
+            'status' => DocumentStatus::Berlaku,
+            'masa_berlaku' => now()->addDays(5)->toDateString(),
+        ]);
+        $this->buatDokumen([
+            'judul' => 'Masih Lama',
+            'status' => DocumentStatus::Berlaku,
+            'masa_berlaku' => now()->addDays(60)->toDateString(),
+        ]);
+        $this->buatDokumen([
+            'judul' => 'Tanpa Masa Berlaku',
+            'status' => DocumentStatus::Berlaku,
+            'masa_berlaku' => null,
+        ]);
+        $this->buatDokumen([
+            'judul' => 'Sudah Kadaluarsa',
+            'status' => DocumentStatus::Kadaluarsa,
+            'masa_berlaku' => now()->addDays(5)->toDateString(),
+        ]);
+
+        $this->actingAs($this->anggota)->get('/documents?evaluasi=7')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 1)
+                ->where('dokumen.data.0.id', $dalamRentang->id)
+                ->where('filter.evaluasi', 7));
+    }
+
+    public function test_penyaring_evaluasi_mengurutkan_dari_paling_dekat_kadaluarsa(): void
+    {
+        $lebihDekat = $this->buatDokumen([
+            'status' => DocumentStatus::Berlaku,
+            'masa_berlaku' => now()->addDays(2)->toDateString(),
+        ]);
+        $lebihJauh = $this->buatDokumen([
+            'status' => DocumentStatus::Berlaku,
+            'masa_berlaku' => now()->addDays(20)->toDateString(),
+        ]);
+
+        $this->actingAs($this->anggota)->get('/documents?evaluasi=30')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 2)
+                ->where('dokumen.data.0.id', $lebihDekat->id)
+                ->where('dokumen.data.1.id', $lebihJauh->id));
+    }
+
+    public function test_penyaring_evaluasi_menolak_nilai_di_luar_pilihan(): void
+    {
+        $this->actingAs($this->anggota)
+            ->get('/documents?evaluasi=45')
+            ->assertSessionHasErrors('evaluasi');
+    }
+
     public function test_tanggal_akhir_tidak_boleh_mendahului_tanggal_awal(): void
     {
         $this->actingAs($this->anggota)

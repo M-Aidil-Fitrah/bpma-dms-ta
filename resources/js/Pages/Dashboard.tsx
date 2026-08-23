@@ -174,13 +174,22 @@ function KartuMasaEvaluasi({ data }: { data: App.Data.DashboardData }) {
                         description={t('masaEvaluasi.kosongDeskripsi', { hari: data.rentang_evaluasi })}
                     />
                 ) : (
-                    <ul className="divide-y divide-line">
-                        {data.mendekati_evaluasi.map((dokumen) => (
-                            <li key={dokumen.id}>
-                                <DocumentRow document={dokumen} />
-                            </li>
-                        ))}
-                    </ul>
+                    <>
+                        <ul className="divide-y divide-line">
+                            {data.mendekati_evaluasi.map((dokumen) => (
+                                <li key={dokumen.id}>
+                                    <DocumentRow document={dokumen} tampilkanMasaBerlaku />
+                                </li>
+                            ))}
+                        </ul>
+
+                        <Link
+                            href={`/documents?evaluasi=${data.rentang_evaluasi}`}
+                            className="mt-1 block px-3 py-2 text-sm font-medium text-brand-700 hover:text-brand-800"
+                        >
+                            {t('masaEvaluasi.lihatSemua')}
+                        </Link>
+                    </>
                 )}
             </CardBody>
         </Card>

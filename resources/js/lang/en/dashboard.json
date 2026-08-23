@@ -18,7 +18,8 @@
         "ariaRentang": "Review period range",
         "hari": "{{hari}} days",
         "kosongJudul": "Nothing nearing its review date",
-        "kosongDeskripsi": "No documents expire within the next {{hari}} days."
+        "kosongDeskripsi": "No documents expire within the next {{hari}} days.",
+        "lihatSemua": "View all in Browse Documents"
     },
     "kategori": {
         "judul": "Category Breakdown",

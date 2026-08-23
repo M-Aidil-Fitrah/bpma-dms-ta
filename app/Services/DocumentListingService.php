@@ -89,6 +89,10 @@ final class DocumentListingService
             ->when(
                 $request->string('sampai')->toString(),
                 fn ($query, string $tanggal) => $query->whereDate('documents.tanggal', '<=', $tanggal),
+            )
+            ->when(
+                $request->integer('evaluasi'),
+                fn ($query, int $hari) => $query->mendekatiMasaEvaluasi($hari),
             );
 
         $pencarianDenganRelevansi = false;
@@ -97,7 +101,11 @@ final class DocumentListingService
             $pencarianDenganRelevansi = $this->tambahkanKonteksPencarian($query, $kata);
         }
 
-        if ($pencarianDenganRelevansi && ! $request->boolean('urut_manual')) {
+        if ($request->integer('evaluasi') && ! $request->boolean('urut_manual')) {
+            // Paling dekat kedaluwarsa lebih dulu — itulah yang membuat
+            // filter ini berguna, bukan urutan tanggal unggah bawaan.
+            $query->orderBy('documents.masa_berlaku', 'asc');
+        } elseif ($pencarianDenganRelevansi && ! $request->boolean('urut_manual')) {
             $query->orderByDesc('search_field_priority')
                 ->orderByDesc('search_relevance');
         } else {

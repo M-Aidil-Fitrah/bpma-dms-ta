@@ -7,6 +7,14 @@ import { memo } from 'react';
 
 export interface DocumentRowProps {
     document: App.Data.DocumentListData;
+    /**
+     * Saat true, tanggal yang ditampilkan adalah `masa_berlaku` (kapan
+     * dokumen jatuh tempo evaluasi), bukan `tanggal` (kapan diunggah) —
+     * dipakai kartu "Mendekati Masa Evaluasi" di dasbor, di mana tanggal
+     * unggah tidak relevan sama sekali dengan alasan dokumen itu muncul
+     * di daftar tersebut.
+     */
+    tampilkanMasaBerlaku?: boolean;
 }
 
 /**
@@ -16,7 +24,8 @@ export interface DocumentRowProps {
  * perubahan satu kolom penyaring merender ulang seluruh baris walau isinya
  * tidak berubah sedikit pun.
  */
-export const DocumentRow = memo(function DocumentRow({ document }: DocumentRowProps) {
+export const DocumentRow = memo(function DocumentRow({ document, tampilkanMasaBerlaku = false }: DocumentRowProps) {
+    const tanggal = tampilkanMasaBerlaku ? document.masa_berlaku : document.tanggal;
     return (
         <Link
             href={`/documents/${document.id}`}
@@ -32,7 +41,7 @@ export const DocumentRow = memo(function DocumentRow({ document }: DocumentRowPr
             <div className="hidden shrink-0 items-center gap-2 sm:flex">
                 <FileTypeBadge mime={document.tipe_berkas} />
                 <span className="w-20 text-right font-mono text-xs text-ink-muted">
-                    {formatTanggal(document.tanggal)}
+                    {formatTanggal(tanggal)}
                 </span>
             </div>
 

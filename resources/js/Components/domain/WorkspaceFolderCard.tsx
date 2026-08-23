@@ -7,12 +7,14 @@ import { Button } from '@/Components/ui/Button';
 import { Link, router, useForm } from '@inertiajs/react';
 import { Folder, Pencil, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     folder: { id: number; name: string };
 }
 
 export function WorkspaceFolderCard({ folder }: Props) {
+    const { t } = useTranslation(['workspace', 'common']);
     const [renameOpen, setRenameOpen] = useState(false);
     const [trashOpen, setTrashOpen] = useState(false);
     const { data, setData, patch, processing, errors } = useForm({ name: folder.name });
@@ -29,10 +31,10 @@ export function WorkspaceFolderCard({ folder }: Props) {
                 <span className="truncate">{folder.name}</span>
             </Link>
             <div className="flex shrink-0 items-center gap-1">
-                <IconButton icon={Pencil} label={`Ubah nama folder ${folder.name}`} size="sm" onClick={() => setRenameOpen(true)} />
+                <IconButton icon={Pencil} label={t('workspace:folderCard.ubahNama.label', { nama: folder.name })} size="sm" onClick={() => setRenameOpen(true)} />
                 <IconButton
                     icon={Trash2}
-                    label={`Pindahkan folder ${folder.name} ke Sampah`}
+                    label={t('workspace:folderCard.pindahkanKeSampah.label', { nama: folder.name })}
                     variant="danger"
                     size="sm"
                     onClick={() => setTrashOpen(true)}
@@ -42,11 +44,11 @@ export function WorkspaceFolderCard({ folder }: Props) {
             <Modal
                 terbuka={renameOpen}
                 onTutup={() => setRenameOpen(false)}
-                judul="Ubah nama folder"
-                footer={<><Button variant="secondary" onClick={() => setRenameOpen(false)}>Batal</Button><Button type="submit" form={`ubah-folder-${folder.id}`} loading={processing}>Simpan</Button></>}
+                judul={t('workspace:folderCard.ubahNama.dialog.judul')}
+                footer={<><Button variant="secondary" onClick={() => setRenameOpen(false)}>{t('common:aksi.batal')}</Button><Button type="submit" form={`ubah-folder-${folder.id}`} loading={processing}>{t('common:aksi.simpan')}</Button></>}
             >
                 <form id={`ubah-folder-${folder.id}`} onSubmit={rename}>
-                    <Field label="Nama folder" error={errors.name} required>
+                    <Field label={t('workspace:folderCard.ubahNama.dialog.labelNama')} error={errors.name} required>
                         {(props) => <Input {...props} autoFocus value={data.name} invalid={Boolean(errors.name)} onChange={(event) => setData('name', event.target.value)} />}
                     </Field>
                 </form>
@@ -56,11 +58,11 @@ export function WorkspaceFolderCard({ folder }: Props) {
                 terbuka={trashOpen}
                 onTutup={() => setTrashOpen(false)}
                 onSetuju={() => router.delete(`/folders/${folder.id}`)}
-                judul="Pindahkan folder ke Sampah?"
-                labelSetuju="Ya, pindahkan"
+                judul={t('workspace:folderCard.pindahkanKeSampah.dialog.judul')}
+                labelSetuju={t('workspace:folderCard.pindahkanKeSampah.dialog.labelSetuju')}
                 ikon={Trash2}
             >
-                Folder <span className="font-medium">{folder.name}</span> dan seluruh subfoldernya dapat dipulihkan selama 30 hari.
+                {t('workspace:folderCard.pindahkanKeSampah.dialog.isiSebelum')} <span className="font-medium">{folder.name}</span> {t('workspace:folderCard.pindahkanKeSampah.dialog.isiSesudah')}
             </ConfirmDialog>
         </article>
     );

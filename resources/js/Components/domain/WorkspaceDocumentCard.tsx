@@ -11,6 +11,7 @@ import { Select } from '@/Components/ui/Select';
 import { Link, router } from '@inertiajs/react';
 import { FolderInput, Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface WorkspaceDocument {
     id: number;
@@ -37,6 +38,8 @@ export function WorkspaceDocumentCard({
     currentFolderId?: number | null;
     mode?: 'tabel' | 'grid';
 }) {
+    const { t } = useTranslation('workspace');
+
     function toggleStar() {
         if (document.starred) {
             router.delete(`/documents/${document.id}/star`, { preserveScroll: true });
@@ -64,7 +67,7 @@ export function WorkspaceDocumentCard({
                             <IconButton
                                 type="button"
                                 icon={Star}
-                                label={document.starred ? `Hapus bintang ${document.judul}` : `Beri bintang ${document.judul}`}
+                                label={document.starred ? t('documentCard.bintang.hapus', { judul: document.judul }) : t('documentCard.bintang.beri', { judul: document.judul })}
                                 className={document.starred ? 'text-warning-strong' : undefined}
                                 iconClassName={document.starred ? 'fill-warning text-warning-strong' : undefined}
                                 onClick={toggleStar}
@@ -77,7 +80,7 @@ export function WorkspaceDocumentCard({
                         <p className="mt-1 truncate font-mono text-xs text-ink-subtle">{document.nomor}</p>
                     </Link>
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
-                        {document.is_private ? <Badge variant="info" size="sm">Hanya saya</Badge> : <span />}
+                        {document.is_private ? <Badge variant="info" size="sm">{t('documentCard.hanyaSaya')}</Badge> : <span />}
                         {folderOptions !== undefined && <MoveDocumentAction document={document} folderOptions={folderOptions} currentFolderId={currentFolderId} />}
                     </div>
                 </div>
@@ -92,13 +95,13 @@ export function WorkspaceDocumentCard({
                 <span className="block truncate text-sm font-medium text-ink">{document.judul}</span>
                 <span className="mt-0.5 block truncate text-xs text-ink-muted">{document.nomor}</span>
                 <span className="mt-1 flex flex-wrap gap-1.5">
-                    {document.is_private && <Badge variant="info" size="sm">Hanya saya</Badge>}
+                    {document.is_private && <Badge variant="info" size="sm">{t('documentCard.hanyaSaya')}</Badge>}
                 </span>
             </Link>
             <IconButton
                 type="button"
                 icon={Star}
-                label={document.starred ? `Hapus bintang ${document.judul}` : `Beri bintang ${document.judul}`}
+                label={document.starred ? t('documentCard.bintang.hapus', { judul: document.judul }) : t('documentCard.bintang.beri', { judul: document.judul })}
                 className={document.starred ? 'text-warning-strong' : undefined}
                 iconClassName={document.starred ? 'fill-warning text-warning-strong' : undefined}
                 onClick={toggleStar}
@@ -110,6 +113,7 @@ export function WorkspaceDocumentCard({
 }
 
 function TrashDocumentAction({ document }: { document: WorkspaceDocument; }) {
+    const { t } = useTranslation('workspace');
     const konfirmasikan = usePasswordConfirmation();
     const [open, setOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
@@ -131,7 +135,7 @@ function TrashDocumentAction({ document }: { document: WorkspaceDocument; }) {
         <>
             <IconButton
                 icon={Trash2}
-                label={`Pindahkan ${document.judul} ke Sampah`}
+                label={t('documentCard.pindahkanKeSampah.label', { judul: document.judul })}
                 variant="danger"
                 onClick={() => setOpen(true)}
             />
@@ -139,13 +143,13 @@ function TrashDocumentAction({ document }: { document: WorkspaceDocument; }) {
                 terbuka={open}
                 onTutup={() => setOpen(false)}
                 onSetuju={trash}
-                judul="Pindahkan dokumen ke Sampah?"
-                labelSetuju="Pindahkan ke Sampah"
+                judul={t('documentCard.pindahkanKeSampah.dialog.judul')}
+                labelSetuju={t('documentCard.pindahkanKeSampah.dialog.labelSetuju')}
                 ikon={Trash2}
                 memproses={processing}
             >
-                <p>Dokumen <span className="font-medium text-ink">{document.judul}</span> tidak lagi tampil di Dokumen Saya atau hasil pencarian.</p>
-                <p>Anda masih dapat memulihkannya dari Sampah selama 30 hari.</p>
+                <p>{t('documentCard.pindahkanKeSampah.dialog.isiSebelum')} <span className="font-medium text-ink">{document.judul}</span> {t('documentCard.pindahkanKeSampah.dialog.isiSesudah')}</p>
+                <p>{t('documentCard.pindahkanKeSampah.dialog.isiKedua')}</p>
             </ConfirmDialog>
         </>
     );
@@ -162,11 +166,12 @@ function MoveDocumentAction({
     currentFolderId: number | null;
     compact?: boolean;
 }) {
+    const { t } = useTranslation(['workspace', 'common']);
     const [open, setOpen] = useState(false);
     const [targetFolderId, setTargetFolderId] = useState<string>(currentFolderId?.toString() ?? 'root');
     const [processing, setProcessing] = useState(false);
     const targetOptions = [
-        { value: 'root', label: 'Tanpa folder — tampil langsung di Dokumen Saya' },
+        { value: 'root', label: t('documentCard.pindahkan.dialog.tanpaFolder') },
         ...folderOptions.map((folder) => ({ value: folder.id, label: folder.name })),
     ];
 
@@ -195,18 +200,18 @@ function MoveDocumentAction({
     return (
         <>
             {compact ? (
-                <IconButton icon={FolderInput} label={`Pindahkan ${document.judul}`} onClick={openDialog} />
+                <IconButton icon={FolderInput} label={t('documentCard.pindahkan.labelDenganNama', { judul: document.judul })} onClick={openDialog} />
             ) : (
-                <Button type="button" icon={FolderInput} size="xs" variant="secondary" onClick={openDialog}>Pindahkan</Button>
+                <Button type="button" icon={FolderInput} size="xs" variant="secondary" onClick={openDialog}>{t('documentCard.pindahkan.label')}</Button>
             )}
             <Modal
                 terbuka={open}
                 onTutup={setOpen}
-                judul="Pindahkan dokumen"
-                keterangan="Pilih folder penyimpanan, atau tampilkan dokumen langsung di halaman Dokumen Saya."
-                footer={<><Button variant="secondary" onClick={() => setOpen(false)} disabled={processing}>Batal</Button><Button icon={FolderInput} onClick={move} loading={processing}>Pindahkan</Button></>}
+                judul={t('documentCard.pindahkan.dialog.judul')}
+                keterangan={t('documentCard.pindahkan.dialog.keterangan')}
+                footer={<><Button variant="secondary" onClick={() => setOpen(false)} disabled={processing}>{t('common:aksi.batal')}</Button><Button icon={FolderInput} onClick={move} loading={processing}>{t('documentCard.pindahkan.dialog.tombolPindahkan')}</Button></>}
             >
-                <Field label="Folder tujuan">
+                <Field label={t('documentCard.pindahkan.dialog.labelFolder')}>
                     {(props) => <Select {...props} value={targetFolderId} options={targetOptions} onChange={(event) => setTargetFolderId(event.target.value)} />}
                 </Field>
             </Modal>

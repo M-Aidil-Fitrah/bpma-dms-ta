@@ -1,0 +1,79 @@
+{
+    "index": {
+        "viewToggle": { "tabel": "Tampilan daftar", "grid": "Tampilan grid" },
+        "tombolBaru": { "label": "Baru", "srLabel": "Buat baru" },
+        "menu": { "unggahDokumen": "Unggah dokumen", "buatFolder": "Buat folder" },
+        "ariaLokasiFolder": "Lokasi folder",
+        "kosong": {
+            "judul": "Belum ada isi",
+            "deskripsi": "Buat folder untuk mengelompokkan dokumen yang Anda unggah, atau unggah dokumen baru.",
+            "tombolUnggah": "Unggah Dokumen"
+        },
+        "bagian": { "folder": "Folder", "dokumen": "Dokumen" },
+        "dialogFolder": { "judul": "Buat folder", "labelNama": "Nama folder", "tombolBuat": "Buat folder" }
+    },
+    "collection": {
+        "viewToggle": { "tabel": "Tampilan daftar", "grid": "Tampilan grid" },
+        "kosong": { "judul": "Belum ada dokumen", "deskripsi": "Dokumen yang Anda tandai atau buka akan muncul di sini." }
+    },
+    "trash": {
+        "judulHalaman": "Sampah",
+        "banner": {
+            "judul": "Item di Sampah disimpan selama 30 hari",
+            "deskripsi": "Pulihkan dokumen atau folder sebelum tanggal penghapusan permanen. Setelah lewat, berkas tidak dapat dikembalikan."
+        },
+        "jumlahItem": "{{jumlah}} item",
+        "kosong": {
+            "judul": "Sampah kosong",
+            "deskripsi": "Dokumen dan folder yang dipindahkan ke Sampah akan berada di sini selama 30 hari."
+        },
+        "bagian": { "folder": "Folder", "dokumen": "Dokumen" },
+        "dihapusPermanen": "Dihapus permanen {{tanggal}}",
+        "tombolPulihkan": { "label": "Pulihkan", "srLabel": "Pulihkan {{nama}}" },
+        "retensi": {
+            "tersisa": "Tersisa {{hari}} hari untuk dipulihkan",
+            "hariIni": "Dihapus hari ini",
+            "belumTersedia": "Tanggal penghapusan belum tersedia"
+        }
+    },
+    "documentCard": {
+        "bintang": { "beri": "Beri bintang {{judul}}", "hapus": "Hapus bintang {{judul}}" },
+        "hanyaSaya": "Hanya saya",
+        "pindahkanKeSampah": {
+            "label": "Pindahkan {{judul}} ke Sampah",
+            "dialog": {
+                "judul": "Pindahkan dokumen ke Sampah?",
+                "labelSetuju": "Pindahkan ke Sampah",
+                "isiSebelum": "Dokumen",
+                "isiSesudah": "tidak lagi tampil di Dokumen Saya atau hasil pencarian.",
+                "isiKedua": "Anda masih dapat memulihkannya dari Sampah selama 30 hari."
+            }
+        },
+        "pindahkan": {
+            "label": "Pindahkan",
+            "labelDenganNama": "Pindahkan {{judul}}",
+            "dialog": {
+                "judul": "Pindahkan dokumen",
+                "keterangan": "Pilih folder penyimpanan, atau tampilkan dokumen langsung di halaman Dokumen Saya.",
+                "labelFolder": "Folder tujuan",
+                "tanpaFolder": "Tanpa folder — tampil langsung di Dokumen Saya",
+                "tombolPindahkan": "Pindahkan"
+            }
+        }
+    },
+    "folderCard": {
+        "ubahNama": {
+            "label": "Ubah nama folder {{nama}}",
+            "dialog": { "judul": "Ubah nama folder", "labelNama": "Nama folder" }
+        },
+        "pindahkanKeSampah": {
+            "label": "Pindahkan folder {{nama}} ke Sampah",
+            "dialog": {
+                "judul": "Pindahkan folder ke Sampah?",
+                "labelSetuju": "Ya, pindahkan",
+                "isiSebelum": "Folder",
+                "isiSesudah": "dan seluruh subfoldernya dapat dipulihkan selama 30 hari."
+            }
+        }
+    }
+}

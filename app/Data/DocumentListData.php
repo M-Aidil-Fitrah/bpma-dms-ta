@@ -56,6 +56,12 @@ final class DocumentListData extends Data
         public ?string $cuplikan_pencarian,
         /** Jumlah frasa persis dalam isi, null bila frasa tidak ditemukan. */
         public ?int $jumlah_frasa_pencarian,
+        /** Hanya diisi oleh halaman workspace (Dokumen Saya/Terbaru/Berbintang); null di tempat lain. */
+        public ?bool $starred = null,
+        /** Hanya diisi oleh Sampah; null di tempat lain. */
+        public ?string $trashed_at = null,
+        /** Hanya diisi oleh Sampah; null di tempat lain. */
+        public ?string $purge_after = null,
     ) {}
 
     /**
@@ -71,6 +77,28 @@ final class DocumentListData extends Data
             ringkasanAkses: $document->accessSummary(),
             alasanTerlihat: $document->alasanTerlihat($user),
             jabatanPengunggah: $document->uploader?->jabatan?->nama,
+        );
+    }
+
+    /**
+     * Bentuk untuk halaman workspace (Dokumen Saya, Terbaru, Berbintang,
+     * Sampah) — sama seperti {@see self::fromModel()}, ditambah status
+     * bintang dan (bila dokumennya ada di Sampah) info retensi.
+     *
+     * `$distarai` dihitung sekali oleh pemanggil untuk seluruh halaman
+     * (satu kueri `IN`), bukan per baris di sini — menghitungnya per baris
+     * berarti satu kueri tambahan untuk setiap dokumen di halaman.
+     */
+    public static function untukWorkspace(Document $document, User $user, bool $distarai): self
+    {
+        return self::bentuk(
+            $document,
+            ringkasanAkses: $document->accessSummary(),
+            alasanTerlihat: $document->alasanTerlihat($user),
+            jabatanPengunggah: $document->uploader?->jabatan?->nama,
+            starred: $distarai,
+            trashedAt: $document->trashed_at?->toIso8601String(),
+            purgeAfter: $document->purge_after?->toIso8601String(),
         );
     }
 
@@ -97,6 +125,9 @@ final class DocumentListData extends Data
         ?array $ringkasanAkses,
         ?string $alasanTerlihat,
         ?string $jabatanPengunggah,
+        ?bool $starred = null,
+        ?string $trashedAt = null,
+        ?string $purgeAfter = null,
     ): self {
         $konteksPencarian = self::konteksPencarian($document);
 
@@ -123,6 +154,9 @@ final class DocumentListData extends Data
             kecocokan_pencarian: $konteksPencarian['kecocokan_pencarian'],
             cuplikan_pencarian: $konteksPencarian['cuplikan_pencarian'],
             jumlah_frasa_pencarian: $konteksPencarian['jumlah_frasa_pencarian'],
+            starred: $starred,
+            trashed_at: $trashedAt,
+            purge_after: $purgeAfter,
         );
     }
 

@@ -8,6 +8,7 @@ use App\Data\DocumentListData;
 use App\Http\Requests\DocumentIndexRequest;
 use App\Models\Document;
 use App\Models\User;
+use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -33,9 +34,11 @@ final class DocumentListingService
 
     /**
      * @param  Builder<Document>  $queryDasar  Query dengan batasan visibilitas/kepemilikan sudah diterapkan.
+     * @param  (Closure(Document): DocumentListData)|null  $pemetaan  Bawaan `DocumentListData::fromModel()`; halaman workspace mengirim bentuk `untukWorkspace()` untuk menyertakan status bintang/retensi Sampah.
      */
-    public function paginasi(Builder $queryDasar, DocumentIndexRequest $request, User $user): LengthAwarePaginator
+    public function paginasi(Builder $queryDasar, DocumentIndexRequest $request, User $user, ?Closure $pemetaan = null): LengthAwarePaginator
     {
+        $pemetaan ??= fn (Document $document): DocumentListData => DocumentListData::fromModel($document, $user);
         $kata = trim($request->string('cari')->toString());
 
         $query = $queryDasar
@@ -109,7 +112,7 @@ final class DocumentListingService
             ->orderBy('documents.id', 'desc')
             ->paginate($this->pengaturan->integer('dokumen.per_halaman') ?? (int) config('dms.dokumen.per_halaman'))
             ->withQueryString()
-            ->through(fn (Document $document): DocumentListData => DocumentListData::fromModel($document, $user));
+            ->through($pemetaan);
     }
 
     /**

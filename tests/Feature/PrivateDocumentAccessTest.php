@@ -113,10 +113,10 @@ final class PrivateDocumentAccessTest extends TestCase
         $this->actingAs($this->pimpinan)
             ->get(route('documents.recent'))
             ->assertOk()
-            ->assertInertia(fn ($halaman) => $halaman->has('documents', 1));
+            ->assertInertia(fn ($halaman) => $halaman->has('dokumen.data', 1));
         $this->actingAs($this->pimpinan)
             ->get(route('documents.starred'))
             ->assertOk()
-            ->assertInertia(fn ($halaman) => $halaman->has('documents', 1));
+            ->assertInertia(fn ($halaman) => $halaman->has('dokumen.data', 1));
     }
 }

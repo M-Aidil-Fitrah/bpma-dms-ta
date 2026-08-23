@@ -5,8 +5,10 @@ import { AuthLayout } from '@/Layouts/AuthLayout';
 import { useForm } from '@inertiajs/react';
 import { Lock, ShieldCheck } from 'lucide-react';
 import { type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function ConfirmPassword() {
+    const { t } = useTranslation('auth');
     const { data, setData, post, processing, errors, reset } = useForm({
         password: '',
     });
@@ -18,11 +20,11 @@ export default function ConfirmPassword() {
 
     return (
         <AuthLayout
-            title="Konfirmasi Kata Sandi"
-            subtitle="Bagian ini membutuhkan pemastian ulang sebelum dilanjutkan"
+            title={t('konfirmasiPassword.judul')}
+            subtitle={t('konfirmasiPassword.subjudul')}
         >
             <form onSubmit={handleSubmit} className="space-y-4">
-                <Field label="Kata Sandi" error={errors.password} required>
+                <Field label={t('konfirmasiPassword.passwordLabel')} error={errors.password} required>
                     {(props) => (
                         <Input
                             {...props}
@@ -45,7 +47,7 @@ export default function ConfirmPassword() {
                     className="w-full"
                     size="lg"
                 >
-                    Konfirmasi
+                    {t('konfirmasiPassword.tombolKonfirmasi')}
                 </Button>
             </form>
         </AuthLayout>

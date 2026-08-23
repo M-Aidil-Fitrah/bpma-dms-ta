@@ -82,6 +82,7 @@ const DocumentGridCard = memo(function DocumentGridCard({
                     kecocokan={document.kecocokan_pencarian}
                     cuplikan={document.cuplikan_pencarian}
                     jumlahFrasa={document.jumlah_frasa_pencarian}
+                    masaBerlaku={document.masa_berlaku}
                 />
 
                 <dl className="mt-2 space-y-0.5 text-xs text-ink-muted">

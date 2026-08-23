@@ -1,25 +1,41 @@
+import { Badge } from '@/Components/ui/Badge';
 import { usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
+import { CalendarClock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface DocumentSearchMatchProps {
     kecocokan: string[] | null;
     cuplikan: string | null;
     jumlahFrasa: number | null;
+    /** Dipakai menghitung badge "X hari lagi" saat filter Masa Berlaku aktif. */
+    masaBerlaku: string | null;
 }
 
 /**
  * Penjelas hasil pencarian yang sengaja hanya menerima projection pendek dari
  * server. Komponen ini tidak pernah memegang atau meminta `extracted_text`
  * penuh, sehingga daftar tetap ringan dan tidak memperluas permukaan data.
+ *
+ * Saat filter Masa Berlaku aktif, slot ini diambil alih badge "X hari lagi" —
+ * kecocokan pencarian isi (yang datang dari hasil OCR) tidak relevan lagi
+ * ketika yang sedang dilihat pengguna adalah daftar dokumen mendekati masa
+ * evaluasi, bukan hasil pencarian kata kunci.
  */
 export function DocumentSearchMatch({
     kecocokan,
     cuplikan,
     jumlahFrasa,
+    masaBerlaku,
 }: DocumentSearchMatchProps) {
     const { t } = useTranslation('documentBrowse');
-    const kataKunci = usePage<PageProps<{ filter?: { cari?: string | null } }>>().props.filter?.cari ?? '';
+    const props = usePage<PageProps<{ filter?: { cari?: string | null; evaluasi?: number | null } }>>().props;
+    const kataKunci = props.filter?.cari ?? '';
+    const evaluasiAktif = Boolean(props.filter?.evaluasi);
+
+    if (evaluasiAktif) {
+        return <EvaluasiBadge masaBerlaku={masaBerlaku} />;
+    }
 
     if (!kecocokan?.length) {
         return null;
@@ -45,6 +61,21 @@ export function DocumentSearchMatch({
                 </p>
             )}
         </div>
+    );
+}
+
+function EvaluasiBadge({ masaBerlaku }: { masaBerlaku: string | null }) {
+    const { t } = useTranslation('documentBrowse');
+
+    if (!masaBerlaku) return null;
+
+    const hari = Math.max(0, Math.ceil((new Date(masaBerlaku).getTime() - Date.now()) / 86_400_000));
+
+    return (
+        <Badge variant="warning" size="sm" className="mt-1.5">
+            <CalendarClock className="size-3" aria-hidden />
+            {hari === 0 ? t('documentBrowse:evaluasiBadge.hariIni') : t('documentBrowse:evaluasiBadge.hariLagi', { hari })}
+        </Badge>
     );
 }
 

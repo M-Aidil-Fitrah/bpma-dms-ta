@@ -109,6 +109,7 @@ const DocumentTableRow = memo(function DocumentTableRow({
                         kecocokan={document.kecocokan_pencarian}
                         cuplikan={document.cuplikan_pencarian}
                         jumlahFrasa={document.jumlah_frasa_pencarian}
+                        masaBerlaku={document.masa_berlaku}
                     />
                 </Link>
             </td>

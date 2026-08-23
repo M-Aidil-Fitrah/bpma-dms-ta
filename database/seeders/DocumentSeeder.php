@@ -14,6 +14,7 @@ use App\Models\User;
 use Database\Seeders\Data\DokumenKurasi;
 use Database\Seeders\Support\BerkasContoh;
 use Database\Seeders\Support\NomorDokumen;
+use Database\Seeders\Support\TanggalSeed;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 
@@ -43,13 +44,14 @@ final class DocumentSeeder extends Seeder
      */
     private const SEBARAN_AKSES = [
         'semua' => 35,          // is_shared_to_all saja
-        'satu_unit' => 56,      // satu unit saja
+        'satu_unit' => 51,      // satu unit saja
         'unit_bertingkat' => 25, // unit induk beserta divisi di bawahnya
         'jenjang' => 30,        // min_tingkat_akses saja
         'orang' => 25,          // document_shares saja
         'dua' => 30,            // dua mekanisme sekaligus
         'tiga' => 11,           // tiga mekanisme sekaligus
         'pengunggah' => 3,      // tanpa mekanisme apa pun — kontrol negatif
+        'pribadi' => 5,         // is_private — Hanya Saya, tanpa bypass jenjang jabatan
     ];
 
     private NomorDokumen $nomor;
@@ -152,7 +154,7 @@ final class DocumentSeeder extends Seeder
 
     /**
      * @param  array{judul: string, kategori: string, unit: string, berkas: string}  $data
-     * @param  array{is_shared_to_all?: bool, min_tingkat_akses?: int, units?: list<int>, shares?: list<int>}  $akses
+     * @param  array{is_shared_to_all?: bool, is_private?: bool, min_tingkat_akses?: int, units?: list<int>, shares?: list<int>}  $akses
      */
     private function buatDokumen(
         array $data,
@@ -184,6 +186,7 @@ final class DocumentSeeder extends Seeder
             'extracted_text' => $teksEkstraksi,
             'extraction_status' => $this->statusEkstraksi($status, $urutan, $teksEkstraksi),
             'is_shared_to_all' => $akses['is_shared_to_all'] ?? false,
+            'is_private' => $akses['is_private'] ?? false,
             'min_tingkat_akses' => $akses['min_tingkat_akses'] ?? null,
             'edit_scope' => $urutan % 10 < 3
                 ? DocumentEditScope::MatchVisibility
@@ -231,7 +234,7 @@ final class DocumentSeeder extends Seeder
     }
 
     /**
-     * @return array{is_shared_to_all?: bool, min_tingkat_akses?: int, units?: list<int>, shares?: list<int>}
+     * @return array{is_shared_to_all?: bool, is_private?: bool, min_tingkat_akses?: int, units?: list<int>, shares?: list<int>}
      */
     private function aksesDari(string $jenis): array
     {
@@ -256,6 +259,9 @@ final class DocumentSeeder extends Seeder
             // Tanpa mekanisme apa pun: hanya pengunggah, Superadmin, dan
             // jabatan tingkat 1 yang dapat melihatnya.
             'pengunggah' => [],
+            // Hanya Saya: lebih ketat dari 'pengunggah' — bahkan jabatan
+            // tingkat 1 tidak mem-bypass, hanya pengunggah dan Superadmin.
+            'pribadi' => ['is_private' => true],
         };
     }
 
@@ -281,8 +287,20 @@ final class DocumentSeeder extends Seeder
     private function tanggalAcak(): string
     {
         // Sebaran 2024-2026, condong ke tahun terbaru supaya daftar teratas
-        // berisi dokumen yang relevan.
+        // berisi dokumen yang relevan. Tahun 2026 dibatasi Januari-Agustus
+        // dan tidak melewati TanggalSeed::sekarang() — dokumen seed tidak
+        // boleh "dari masa depan" dibandingkan kondisi proyek yang
+        // disimulasikan.
         $tahun = [2024, 2025, 2025, 2026, 2026][mt_rand(0, 4)];
+
+        if ($tahun === (int) TanggalSeed::sekarang()->format('Y')) {
+            $bulanTerbaru = (int) TanggalSeed::sekarang()->format('n');
+            $hariTerbaru = (int) TanggalSeed::sekarang()->format('j');
+            $bulan = mt_rand(1, $bulanTerbaru);
+            $hari = $bulan === $bulanTerbaru ? mt_rand(1, $hariTerbaru) : mt_rand(1, 28);
+
+            return sprintf('%d-%02d-%02d', $tahun, $bulan, $hari);
+        }
 
         return sprintf('%d-%02d-%02d', $tahun, mt_rand(1, 12), mt_rand(1, 28));
     }
@@ -292,13 +310,13 @@ final class DocumentSeeder extends Seeder
         // Delapan dokumen sengaja jatuh dalam 30 hari ke depan supaya kartu
         // "mendekati masa evaluasi" di dasbor punya isi sejak awal (FR-04).
         if ($urutan % 27 === 0 && $urutan < 220) {
-            return now()->addDays(mt_rand(3, 29))->toDateString();
+            return TanggalSeed::sekarang()->addDays(mt_rand(3, 29))->toDateString();
         }
 
         // Lima dokumen sudah lewat masa berlakunya tapi statusnya belum
         // berpindah — bahan demo perintah transisi otomatis (FEAT-16).
         if ($urutan % 43 === 7) {
-            return now()->subDays(mt_rand(1, 20))->toDateString();
+            return TanggalSeed::sekarang()->subDays(mt_rand(1, 20))->toDateString();
         }
 
         if ($urutan % 5 === 0) {
@@ -315,7 +333,7 @@ final class DocumentSeeder extends Seeder
      */
     private function terapkanStatusKadaluarsa(Document $document): void
     {
-        if ($document->masa_berlaku?->isBefore(now()->subMonth())) {
+        if ($document->masa_berlaku?->isBefore(TanggalSeed::sekarang()->subMonth())) {
             $document->update(['status' => DocumentStatus::Kadaluarsa]);
         }
     }

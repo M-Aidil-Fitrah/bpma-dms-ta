@@ -1,0 +1,84 @@
+{
+    "aksi": {
+        "simpan": "Save",
+        "simpanPerubahan": "Save Changes",
+        "batal": "Cancel",
+        "hapus": "Delete",
+        "ubah": "Edit",
+        "unggah": "Upload",
+        "unduh": "Download",
+        "cari": "Search",
+        "tutup": "Close",
+        "kembali": "Back",
+        "lanjutkan": "Continue",
+        "pulihkan": "Restore",
+        "buang": "Trash",
+        "tambah": "Add",
+        "buat": "Create",
+        "filter": "Filter",
+        "resetFilter": "Reset Filter",
+        "lihatSemua": "View All",
+        "muatLebihBanyak": "Load More"
+    },
+    "status": {
+        "aktif": "Active",
+        "nonaktif": "Inactive",
+        "berlaku": "Valid",
+        "kedaluwarsa": "Expired",
+        "menunggu": "Pending",
+        "diproses": "Processing",
+        "berhasil": "Success",
+        "gagal": "Failed"
+    },
+    "kosong": {
+        "judul": "No data yet",
+        "tanpaHasilPencarian": "No results match your search."
+    },
+    "konfirmasi": {
+        "judul": "Confirmation",
+        "yakin": "Are you sure?",
+        "tidakDapatDibatalkan": "This action cannot be undone."
+    },
+    "bahasa": {
+        "label": "Language",
+        "indonesia": "Indonesian",
+        "inggris": "English"
+    },
+    "format": {
+        "baruSaja": "Just now",
+        "menitLalu": "{{n}} minutes ago",
+        "jamLalu": "{{n}} hours ago",
+        "kemarin": "Yesterday",
+        "hariLalu": "{{n}} days ago",
+        "tipeBerkas": {
+            "gambar": "Image",
+            "video": "Video",
+            "audio": "Audio",
+            "teks": "Text",
+            "zip": "ZIP",
+            "berkas": "File"
+        }
+    },
+    "toastStatus": {
+        "success": "Success",
+        "error": "Failed",
+        "warning": "Needs Attention",
+        "info": "Information"
+    },
+    "ui": {
+        "semua": "All",
+        "tutupPemberitahuan": "Close notification",
+        "navigasiHalaman": "Page navigation",
+        "halamanNomor": "Page {{nomor}}",
+        "halamanSebelumnya": "Previous page",
+        "halamanBerikutnya": "Next page",
+        "menampilkan": "Showing",
+        "dari": "of",
+        "modeTampilan": "View mode",
+        "tampilanTabel": "Table view",
+        "tampilanKartu": "Card view",
+        "urutkanBerdasarkan": "Sort by {{label}}",
+        "cariPlaceholder": "Search…",
+        "bersihkanPencarian": "Clear search"
+    }
+}

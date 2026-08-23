@@ -3,6 +3,18 @@ import { Button } from '@/Components/ui/Button';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props { referensi: Pagination.Paginated<App.Data.ReferensiListData>; filter: { cari: string | null; status: string | null }; }
-export default function Index({ referensi, filter }: Props) { return <AppLayout title="Kategori" actions={<Link href="/admin/categories/create"><Button icon={Plus}><span className="hidden sm:inline">Tambah Kategori</span><span className="sr-only sm:hidden">Tambah Kategori</span></Button></Link>}><div className="space-y-4"><ReferenceResourceIndex jenis="kategori" judul="Kategori" singular="kategori" alamat="/admin/categories" referensi={referensi} filter={filter} /></div></AppLayout>; }
+export default function Index({ referensi, filter }: Props) {
+    const { t } = useTranslation(['reference', 'common']);
+    const judul = t('reference:kategori.label');
+    const tambahJudul = `${t('common:aksi.tambah')} ${judul}`;
+    return (
+        <AppLayout title={judul} actions={<Link href="/admin/categories/create"><Button icon={Plus}><span className="hidden sm:inline">{tambahJudul}</span><span className="sr-only sm:hidden">{tambahJudul}</span></Button></Link>}>
+            <div className="space-y-4">
+                <ReferenceResourceIndex jenis="kategori" judul={judul} singular={t('reference:kategori.labelKecil')} alamat="/admin/categories" referensi={referensi} filter={filter} />
+            </div>
+        </AppLayout>
+    );
+}

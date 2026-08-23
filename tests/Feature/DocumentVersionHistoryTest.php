@@ -200,6 +200,56 @@ final class DocumentVersionHistoryTest extends TestCase
                 ->where('versi.0.terbaru', true));
     }
 
+    /**
+     * Bug keamanan: query riwayat versi tidak melewati `visibleTo()`, sehingga
+     * versi lama yang sengaja ditandai "Hanya saya" ikut membocorkan nama
+     * berkas dan catatan revisinya ke siapa pun yang kebetulan berhak atas
+     * versi terbaru — meski mereka bukan pengunggah versi privat itu.
+     */
+    public function test_versi_pribadi_tidak_bocor_ke_pembaca_yang_hanya_berhak_atas_versi_terbaru(): void
+    {
+        $pembaca = $this->buatPengguna($this->unit, 'Pembaca Rantai');
+
+        $this->awal->update(['is_active' => false]);
+
+        $versiPrivat = Document::factory()->create([
+            'category_id' => $this->kategori->id,
+            'origin_unit_id' => $this->unit->id,
+            'uploaded_by' => $this->pemilik->id,
+            'version_root_id' => $this->awal->version_root_id,
+            'version_major' => 2,
+            'version_minor' => 0,
+            'is_active' => false,
+            'is_private' => true,
+            'is_shared_to_all' => false,
+            'file_name_original' => 'RAHASIA-jangan-bocor.pdf',
+            'version_note' => 'Catatan rahasia yang tidak boleh terlihat pembaca.',
+        ]);
+
+        $terbaru = Document::factory()->create([
+            'category_id' => $this->kategori->id,
+            'origin_unit_id' => $this->unit->id,
+            'uploaded_by' => $this->pemilik->id,
+            'version_root_id' => $this->awal->version_root_id,
+            'version_major' => 3,
+            'version_minor' => 0,
+            'is_active' => true,
+        ]);
+        $terbaru->targetUnits()->attach($this->unit->id, ['added_by' => $this->pemilik->id]);
+
+        $responsPemilik = $this->actingAs($this->pemilik)->get("/documents/{$terbaru->id}");
+        $responsPemilik->assertOk()->assertInertia(fn ($halaman) => $halaman->has('versi', 3));
+
+        $responsPembaca = $this->actingAs($pembaca)->get("/documents/{$terbaru->id}");
+        $responsPembaca->assertOk()
+            ->assertInertia(fn ($halaman) => $halaman->has('versi', 2))
+            ->assertDontSee('RAHASIA-jangan-bocor.pdf')
+            ->assertDontSee('Catatan rahasia yang tidak boleh terlihat pembaca.');
+
+        $idVersiTerlihatPembaca = collect($responsPembaca->viewData('page')['props']['versi'])->pluck('id');
+        $this->assertNotContains($versiPrivat->id, $idVersiTerlihatPembaca);
+    }
+
     public function test_editor_bukan_pemilik_rantai_tidak_dapat_memulihkan_versi(): void
     {
         $editor = $this->buatPengguna($this->unit, 'Editor Rantai');

@@ -4,6 +4,7 @@ import { IconButton } from '@/Components/ui/IconButton';
 import { Link, router } from '@inertiajs/react';
 import { Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type ReferenceResourceKind = 'jabatan' | 'unit' | 'kategori';
 
@@ -22,11 +23,12 @@ const PATH: Record<ReferenceResourceKind, string> = {
 };
 
 export function ReferenceResourceActions({ jenis, id, nama, aktif, dampak }: ReferenceResourceActionsProps) {
+    const { t } = useTranslation('reference');
     const konfirmasikan = usePasswordConfirmation();
     const [konfirmasi, setKonfirmasi] = useState(false);
     const [memproses, setMemproses] = useState(false);
     const path = `/admin/${PATH[jenis]}/${id}`;
-    const label = jenis === 'unit' ? 'unit kerja' : jenis;
+    const label = t(`${jenis}.labelKecil`);
 
     function nonaktifkan() {
         konfirmasikan(jalankanNonaktifkan);
@@ -51,16 +53,18 @@ export function ReferenceResourceActions({ jenis, id, nama, aktif, dampak }: Ref
         router.patch(`${path}/restore`, {}, { onFinish: () => setMemproses(false) });
     }
 
+    const labelKapital = label[0].toUpperCase() + label.slice(1);
+
     return (
         <div className="flex items-center justify-end gap-1">
             <Link href={`${path}/edit`} tabIndex={-1}>
-                <IconButton icon={Pencil} label={`Ubah ${label}`} size="sm" />
+                <IconButton icon={Pencil} label={t('actions.ubahLabel', { label })} size="sm" />
             </Link>
 
             {aktif ? (
                 <IconButton
                     icon={Trash2}
-                    label={`Nonaktifkan ${label}`}
+                    label={t('actions.nonaktifkanLabel', { label })}
                     size="sm"
                     variant="danger"
                     onClick={() => setKonfirmasi(true)}
@@ -68,7 +72,7 @@ export function ReferenceResourceActions({ jenis, id, nama, aktif, dampak }: Ref
             ) : (
                 <IconButton
                     icon={RotateCcw}
-                    label={`Aktifkan kembali ${label}`}
+                    label={t('actions.aktifkanKembaliLabel', { label })}
                     size="sm"
                     onClick={aktifkan}
                     disabled={memproses}
@@ -79,22 +83,22 @@ export function ReferenceResourceActions({ jenis, id, nama, aktif, dampak }: Ref
                 terbuka={konfirmasi}
                 onTutup={() => setKonfirmasi(false)}
                 onSetuju={nonaktifkan}
-                judul={`Nonaktifkan ${nama}?`}
-                labelSetuju="Ya, nonaktifkan"
+                judul={t('actions.confirm.judul', { nama })}
+                labelSetuju={t('actions.confirm.setuju')}
                 ikon={Trash2}
                 memproses={memproses}
             >
                 <p>
-                    {label[0].toUpperCase() + label.slice(1)} ini tidak akan muncul pada pilihan baru,
-                    tetapi tidak dihapus dari riwayat yang sudah ada.
+                    {t('actions.confirm.tidakMuncul', { label: labelKapital })}
                 </p>
                 {dampak.length > 0 ? (
                     <p>
-                        Masih terkait dengan <span className="font-medium text-ink">{dampak.join(', ')}</span>.
-                        Data tersebut tetap utuh.
+                        {t('actions.confirm.masihTerkaitAwalan')}{' '}
+                        <span className="font-medium text-ink">{dampak.join(', ')}</span>
+                        {t('actions.confirm.masihTerkaitAkhiran')}
                     </p>
                 ) : (
-                    <p>Belum ada pengguna atau dokumen yang terkait dengannya.</p>
+                    <p>{t('actions.confirm.tidakAdaTerkait')}</p>
                 )}
             </ConfirmDialog>
         </div>

@@ -4,6 +4,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { cn } from '@/lib/cn';
 import { Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface SearchInputProps {
     value: string;
@@ -22,9 +23,11 @@ export interface SearchInputProps {
 export function SearchInput({
     value,
     onChange,
-    placeholder = 'Cari…',
+    placeholder,
     className,
 }: SearchInputProps) {
+    const { t } = useTranslation('common');
+    const placeholderAkhir = placeholder ?? t('ui.cariPlaceholder');
     const [lokal, setLokal] = useState(value);
     const ditunda = useDebounce(lokal, 300);
     const nilaiTerakhir = useRef(value);
@@ -55,8 +58,8 @@ export function SearchInput({
                     type="search"
                     icon={Search}
                     value={lokal}
-                    placeholder={placeholder}
-                    aria-label={placeholder}
+                    placeholder={placeholderAkhir}
+                    aria-label={placeholderAkhir}
                     onChange={(e) => setLokal(e.target.value)}
                     className={cn(
                         // Tombol hapus bawaan peramban untuk `type="search"`
@@ -71,7 +74,7 @@ export function SearchInput({
                 {lokal && (
                     <IconButton
                         icon={X}
-                        label="Bersihkan pencarian"
+                        label={t('ui.bersihkanPencarian')}
                         variant="ghost"
                         size="sm"
                         onClick={() => setLokal('')}

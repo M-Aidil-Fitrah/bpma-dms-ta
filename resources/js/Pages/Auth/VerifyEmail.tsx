@@ -4,8 +4,10 @@ import { AuthLayout } from '@/Layouts/AuthLayout';
 import { Link, useForm } from '@inertiajs/react';
 import { MailCheck } from 'lucide-react';
 import { type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function VerifyEmail({ status }: { status?: string }) {
+    const { t } = useTranslation('auth');
     const { post, processing } = useForm({});
 
     function handleSubmit(event: FormEvent) {
@@ -15,12 +17,12 @@ export default function VerifyEmail({ status }: { status?: string }) {
 
     return (
         <AuthLayout
-            title="Verifikasi Surel"
-            subtitle="Buka tautan yang kami kirim ke kotak masuk Anda untuk melanjutkan"
+            title={t('verifikasiEmail.judul')}
+            subtitle={t('verifikasiEmail.subjudul')}
         >
             {status === 'verification-link-sent' && (
                 <Alert variant="success" className="mb-5">
-                    Tautan verifikasi baru sudah dikirim ke surel Anda.
+                    {t('verifikasiEmail.tautanTerkirim')}
                 </Alert>
             )}
 
@@ -32,7 +34,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
                     className="w-full"
                     size="lg"
                 >
-                    Kirim Ulang Tautan
+                    {t('verifikasiEmail.kirimUlang')}
                 </Button>
             </form>
 
@@ -42,7 +44,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
                 as="button"
                 className="mt-5 block w-full text-center text-sm font-medium text-ink-muted hover:text-ink"
             >
-                Keluar
+                {t('verifikasiEmail.keluar')}
             </Link>
         </AuthLayout>
     );

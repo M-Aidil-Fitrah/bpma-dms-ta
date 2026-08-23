@@ -7,6 +7,8 @@ export interface FieldProps {
     hint?: string;
     error?: string;
     required?: boolean;
+    /** Penanda "(Opsional)" di sebelah label — dipakai hanya bila keharusan mengisinya sering disalahsangka. */
+    optional?: boolean;
     className?: string;
     /**
      * Menerima fungsi supaya `id` dan atribut aksesibilitas dapat diteruskan ke
@@ -32,6 +34,7 @@ export function Field({
     hint,
     error,
     required = false,
+    optional = false,
     className,
     children,
 }: FieldProps) {
@@ -48,6 +51,9 @@ export function Field({
                     <span className="ml-1 text-danger" aria-hidden>
                         *
                     </span>
+                )}
+                {optional && (
+                    <span className="ml-1 font-normal text-ink-muted">(Opsional)</span>
                 )}
             </label>
 

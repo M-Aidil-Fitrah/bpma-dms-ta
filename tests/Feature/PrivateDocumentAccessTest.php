@@ -64,4 +64,59 @@ final class PrivateDocumentAccessTest extends TestCase
             ->assertOk()
             ->assertDontSee($this->dokumen->judul);
     }
+
+    /**
+     * Bug: setelah Pimpinan Tertinggi mengunggah dokumennya sendiri dengan
+     * akses "Hanya saya", redirect ke halaman detail langsung 403 — sebab
+     * `scopeVisibleTo()` mem-bypass Pimpinan Tertinggi dengan syarat
+     * `is_private = false` tanpa pengecualian untuk dokumen miliknya sendiri.
+     * Pemilik harus selalu dapat melihat dokumen pribadinya sendiri, terlepas
+     * dari jabatan apa pun yang ia sandang.
+     */
+    public function test_pimpinan_tertinggi_tetap_dapat_melihat_dokumen_pribadi_miliknya_sendiri(): void
+    {
+        $dokumenMilikPimpinan = Document::factory()->create([
+            'category_id' => Category::factory()->create()->id,
+            'uploaded_by' => $this->pimpinan->id,
+            'is_private' => true,
+            'is_shared_to_all' => false,
+        ]);
+
+        $this->actingAs($this->pimpinan)
+            ->get(route('documents.show', $dokumenMilikPimpinan))
+            ->assertOk();
+    }
+
+    /**
+     * Perlindungan tambahan (defense-in-depth): "Terbaru" dan "Berbintang"
+     * memakai `scopeVisibleTo()` yang persis sama. Membuka dokumen pribadi
+     * milik sendiri mencatatnya sebagai "Terbaru"; membintanginya mencatatnya
+     * sebagai "Berbintang" — keduanya wajib tetap terlihat pemiliknya
+     * meski ia berjabatan Pimpinan Tertinggi.
+     */
+    public function test_pimpinan_tertinggi_tetap_melihat_dokumen_pribadi_miliknya_di_terbaru_dan_berbintang(): void
+    {
+        $dokumenMilikPimpinan = Document::factory()->create([
+            'category_id' => Category::factory()->create()->id,
+            'uploaded_by' => $this->pimpinan->id,
+            'is_private' => true,
+            'is_shared_to_all' => false,
+        ]);
+
+        $this->actingAs($this->pimpinan)
+            ->get(route('documents.show', $dokumenMilikPimpinan))
+            ->assertOk();
+        $this->actingAs($this->pimpinan)
+            ->put(route('documents.star', $dokumenMilikPimpinan))
+            ->assertRedirect();
+
+        $this->actingAs($this->pimpinan)
+            ->get(route('documents.recent'))
+            ->assertOk()
+            ->assertInertia(fn ($halaman) => $halaman->has('dokumen.data', 1));
+        $this->actingAs($this->pimpinan)
+            ->get(route('documents.starred'))
+            ->assertOk()
+            ->assertInertia(fn ($halaman) => $halaman->has('dokumen.data', 1));
+    }
 }

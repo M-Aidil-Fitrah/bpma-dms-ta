@@ -20,7 +20,9 @@ import { cn } from '@/lib/cn';
 import { dalamJendelaWaktu, formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, Check, Copy, FileText, History, Info, ShieldCheck } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import type { TFunction } from 'i18next';
+import { useMemo, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ShowProps {
     dokumen: App.Data.DocumentDetailData;
@@ -32,11 +34,14 @@ interface ShowProps {
 type Tab = 'detail' | 'akses' | 'riwayat';
 
 const TAB_VALID: readonly Tab[] = ['detail', 'akses', 'riwayat'];
-const TAB_ITEMS: readonly TabItem<Tab>[] = [
-    { value: 'detail', label: 'Detail', icon: Info },
-    { value: 'akses', label: 'Akses', icon: ShieldCheck },
-    { value: 'riwayat', label: 'Riwayat', icon: History },
-];
+
+function buatTabItems(t: TFunction): readonly TabItem<Tab>[] {
+    return [
+        { value: 'detail', label: t('documentBrowse:show.tabs.detail'), icon: Info },
+        { value: 'akses', label: t('documentBrowse:show.tabs.akses'), icon: ShieldCheck },
+        { value: 'riwayat', label: t('documentBrowse:show.tabs.riwayat'), icon: History },
+    ];
+}
 
 /**
  * Tab awal mengikuti `location.hash` (mis. tautan menu "Lihat pengaturan
@@ -62,7 +67,9 @@ function isTab(value: string): value is Tab {
 const JENDELA_PRATINJAU_MENIT = 5;
 
 export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: ShowProps) {
+    const { t } = useTranslation(['documentBrowse', 'common']);
     const [tab, setTab] = useState<Tab>(tabDariHash);
+    const tabItems = useMemo(() => buatTabItems(t), [t]);
 
     const masihMenyiapkanPratinjau =
         dokumen.pratinjau_sedang_disiapkan && dalamJendelaWaktu(dokumen.diunggah_pada, JENDELA_PRATINJAU_MENIT);
@@ -85,10 +92,8 @@ export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: Sh
             }
         >
             {!dokumen.aktif && (
-                <Alert variant="warning" title="Dokumen ini nonaktif" className="mb-5">
-                    Disembunyikan dari daftar dokumen dan hasil pencarian. Anda membukanya
-                    lewat riwayat versi. Arsip tidak dapat diubah; pemilik rantai dapat
-                    menjadikannya versi terbaru dari panel Riwayat.
+                <Alert variant="warning" title={t('documentBrowse:show.nonaktif.judul')} className="mb-5">
+                    {t('documentBrowse:show.nonaktif.deskripsi')}
                 </Alert>
             )}
 
@@ -102,7 +107,7 @@ export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: Sh
                 </Card>
 
                 <Card className="flex min-h-0 flex-col xl:col-span-2 xl:h-full">
-                    <Tabs items={TAB_ITEMS} value={tab} onChange={setTab} label="Bagian dokumen" />
+                    <Tabs items={tabItems} value={tab} onChange={setTab} label={t('documentBrowse:show.tabs.ariaLabel')} />
 
                     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5">
                         {tab === 'detail' && <PanelDetail dokumen={dokumen} />}
@@ -122,6 +127,8 @@ export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: Sh
 }
 
 function Remah({ judul }: { judul: string }) {
+    const { t } = useTranslation(['documentBrowse']);
+
     return (
         <div className="flex min-w-0 items-center gap-2 text-sm">
             <Link
@@ -129,7 +136,7 @@ function Remah({ judul }: { judul: string }) {
                 className="flex shrink-0 items-center gap-1.5 font-medium text-ink-muted hover:text-ink"
             >
                 <ArrowLeft className="size-4" aria-hidden />
-                Semua Dokumen
+                {t('documentBrowse:index.title')}
             </Link>
             <span className="text-ink-subtle" aria-hidden>
                 /
@@ -140,6 +147,7 @@ function Remah({ judul }: { judul: string }) {
 }
 
 function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
+    const { t } = useTranslation(['documentBrowse']);
     const [teksEkstraksiTerbuka, setTeksEkstraksiTerbuka] = useState(false);
     const [teksTersalin, setTeksTersalin] = useState(false);
     const teksEkstraksiTersedia = dokumen.extraction_status === 'completed' && dokumen.isi_teks !== null;
@@ -170,51 +178,51 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
 
     return (
         <dl className="space-y-4">
-            <Baris label="Nomor Dokumen" mono>
+            <Baris label={t('documentBrowse:show.detail.nomorDokumen')} mono>
                 {dokumen.nomor}
             </Baris>
-            <Baris label="Judul">{dokumen.judul}</Baris>
+            <Baris label={t('documentBrowse:show.detail.judul')}>{dokumen.judul}</Baris>
 
-            <Baris label="Versi Dokumen">
+            <Baris label={t('documentBrowse:show.detail.versiDokumen')}>
                 <div className="space-y-1">
                     <span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 font-mono text-xs font-semibold text-brand-700">
                         {dokumen.version_label}
                     </span>
                     <p className="whitespace-pre-wrap text-sm text-ink-muted">
-                        Deskripsi perubahan: {dokumen.version_note}
+                        {t('documentBrowse:show.detail.deskripsiPerubahan', { catatan: dokumen.version_note })}
                     </p>
                 </div>
             </Baris>
 
             {dokumen.deskripsi && (
-                <Baris label="Deskripsi">
+                <Baris label={t('documentBrowse:show.detail.deskripsi')}>
                     <span className="whitespace-pre-wrap">{dokumen.deskripsi}</span>
                 </Baris>
             )}
 
-            <Baris label="Kategori">{dokumen.kategori ?? '—'}</Baris>
-            <Baris label="Unit Asal">{dokumen.unit_asal ?? '—'}</Baris>
-            <Baris label="Tanggal Dokumen">{formatTanggalPanjang(dokumen.tanggal)}</Baris>
+            <Baris label={t('documentBrowse:show.detail.kategori')}>{dokumen.kategori ?? '—'}</Baris>
+            <Baris label={t('documentBrowse:show.detail.unitAsal')}>{dokumen.unit_asal ?? '—'}</Baris>
+            <Baris label={t('documentBrowse:show.detail.tanggalDokumen')}>{formatTanggalPanjang(dokumen.tanggal)}</Baris>
 
-            <Baris label="Masa Berlaku">
+            <Baris label={t('documentBrowse:show.detail.masaBerlaku')}>
                 {dokumen.masa_berlaku ? (
                     formatTanggalPanjang(dokumen.masa_berlaku)
                 ) : (
-                    <span className="text-ink-subtle">Tanpa batas waktu</span>
+                    <span className="text-ink-subtle">{t('documentBrowse:show.detail.tanpaBatasWaktu')}</span>
                 )}
             </Baris>
 
-            <Baris label="Status">
+            <Baris label={t('documentBrowse:show.detail.status')}>
                 <DocumentStatusBadge status={dokumen.status} />
             </Baris>
 
             <hr className="border-line" />
 
-            <Baris label="Nama Berkas" mono>
+            <Baris label={t('documentBrowse:show.detail.namaBerkas')} mono>
                 <span className="block break-all">{dokumen.nama_berkas}</span>
             </Baris>
 
-            <Baris label="Tipe & Ukuran">
+            <Baris label={t('documentBrowse:show.detail.tipeUkuran')}>
                 <span className="flex flex-wrap items-center gap-2">
                     <FileTypeBadge mime={dokumen.tipe_berkas} />
                     <span className="font-mono text-sm text-ink-muted">
@@ -223,7 +231,7 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                 </span>
             </Baris>
 
-            <Baris label="Pencarian Isi">
+            <Baris label={t('documentBrowse:show.detail.pencarianIsi')}>
                 <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                         <ExtractionStatusBadge
@@ -241,7 +249,7 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                                 icon={FileText}
                                 onClick={() => setTeksEkstraksiTerbuka(true)}
                             >
-                                Lihat teks hasil ekstraksi
+                                {t('documentBrowse:show.detail.lihatTeksEkstraksi')}
                             </Button>
                         )}
                     </div>
@@ -252,12 +260,12 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                 <Modal
                     terbuka={teksEkstraksiTerbuka}
                     onTutup={setTeksEkstraksiTerbuka}
-                    judul="Teks hasil ekstraksi"
+                    judul={t('documentBrowse:show.modal.judul')}
                     keterangan={dokumen.nama_berkas}
                     aksiHeader={
                         <IconButton
                             icon={teksTersalin ? Check : Copy}
-                            label={teksTersalin ? 'Teks hasil ekstraksi sudah disalin' : 'Salin teks hasil ekstraksi'}
+                            label={teksTersalin ? t('documentBrowse:show.modal.sudahDisalin') : t('documentBrowse:show.modal.salinTeks')}
                             variant="ghost"
                             onClick={() => void salinTeksEkstraksi()}
                         />
@@ -266,7 +274,7 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                     contentClassName="p-0"
                 >
                     <p className="border-b border-line bg-surface-raised px-5 py-3 text-sm text-ink-muted">
-                        Teks ini dipakai untuk pencarian isi dan dapat berbeda dari tata letak berkas asli.
+                        {t('documentBrowse:show.modal.keterangan')}
                     </p>
                     <pre className="whitespace-pre-wrap break-words p-5 font-mono text-sm leading-relaxed text-ink">
                         {dokumen.isi_teks}
@@ -276,7 +284,7 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
 
             <hr className="border-line" />
 
-            <Baris label="Diunggah Oleh">
+            <Baris label={t('documentBrowse:show.detail.diunggahOleh')}>
                 <span className="flex items-start gap-2">
                     <Avatar
                         initials={dokumen.inisial_pengunggah}
@@ -297,10 +305,10 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                 </span>
             </Baris>
 
-            <Baris label="Diunggah Pada" mono>
+            <Baris label={t('documentBrowse:show.detail.diunggahPada')} mono>
                 {formatWaktu(dokumen.diunggah_pada)}
             </Baris>
-            <Baris label="Terakhir Diperbarui" mono>
+            <Baris label={t('documentBrowse:show.detail.terakhirDiperbarui')} mono>
                 {formatWaktu(dokumen.diperbarui_pada)}
             </Baris>
         </dl>
@@ -316,6 +324,7 @@ function PanelRiwayat({
     riwayat: App.Data.ActivityLogData[];
     bolehPulihkan: boolean;
 }) {
+    const { t } = useTranslation(['documentBrowse']);
     const [bagian, setBagian] = useState<'versi' | 'aktivitas'>('versi');
     const [batasAktivitas, setBatasAktivitas] = useState(5);
     const aktivitasDitampilkan = riwayat.slice(0, batasAktivitas);
@@ -329,7 +338,7 @@ function PanelRiwayat({
                     aria-pressed={bagian === 'versi'}
                     className={cn('rounded-md px-3 py-2 text-sm font-medium', bagian === 'versi' ? 'bg-surface text-brand-700 shadow-sm' : 'text-ink-muted')}
                 >
-                    Versi ({versi.length})
+                    {t('documentBrowse:show.riwayat.tabVersi', { jumlah: versi.length })}
                 </button>
                 <button
                     type="button"
@@ -337,7 +346,7 @@ function PanelRiwayat({
                     aria-pressed={bagian === 'aktivitas'}
                     className={cn('rounded-md px-3 py-2 text-sm font-medium', bagian === 'aktivitas' ? 'bg-surface text-brand-700 shadow-sm' : 'text-ink-muted')}
                 >
-                    Aktivitas
+                    {t('documentBrowse:show.riwayat.tabAktivitas')}
                 </button>
             </div>
 
@@ -358,8 +367,8 @@ function PanelRiwayat({
             ) : (
                 <EmptyState
                     icon={History}
-                    title="Belum ada aktivitas"
-                    description="Aktivitas yang dapat Anda akses akan muncul di sini."
+                    title={t('documentBrowse:show.riwayat.kosong.judul')}
+                    description={t('documentBrowse:show.riwayat.kosong.deskripsi')}
                 />
             )}
         </div>

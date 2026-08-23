@@ -6,8 +6,10 @@ import { wajibPenggunaTerautentikasi } from '@/types/auth';
 import { useForm, usePage } from '@inertiajs/react';
 import { Check, Save } from 'lucide-react';
 import { type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function UpdateProfileInformationForm() {
+    const { t } = useTranslation(['profile', 'common']);
     const penggunaSaatIni = wajibPenggunaTerautentikasi(usePage().props);
 
     const { data, setData, patch, processing, errors, recentlySuccessful } = useForm({
@@ -24,16 +26,16 @@ export function UpdateProfileInformationForm() {
         <Card>
             <CardHeader>
                 <div>
-                    <CardTitle>Informasi Profil</CardTitle>
+                    <CardTitle>{t('informasiProfil.judul')}</CardTitle>
                     <p className="mt-0.5 text-sm text-ink-muted">
-                        Perbarui nama dan alamat surel akun Anda.
+                        {t('informasiProfil.deskripsi')}
                     </p>
                 </div>
             </CardHeader>
 
             <CardBody>
                 <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
-                    <Field label="Nama" error={errors.name} required>
+                    <Field label={t('informasiProfil.namaLabel')} error={errors.name} required>
                         {(props) => (
                             <Input
                                 {...props}
@@ -45,7 +47,7 @@ export function UpdateProfileInformationForm() {
                         )}
                     </Field>
 
-                    <Field label="Surel" error={errors.email} required>
+                    <Field label={t('informasiProfil.emailLabel')} error={errors.email} required>
                         {(props) => (
                             <Input
                                 {...props}
@@ -63,26 +65,26 @@ export function UpdateProfileInformationForm() {
                         (FR-26), karena menentukan cakupan akses dokumen. */}
                     <dl className="grid gap-3 rounded-lg bg-surface-sunken p-4 text-sm sm:grid-cols-2">
                         <div>
-                            <dt className="text-ink-muted">Jabatan</dt>
+                            <dt className="text-ink-muted">{t('informasiProfil.jabatanLabel')}</dt>
                             <dd className="font-medium text-ink">
                                 {penggunaSaatIni.jabatan ?? '—'}
                             </dd>
                         </div>
                         <div>
-                            <dt className="text-ink-muted">Unit Kerja</dt>
+                            <dt className="text-ink-muted">{t('informasiProfil.unitKerjaLabel')}</dt>
                             <dd className="font-medium text-ink">{penggunaSaatIni.unit ?? '—'}</dd>
                         </div>
                     </dl>
 
                     <div className="flex items-center gap-3">
                         <Button type="submit" icon={Save} loading={processing}>
-                            Simpan
+                            {t('common:aksi.simpan')}
                         </Button>
 
                         {recentlySuccessful && (
                             <span className="flex items-center gap-1.5 text-sm text-success">
                                 <Check className="size-4" aria-hidden />
-                                Tersimpan
+                                {t('tersimpan')}
                             </span>
                         )}
                     </div>

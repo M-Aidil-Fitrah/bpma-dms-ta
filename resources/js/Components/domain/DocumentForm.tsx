@@ -19,6 +19,8 @@ import { formatUkuranBerkas } from '@/lib/format';
 import { Link, useForm } from '@inertiajs/react';
 import { Lock, Save, Upload } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 export interface OpsiFormulirDokumen {
     kategori: { id: number; nama: string }[];
@@ -92,6 +94,7 @@ export function DocumentForm({
     unggahVersiBaru,
     replacesDocumentId = null,
 }: DocumentFormProps) {
+    const { t } = useTranslation(['documentForm', 'common']);
     const [akses, setAkses] = useState<NilaiAkses>(aksesAwal);
 
     const { data, setData, post, patch, processing, progress, errors, transform } =
@@ -101,7 +104,7 @@ export function DocumentForm({
             replaces_document_id: replacesDocumentId,
         });
     const unitPenerbitDitentukan = opsi.unit_akun_id !== null || !opsi.unit_kerja_wajib;
-    const keteranganUnitKerja = 'Pilih unit kerja yang bertanggung jawab atas dokumen ini.';
+    const keteranganUnitKerja = t('documentForm:form.unitPenerbit.keteranganPilih');
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
@@ -159,16 +162,17 @@ export function DocumentForm({
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-5 xl:grid-cols-3">
             <div className="min-w-0 space-y-5 xl:col-span-2">
                 {mode === 'buat' && opsi.lingkungan_kurang && (
-                    <Alert variant="warning" title="Batas unggahan di bawah semestinya">
-                        Aplikasi menetapkan {opsi.batas_dijanjikan_label}, tapi mesin ini
-                        hanya sanggup {opsi.batas_unggah_label}. Setelan PHP atau server
-                        web perlu dinaikkan — lihat README bagian Batas Ukuran Unggahan.
+                    <Alert variant="warning" title={t('documentForm:form.peringatanBatasUnggah.judul')}>
+                        {t('documentForm:form.peringatanBatasUnggah.keterangan', {
+                            batasDijanjikan: opsi.batas_dijanjikan_label,
+                            batasUnggah: opsi.batas_unggah_label,
+                        })}
                     </Alert>
                 )}
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Berkas Dokumen</CardTitle>
+                        <CardTitle>{t('documentForm:form.kartuBerkas.judul')}</CardTitle>
                     </CardHeader>
                     <CardBody>
                         {mode === 'ubah' && berkas !== undefined ? (
@@ -184,9 +188,10 @@ export function DocumentForm({
                             <div className="space-y-4">
                                 {replacesDocumentId !== null && versiTerbaru !== undefined && (
                                     <>
-                                        <Alert variant="warning" title="Format versi harus sama">
-                                            Versi baru wajib menggunakan format {labelFormat(versiTerbaru.tipe)}
-                                            {' '}seperti versi terbaru saat ini.
+                                        <Alert variant="warning" title={t('documentForm:form.peringatanFormatVersi.judul')}>
+                                            {t('documentForm:form.peringatanFormatVersi.keterangan', {
+                                                format: labelFormat(versiTerbaru.tipe, t),
+                                            })}
                                         </Alert>
                                         <VersiTerbaruTersimpan berkas={versiTerbaru} />
                                     </>
@@ -205,22 +210,22 @@ export function DocumentForm({
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Informasi Dokumen</CardTitle>
+                        <CardTitle>{t('documentForm:form.kartuInformasi.judul')}</CardTitle>
                     </CardHeader>
                     <CardBody className="grid gap-4 sm:grid-cols-2">
-                        <Field label="Nomor Dokumen" error={errors.nomor} required>
+                        <Field label={t('documentForm:form.nomor.label')} error={errors.nomor} required>
                             {(props) => (
                                 <Input
                                     {...props}
                                     value={data.nomor}
-                                    placeholder="042/BPMA/DPR-TPL/VIII/2026"
+                                    placeholder={t('documentForm:form.nomor.placeholder')}
                                     invalid={Boolean(errors.nomor)}
                                     onChange={(e) => setData('nomor', e.target.value)}
                                 />
                             )}
                         </Field>
 
-                        <Field label="Tanggal Dokumen" error={errors.tanggal} required>
+                        <Field label={t('documentForm:form.tanggal.label')} error={errors.tanggal} required>
                             {(props) => (
                                 <Input
                                     {...props}
@@ -233,7 +238,7 @@ export function DocumentForm({
                         </Field>
 
                         <Field
-                            label="Judul"
+                            label={t('documentForm:form.judul.label')}
                             error={errors.judul}
                             required
                             className="sm:col-span-2"
@@ -248,53 +253,67 @@ export function DocumentForm({
                             )}
                         </Field>
 
-                        <Field label="Kategori" error={errors.category_id} required>
-                            {(props) => (
-                                <Select
-                                    {...props}
-                                    placeholder="Pilih kategori"
-                                    value={data.category_id}
-                                    invalid={Boolean(errors.category_id)}
-                                    options={opsi.kategori.map((k) => ({
-                                        value: k.id,
-                                        label: k.nama,
-                                    }))}
-                                    onChange={(e) => setData('category_id', e.target.value)}
-                                />
-                            )}
-                        </Field>
+                        <div className="space-y-1.5 sm:col-span-2">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <Field label={t('documentForm:form.kategori.label')} error={errors.category_id} required>
+                                    {(props) => (
+                                        <Select
+                                            {...props}
+                                            placeholder={t('documentForm:form.kategori.placeholder')}
+                                            value={data.category_id}
+                                            invalid={Boolean(errors.category_id)}
+                                            options={opsi.kategori.map((k) => ({
+                                                value: k.id,
+                                                label: k.nama,
+                                            }))}
+                                            onChange={(e) => setData('category_id', e.target.value)}
+                                        />
+                                    )}
+                                </Field>
 
-                        <Field
-                            label="Unit Penerbit"
-                            hint={unitPenerbitDitentukan ? 'Ditentukan dari akun Anda dan tidak dapat diubah di formulir.' : keteranganUnitKerja}
-                            error={errors.origin_unit_id}
-                            required={!unitPenerbitDitentukan}
-                        >
-                            {(props) => unitPenerbitDitentukan ? (
-                                <Input
-                                    {...props}
-                                    value={opsi.unit_akun_nama ?? 'Pimpinan BPMA'}
-                                    readOnly
-                                    aria-readonly="true"
-                                />
-                            ) : (
-                                <Select
-                                    {...props}
-                                    placeholder="Pilih unit kerja"
-                                    value={data.origin_unit_id}
-                                    invalid={Boolean(errors.origin_unit_id)}
-                                    options={opsi.unit.map((u) => ({
-                                        value: u.id,
-                                        label: u.nama,
-                                    }))}
-                                    onChange={(e) => setData('origin_unit_id', e.target.value)}
-                                />
-                            )}
-                        </Field>
+                                {/* Tanpa `hint` di sini: dulu penjelasan tampil di antara
+                                    label dan kendali, sehingga kotak dropdown ini turun
+                                    lebih rendah daripada Kategori di sebelahnya dan
+                                    keduanya tidak sejajar. Penjelasannya sekarang satu
+                                    baris di bawah, meliputi kedua kolom, sama seperti
+                                    pola pada Masa Berlaku di bawah. */}
+                                <Field
+                                    label={t('documentForm:form.unitPenerbit.label')}
+                                    error={errors.origin_unit_id}
+                                    required={!unitPenerbitDitentukan}
+                                >
+                                    {(props) => unitPenerbitDitentukan ? (
+                                        <Input
+                                            {...props}
+                                            value={opsi.unit_akun_nama ?? 'Pimpinan BPMA'}
+                                            readOnly
+                                            aria-readonly="true"
+                                        />
+                                    ) : (
+                                        <Select
+                                            {...props}
+                                            placeholder={t('documentForm:form.unitPenerbit.placeholderSelect')}
+                                            value={data.origin_unit_id}
+                                            invalid={Boolean(errors.origin_unit_id)}
+                                            options={opsi.unit.map((u) => ({
+                                                value: u.id,
+                                                label: u.nama,
+                                            }))}
+                                            onChange={(e) => setData('origin_unit_id', e.target.value)}
+                                        />
+                                    )}
+                                </Field>
+                            </div>
+                            <p className="text-xs text-ink-muted">
+                                {unitPenerbitDitentukan
+                                    ? t('documentForm:form.unitPenerbit.keteranganDitentukan')
+                                    : keteranganUnitKerja}
+                            </p>
+                        </div>
 
                         <div className="space-y-1.5 sm:col-span-2">
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <Field label="Masa Berlaku" error={errors.masa_berlaku}>
+                                <Field label={t('documentForm:form.masaBerlaku.label')} optional error={errors.masa_berlaku}>
                                     {(props) => (
                                         <Input
                                             {...props}
@@ -306,16 +325,16 @@ export function DocumentForm({
                                     )}
                                 </Field>
 
-                                <Field label="Siapa yang Boleh Mengubah" error={errors.edit_scope}>
+                                <Field label={t('documentForm:form.editScope.label')} error={errors.edit_scope}>
                                     {(props) => (
                                         <Select
                                             {...props}
                                             value={data.edit_scope}
                                             options={[
-                                                { value: 'owner_only', label: 'Hanya pemilik dokumen' },
+                                                { value: 'owner_only', label: t('documentForm:form.editScope.opsi.pemilikSaja') },
                                                 {
                                                     value: 'match_visibility',
-                                                    label: 'Sama seperti akses',
+                                                    label: t('documentForm:form.editScope.opsi.samaSepertiAkses'),
                                                 },
                                             ]}
                                             onChange={(e) => setData('edit_scope', e.target.value)}
@@ -323,11 +342,11 @@ export function DocumentForm({
                                     )}
                                 </Field>
                             </div>
-                            <p className="text-xs text-ink-muted">Kosongkan Masa Berlaku bila dokumen berlaku tanpa batas waktu.</p>
+                            <p className="text-xs text-ink-muted">{t('documentForm:form.masaBerlaku.keterangan')}</p>
                         </div>
 
                         <Field
-                            label="Deskripsi"
+                            label={t('documentForm:form.deskripsi.label')}
                             error={errors.deskripsi}
                             className="sm:col-span-2"
                         >
@@ -344,10 +363,10 @@ export function DocumentForm({
 
                         {(mode === 'ubah' || replacesDocumentId !== null) && (
                             <Field
-                                label="Catatan Versi"
+                                label={t('documentForm:form.catatanVersi.label')}
                                 hint={mode === 'ubah'
-                                    ? 'Jelaskan perubahan metadata atau akses pada revisi ini.'
-                                    : 'Jelaskan perubahan isi pada versi major baru ini.'}
+                                    ? t('documentForm:form.catatanVersi.hintUbah')
+                                    : t('documentForm:form.catatanVersi.hintVersiBaru')}
                                 error={errors.version_note}
                                 required
                                 className="sm:col-span-2"
@@ -359,7 +378,7 @@ export function DocumentForm({
                                         value={data.version_note}
                                         invalid={Boolean(errors.version_note)}
                                         onChange={(e) => setData('version_note', e.target.value)}
-                                        placeholder="Contoh: memperbaiki masa berlaku dan akses unit"
+                                        placeholder={t('documentForm:form.catatanVersi.placeholder')}
                                     />
                                 )}
                             </Field>
@@ -372,9 +391,9 @@ export function DocumentForm({
                 <Card>
                     <CardHeader>
                         <div>
-                            <CardTitle>Pengaturan Akses</CardTitle>
+                            <CardTitle>{t('documentForm:form.kartuAkses.judul')}</CardTitle>
                             <p className="mt-0.5 text-sm text-ink-muted">
-                                Boleh mengaktifkan lebih dari satu sekaligus.
+                                {t('documentForm:form.kartuAkses.keterangan')}
                             </p>
                         </div>
                     </CardHeader>
@@ -392,7 +411,7 @@ export function DocumentForm({
                 <div className="grid grid-cols-2 gap-2">
                     <Link href={batal}>
                         <Button type="button" variant="secondary" size="lg" className="w-full">
-                            Batal
+                            {t('common:aksi.batal')}
                         </Button>
                     </Link>
 
@@ -405,13 +424,13 @@ export function DocumentForm({
                     >
                         {mode === 'buat'
                             ? processing
-                                ? 'Mengunggah…'
+                                ? t('documentForm:form.tombol.mengunggah')
                                 : replacesDocumentId === null
-                                  ? 'Unggah Dokumen'
-                                  : 'Unggah versi baru'
+                                  ? t('documentForm:form.tombol.unggahDokumen')
+                                  : t('documentForm:form.tombol.unggahVersiBaru')
                             : processing
-                              ? 'Menyimpan…'
-                              : 'Simpan Perubahan'}
+                              ? t('documentForm:form.tombol.menyimpan')
+                              : t('common:aksi.simpanPerubahan')}
                     </Button>
                 </div>
             </div>
@@ -433,6 +452,8 @@ function BerkasTerkunci({
     berkas: RingkasanBerkas;
     unggahVersiBaru?: string;
 }) {
+    const { t } = useTranslation('documentForm');
+
     return (
         <div className="space-y-2">
             <div className="flex items-center gap-3 rounded-card border border-line bg-surface-sunken p-3">
@@ -449,14 +470,13 @@ function BerkasTerkunci({
             </div>
 
             <p className="text-xs text-ink-muted">
-                Metadata dan akses dapat diubah di halaman ini. Bila isi berkas berubah,
-                buat versi baru agar riwayat dokumen ini tetap utuh.
+                {t('documentForm:form.berkasTerkunci.keterangan')}
             </p>
 
             {unggahVersiBaru && (
                 <Link href={unggahVersiBaru} className="inline-flex">
                     <Button type="button" variant="secondary" size="sm" icon={Upload}>
-                        Unggah versi baru
+                        {t('documentForm:form.tombol.unggahVersiBaru')}
                     </Button>
                 </Link>
             )}
@@ -474,10 +494,12 @@ interface RingkasanBerkas {
 
 /** Pembanding yang tidak pernah berubah saat pengguna memilih berkas baru. */
 function VersiTerbaruTersimpan({ berkas }: { berkas: RingkasanBerkas }) {
+    const { t } = useTranslation('documentForm');
+
     return (
         <div className="overflow-hidden rounded-card border border-line bg-surface">
             <p className="border-b border-line bg-surface-sunken px-3 py-2 text-xs font-semibold text-ink-muted">
-                Versi terbaru saat ini
+                {t('documentForm:form.versiTerbaru.label')}
             </p>
             <div className="flex min-w-0 items-center gap-3 p-3">
                 <DocumentThumbnail
@@ -499,10 +521,10 @@ function VersiTerbaruTersimpan({ berkas }: { berkas: RingkasanBerkas }) {
     );
 }
 
-function labelFormat(mime: string): string {
-    if (mime.startsWith('image/')) return 'gambar';
-    if (mime === 'application/pdf') return 'PDF';
-    if (mime.includes('word')) return 'dokumen Word';
+function labelFormat(mime: string, t: TFunction): string {
+    if (mime.startsWith('image/')) return t('documentForm:form.formatBerkas.gambar');
+    if (mime === 'application/pdf') return t('documentForm:form.formatBerkas.pdf');
+    if (mime.includes('word')) return t('documentForm:form.formatBerkas.word');
 
     return mime;
 }

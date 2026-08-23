@@ -1,0 +1,243 @@
+{
+    "form": {
+        "peringatanBatasUnggah": {
+            "judul": "Upload limit is lower than intended",
+            "keterangan": "The application sets a limit of {{batasDijanjikan}}, but this server can only handle {{batasUnggah}}. The PHP or web server settings need to be raised — see the README's Upload Size Limit section."
+        },
+        "kartuBerkas": {
+            "judul": "Document File"
+        },
+        "peringatanFormatVersi": {
+            "judul": "New version must match the format",
+            "keterangan": "The new version must use the {{format}} format, same as the current latest version."
+        },
+        "formatBerkas": {
+            "gambar": "image",
+            "pdf": "PDF",
+            "word": "Word document"
+        },
+        "kartuInformasi": {
+            "judul": "Document Information"
+        },
+        "nomor": {
+            "label": "Document Number",
+            "placeholder": "042/BPMA/DPR-TPL/VIII/2026"
+        },
+        "unitPenerbit": {
+            "label": "Issuing Unit",
+            "placeholderSelect": "Select work unit",
+            "keteranganDitentukan": "Determined from your account and cannot be changed in this form.",
+            "keteranganPilih": "Select the work unit responsible for this document."
+        },
+        "masaBerlaku": {
+            "label": "Expiry Date",
+            "keterangan": "Leave Expiry Date empty if the document is valid indefinitely."
+        },
+        "tanggal": {
+            "label": "Document Date"
+        },
+        "judul": {
+            "label": "Title"
+        },
+        "kategori": {
+            "label": "Category",
+            "placeholder": "Select category"
+        },
+        "editScope": {
+            "label": "Who Can Edit",
+            "opsi": {
+                "pemilikSaja": "Document owner only",
+                "samaSepertiAkses": "Same as access"
+            }
+        },
+        "deskripsi": {
+            "label": "Description"
+        },
+        "catatanVersi": {
+            "label": "Version Note",
+            "hintUbah": "Describe the metadata or access changes in this revision.",
+            "hintVersiBaru": "Describe the content changes in this new major version.",
+            "placeholder": "Example: fixed validity period and unit access"
+        },
+        "kartuAkses": {
+            "judul": "Access Settings",
+            "keterangan": "More than one can be enabled at once."
+        },
+        "tombol": {
+            "mengunggah": "Uploading…",
+            "unggahDokumen": "Upload Document",
+            "unggahVersiBaru": "Upload new version",
+            "menyimpan": "Saving…"
+        },
+        "berkasTerkunci": {
+            "keterangan": "Metadata and access can be changed on this page. If the file's content changes, create a new version to keep this document's history intact."
+        },
+        "versiTerbaru": {
+            "label": "Current latest version"
+        }
+    },
+    "aksesMekanisme": {
+        "galat": {
+            "judul": "No access mechanism has been set"
+        },
+        "hanyaSaya": {
+            "judul": "Only me",
+            "keterangan": "Only you and Superadmins, for audit and recovery purposes, can open this document."
+        },
+        "bagikanSemua": {
+            "judul": "Share with everyone",
+            "keterangan": "All internal users can view this document."
+        },
+        "bagikanJenjang": {
+            "judul": "Share with a position level and above",
+            "keterangan": "All active users at the selected level can open it, across all work units."
+        },
+        "bagikanUnit": {
+            "judul": "Share with units",
+            "keteranganDipilih": "{{jumlah}} units selected.",
+            "keteranganKosong": "Select the work units that should have access."
+        },
+        "bagikanOrang": {
+            "judul": "Share with specific people",
+            "keteranganDipilih": "{{jumlah}} people selected.",
+            "keteranganKosong": "Search for people by name, across units and positions."
+        },
+        "jenjangPicker": {
+            "ariaLabel": "Minimum position that can view",
+            "opsiKeAtas": "{{nama}} and above",
+            "jumlahOrangMelihat": "{{jumlah}} people will be able to view this document:",
+            "tidakTermasuk": "Not included:"
+        },
+        "ringkasJenjang": "{{jumlah}} people holding the position of {{nama}}",
+        "pratinjau": {
+            "kosong": {
+                "judul": "No access mechanism is active yet",
+                "keterangan": "Enable at least one sharing mechanism or choose Only me."
+            },
+            "pribadi": {
+                "judul": "Private document",
+                "keterangan": "This document can only be viewed by you as the uploader and Superadmins, for audit and recovery purposes."
+            },
+            "keSemua": {
+                "judul": "This document will be visible to everyone",
+                "keterangan": "Other active mechanisms add nothing — all internal users can already view it through the “share with everyone” mechanism."
+            },
+            "judulDaftar": "Who will be able to view this document",
+            "jenjangDiUnitManaPun": "{{ringkasan}}, in any unit",
+            "anggotaUnit": "Members of {{jumlah}} units: {{nama}}",
+            "orangTertentu": "{{jumlah}} specific people: {{nama}}",
+            "andaSendiri": "Yourself as the uploader, Superadmins, and the highest-level position"
+        }
+    },
+    "aksesRingkasan": {
+        "labelSemua": "All",
+        "labelTerbatas": "Restricted",
+        "labelJumlahMekanisme": "{{jumlah}} mechanisms",
+        "labelUnitTertentu": "Specific unit",
+        "labelJenjangJabatan": "Position tier"
+    },
+    "panelAkses": {
+        "mekanisme": {
+            "bagikanSemua": {
+                "judul": "Share with everyone",
+                "keterangan": "All internal users can view this document."
+            },
+            "bagikanJabatan": {
+                "judul": "Share with a position"
+            },
+            "bagikanUnit": {
+                "judul": "Share with units",
+                "keterangan": "{{jumlah}} work units can view this document."
+            },
+            "bagikanOrang": {
+                "judul": "Share with specific people",
+                "keterangan": "{{jumlah}} people have direct access."
+            }
+        },
+        "ringkasan": {
+            "pribadi": "Only you as the uploader and Superadmins, for audit and recovery purposes, can open this document.",
+            "tanpaMekanisme": "Only the document owner, Superadmins, and BPMA Leadership can open this document.",
+            "labelAkses": "{{jumlah}} active"
+        },
+        "kartuUtama": {
+            "labelKategori": "Document access",
+            "hanyaSaya": "Only me",
+            "siapaBolehMembuka": "Who can open it",
+            "ariaRingkasan": "Active access summary"
+        },
+        "jalurAkses": {
+            "judul": "Access paths",
+            "jumlahAktif": "{{jumlah}} active mechanisms",
+            "aktif": "Active"
+        },
+        "wewenangUbah": {
+            "judul": "Editing authority",
+            "siapaBolehMengubah": "Who can edit",
+            "hanyaPengunggah": "Only the uploader can edit this document.",
+            "samaSepertiAkses": "Users who can view this document can also edit it."
+        },
+        "daftarJabatan": {
+            "kosong": "No active position matches this path yet.",
+            "keterangan": "All active users in the following positions, across all work units:",
+            "ariaLabel": "Positions that can open it"
+        },
+        "keteranganJabatan": {
+            "kosong": "No active position falls within this level.",
+            "isi": "All active users with the position of {{daftar}} across all work units can open it."
+        },
+        "daftarUnit": {
+            "ariaLabel": "Work units that can open it"
+        },
+        "daftarOrang": {
+            "ariaLabel": "People who can open it"
+        },
+        "gabungkan": {
+            "dan": "and"
+        }
+    },
+    "pohonUnit": {
+        "tutupDivisi": "Collapse {{nama}} division",
+        "bukaDivisi": "Expand {{nama}} division",
+        "jumlahDivisi": "{{jumlah}} divisions"
+    },
+    "pilihUnit": {
+        "semuaUnitAsal": "All origin units",
+        "ariaLabelPohon": "Select origin unit",
+        "tutupDivisi": "Collapse {{nama}} division",
+        "bukaDivisi": "Expand {{nama}} division"
+    },
+    "pemilihPengguna": {
+        "placeholderCari": "Type a name, minimum 2 letters…",
+        "ariaCari": "Search users",
+        "tidakAdaHasil": "No matching active users.",
+        "hapusPengguna": "Remove {{nama}}"
+    },
+    "unggahBerkas": {
+        "galatUkuran": "File size {{ukuran}} exceeds the {{batas}} limit.",
+        "hapusBerkas": "Remove file",
+        "seretKeSini": "Drag a file here, or",
+        "pilihBerkas": "Choose File",
+        "ambilFoto": "Take Photo",
+        "keterangan": "All file types are accepted. Size limit {{batas}}.",
+        "ariaPilihBerkas": "Choose document file"
+    },
+    "progresUnggah": {
+        "ariaLabel": "Upload progress",
+        "persenSelesai": "{{persen}}% complete",
+        "perDetik": "{{kecepatan}}/sec",
+        "sisaWaktu": "{{waktu}} left",
+        "selesaiTersimpan": "File finished uploading, saving to the server…",
+        "detik": "{{jumlah}} seconds",
+        "menit": "{{jumlah}} minutes",
+        "jam": "{{jumlah}} hours"
+    },
+    "halamanBuat": {
+        "judulVersiBaru": "Upload New Version",
+        "judulUnggah": "Upload Document",
+        "semuaDokumen": "All Documents"
+    },
+    "halamanUbah": {
+        "judul": "Edit — {{judul}}",
+        "detailDokumen": "Document Details"
+    }
+}

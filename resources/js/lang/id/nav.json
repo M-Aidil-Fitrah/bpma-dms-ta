@@ -1,0 +1,30 @@
+{
+    "ariaNavigasiUtama": "Navigasi utama",
+    "bukaNavigasi": "Buka navigasi",
+    "tutupNavigasi": "Tutup navigasi",
+    "grup": {
+        "menuUtama": "Menu Utama",
+        "pengelolaan": "Pengelolaan"
+    },
+    "item": {
+        "beranda": "Beranda",
+        "dokumenSaya": "Dokumen Saya",
+        "jelajahiDokumen": "Jelajahi Dokumen",
+        "terbaru": "Terbaru",
+        "berbintang": "Berbintang",
+        "sampah": "Sampah",
+        "riwayatAktivitas": "Riwayat Aktivitas",
+        "logAktivitas": "Log Aktivitas",
+        "pengguna": "Pengguna",
+        "unitKerja": "Unit Kerja",
+        "jabatan": "Jabatan",
+        "kategori": "Kategori",
+        "pengaturan": "Pengaturan"
+    },
+    "penggunaMenu": {
+        "profilSaya": "Profil Saya",
+        "keluar": "Keluar",
+        "superadmin": "Superadmin",
+        "pengguna": "Pengguna"
+    }
+}

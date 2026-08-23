@@ -1,0 +1,84 @@
+{
+    "kategori": {
+        "label": "Kategori",
+        "labelKecil": "kategori"
+    },
+    "jabatan": {
+        "label": "Jabatan",
+        "labelKecil": "jabatan"
+    },
+    "unit": {
+        "label": "Unit Kerja",
+        "labelSingkat": "Unit",
+        "labelKecil": "unit kerja"
+    },
+    "form": {
+        "informasiJudul": "Informasi {{label}}",
+        "namaLabel": "Nama {{label}}",
+        "tingkatAkses": {
+            "label": "Tingkat akses",
+            "hint": "1 adalah jenjang tertinggi; angka lebih besar berarti wewenang lebih rendah."
+        },
+        "unitInduk": {
+            "label": "Unit induk",
+            "hint": "Kosongkan untuk unit tingkat atas.",
+            "placeholder": "Tidak ada unit induk"
+        },
+        "tipeUnit": {
+            "label": "Tipe unit",
+            "opsi": {
+                "sekretaris": "Sekretaris",
+                "deputi": "Deputi",
+                "divisi": "Divisi"
+            }
+        },
+        "deskripsi": {
+            "label": "Deskripsi",
+            "hint": "Opsional; jelaskan jenis dokumen yang masuk ke kategori ini."
+        },
+        "menyimpan": "Menyimpan…"
+    },
+    "table": {
+        "kolom": {
+            "nama": "Nama",
+            "keterangan": "Keterangan",
+            "status": "Status",
+            "aksi": "Aksi"
+        }
+    },
+    "editor": {
+        "ubahNama": "Ubah — {{nama}}"
+    },
+    "index": {
+        "filter": {
+            "statusLabel": "Status",
+            "semuaStatus": "Semua status",
+            "chipKataKunci": "Kata kunci: {{kata}}",
+            "chipStatus": "Status: {{status}}"
+        },
+        "cariPlaceholder": "Cari {{singular}}…",
+        "kosong": {
+            "tidakCocok": "Tidak ada {{singular}} yang cocok",
+            "belumAda": "Belum ada {{singular}}",
+            "deskripsiFilter": "Coba longgarkan atau bersihkan penyaring yang aktif.",
+            "deskripsiKosong": "Tambahkan {{singular}} pertama untuk melengkapi struktur organisasi.",
+            "bersihkanFilter": "Bersihkan semua filter"
+        }
+    },
+    "actions": {
+        "ubahLabel": "Ubah {{label}}",
+        "nonaktifkanLabel": "Nonaktifkan {{label}}",
+        "aktifkanKembaliLabel": "Aktifkan kembali {{label}}",
+        "confirm": {
+            "judul": "Nonaktifkan {{nama}}?",
+            "setuju": "Ya, nonaktifkan",
+            "tidakMuncul": "{{label}} ini tidak akan muncul pada pilihan baru, tetapi tidak dihapus dari riwayat yang sudah ada.",
+            "masihTerkaitAwalan": "Masih terkait dengan",
+            "masihTerkaitAkhiran": ". Data tersebut tetap utuh.",
+            "tidakAdaTerkait": "Belum ada pengguna atau dokumen yang terkait dengannya."
+        }
+    },
+    "umum": {
+        "tambahEntitas": "Tambah {{label}}"
+    }
+}

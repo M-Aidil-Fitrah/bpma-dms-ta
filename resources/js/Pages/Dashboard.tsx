@@ -18,49 +18,51 @@ import {
     History,
     Plus,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface DashboardProps {
     data: App.Data.DashboardData;
 }
 
 export default function Dashboard({ data }: DashboardProps) {
+    const { t } = useTranslation('dashboard');
     const penggunaSaatIni = wajibPenggunaTerautentikasi(usePage().props);
 
     return (
-        <AppLayout title="Beranda">
+        <AppLayout title={t('judulHalaman')}>
             <div className="space-y-5">
                 <SambutanBanner user={penggunaSaatIni} />
 
                 <section aria-labelledby="statistik">
                     <h2 id="statistik" className="mb-3 text-sm font-semibold text-ink">
-                        Statistik Dokumen
+                        {t('statistik.judul')}
                     </h2>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <StatCard
-                            label="Total Dokumen"
+                            label={t('statistik.totalDokumen')}
                             value={data.total}
                             icon={FileText}
-                            caption="dapat Anda akses"
+                            caption={t('statistik.captionTotal')}
                         />
                         <StatCard
-                            label="Berlaku"
+                            label={t('statistik.berlaku')}
                             value={data.berlaku}
                             icon={CircleCheck}
                             tone="success"
                         />
                         <StatCard
-                            label="Kadaluarsa"
+                            label={t('statistik.kadaluarsa')}
                             value={data.kadaluarsa}
                             icon={CircleX}
                             tone="danger"
                         />
                         <StatCard
-                            label="Mendekati Masa Evaluasi"
+                            label={t('statistik.mendekatiEvaluasi')}
                             value={data.jumlah_mendekati_evaluasi}
                             icon={CalendarClock}
                             tone="warning"
-                            caption={`dalam ${data.rentang_evaluasi} hari`}
+                            caption={t('statistik.captionRentang', { hari: data.rentang_evaluasi })}
                         />
                     </div>
                 </section>
@@ -80,7 +82,8 @@ export default function Dashboard({ data }: DashboardProps) {
 }
 
 function SambutanBanner({ user }: { user: App.Data.AuthUserData }) {
-    const hariIni = new Date().toLocaleDateString('id-ID', {
+    const { t, i18n } = useTranslation('dashboard');
+    const hariIni = new Date().toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
         weekday: 'long',
         day: 'numeric',
         month: 'long',
@@ -89,7 +92,7 @@ function SambutanBanner({ user }: { user: App.Data.AuthUserData }) {
 
     return (
         <div className="overflow-hidden rounded-card bg-brand-700 px-5 py-6 text-white sm:px-7 sm:py-8">
-            <p className="text-sm text-brand-100">Selamat datang kembali,</p>
+            <p className="text-sm text-brand-100">{t('sambutan.kembali')}</p>
             <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">{user.name}</h1>
             <p className="mt-1 text-sm text-brand-100">
                 {hariIni}
@@ -103,7 +106,7 @@ function SambutanBanner({ user }: { user: App.Data.AuthUserData }) {
                     className="inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-lg bg-surface px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto"
                 >
                     <Plus className="size-4" aria-hidden />
-                    Unggah Dokumen
+                    {t('sambutan.tombolUnggah')}
                 </Link>
 
                 <Link
@@ -111,7 +114,7 @@ function SambutanBanner({ user }: { user: App.Data.AuthUserData }) {
                     className="inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-lg border border-white/40 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-surface/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto"
                 >
                     <FolderOpen className="size-4" aria-hidden />
-                    Jelajahi Dokumen
+                    {t('sambutan.tombolJelajahi')}
                 </Link>
             </div>
         </div>
@@ -119,6 +122,8 @@ function SambutanBanner({ user }: { user: App.Data.AuthUserData }) {
 }
 
 function KartuMasaEvaluasi({ data }: { data: App.Data.DashboardData }) {
+    const { t } = useTranslation('dashboard');
+
     /**
      * Rentang disimpan di query string, bukan di state komponen. Dengan begitu
      * pilihan pengguna ikut terbawa saat halaman disegarkan atau alamatnya
@@ -135,11 +140,11 @@ function KartuMasaEvaluasi({ data }: { data: App.Data.DashboardData }) {
     return (
         <Card className="xl:col-span-2">
             <CardHeader>
-                <CardTitle>Mendekati Masa Evaluasi</CardTitle>
+                <CardTitle>{t('statistik.mendekatiEvaluasi')}</CardTitle>
 
                 <div
                     role="group"
-                    aria-label="Rentang masa evaluasi"
+                    aria-label={t('masaEvaluasi.ariaRentang')}
                     className="flex rounded-lg border border-line p-0.5"
                 >
                     {data.rentang_pilihan.map((hari) => (
@@ -155,7 +160,7 @@ function KartuMasaEvaluasi({ data }: { data: App.Data.DashboardData }) {
                                     : 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
                             )}
                         >
-                            {hari} hari
+                            {t('masaEvaluasi.hari', { hari })}
                         </button>
                     ))}
                 </div>
@@ -165,8 +170,8 @@ function KartuMasaEvaluasi({ data }: { data: App.Data.DashboardData }) {
                 {data.mendekati_evaluasi.length === 0 ? (
                     <EmptyState
                         icon={CalendarClock}
-                        title="Tidak ada yang mendekati masa evaluasi"
-                        description={`Tidak ada dokumen yang masa berlakunya berakhir dalam ${data.rentang_evaluasi} hari ke depan.`}
+                        title={t('masaEvaluasi.kosongJudul')}
+                        description={t('masaEvaluasi.kosongDeskripsi', { hari: data.rentang_evaluasi })}
                     />
                 ) : (
                     <ul className="divide-y divide-line">
@@ -183,18 +188,20 @@ function KartuMasaEvaluasi({ data }: { data: App.Data.DashboardData }) {
 }
 
 function KartuKategori({ data }: { data: App.Data.DashboardData }) {
+    const { t } = useTranslation(['dashboard', 'common']);
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Komposisi Kategori</CardTitle>
+                <CardTitle>{t('kategori.judul')}</CardTitle>
             </CardHeader>
 
             <CardBody>
                 {data.per_kategori.length === 0 ? (
                     <EmptyState
                         icon={FileText}
-                        title="Belum ada data"
-                        description="Kategori akan tampil di sini setelah ada dokumen yang dapat Anda akses."
+                        title={t('common:kosong.judul')}
+                        description={t('kategori.kosongDeskripsi')}
                     />
                 ) : (
                     <>
@@ -223,15 +230,17 @@ function KartuKategori({ data }: { data: App.Data.DashboardData }) {
 }
 
 function KartuTerbaru({ data }: { data: App.Data.DashboardData }) {
+    const { t } = useTranslation('dashboard');
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Dokumen Terbaru</CardTitle>
+                <CardTitle>{t('terbaru.judul')}</CardTitle>
                 <Link
                     href="/documents"
                     className="text-sm font-medium text-brand-700 hover:text-brand-800"
                 >
-                    Lihat semua
+                    {t('terbaru.lihatSemua')}
                 </Link>
             </CardHeader>
 
@@ -239,8 +248,8 @@ function KartuTerbaru({ data }: { data: App.Data.DashboardData }) {
                 {data.terbaru.length === 0 ? (
                     <EmptyState
                         icon={FileText}
-                        title="Belum ada dokumen"
-                        description="Dokumen yang dapat Anda akses akan tampil di sini."
+                        title={t('terbaru.kosongJudul')}
+                        description={t('terbaru.kosongDeskripsi')}
                     />
                 ) : (
                     <ul className="divide-y divide-line">
@@ -263,10 +272,12 @@ function KartuTerbaru({ data }: { data: App.Data.DashboardData }) {
  * mudah terbawa sampai demo dan disangka data sungguhan.
  */
 function KartuAktivitas({ data }: { data: App.Data.DashboardData }) {
+    const { t } = useTranslation('dashboard');
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Aktivitas Terbaru</CardTitle>
+                <CardTitle>{t('aktivitas.judul')}</CardTitle>
             </CardHeader>
 
             <CardBody className="p-2">
@@ -275,8 +286,8 @@ function KartuAktivitas({ data }: { data: App.Data.DashboardData }) {
                 ) : (
                     <EmptyState
                         icon={History}
-                        title="Belum ada aktivitas"
-                        description="Aktivitas yang dapat Anda akses akan muncul di sini."
+                        title={t('aktivitas.kosongJudul')}
+                        description={t('aktivitas.kosongDeskripsi')}
                     />
                 )}
             </CardBody>

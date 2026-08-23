@@ -1,0 +1,22 @@
+{
+    "halaman": {
+        "judul": "My Profile"
+    },
+    "informasiProfil": {
+        "judul": "Profile Information",
+        "deskripsi": "Update your account's name and email address.",
+        "namaLabel": "Name",
+        "emailLabel": "Email",
+        "jabatanLabel": "Position",
+        "unitKerjaLabel": "Work Unit"
+    },
+    "ubahPassword": {
+        "judul": "Change Password",
+        "deskripsi": "Use a long password that isn't used anywhere else.",
+        "passwordSaatIniLabel": "Current Password",
+        "passwordBaruLabel": "New Password",
+        "ulangiPasswordLabel": "Confirm New Password",
+        "tombolPerbarui": "Update Password"
+    },
+    "tersimpan": "Saved"
+}

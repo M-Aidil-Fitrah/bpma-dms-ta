@@ -38,6 +38,12 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
 
+            // Sudah final saat sampai di sini — `SetLocale` berjalan lebih
+            // dulu di grup middleware `web`. Dibagikan apa adanya (bukan
+            // dibaca ulang dari cookie/akun) supaya frontend dan backend
+            // selalu sepakat pada bahasa yang sama untuk satu permintaan.
+            'locale' => app()->getLocale(),
+
             'auth' => [
                 // Relasi dimuat di sini sekali untuk seluruh aplikasi, bukan di
                 // tiap controller. `roles` ikut dimuat karena setiap

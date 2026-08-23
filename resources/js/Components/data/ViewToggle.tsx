@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn';
 import { LayoutGrid, List } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export type ModeTampilan = 'tabel' | 'grid';
 
@@ -9,11 +10,6 @@ export interface ViewToggleProps {
     labels?: { tabel: string; grid: string };
 }
 
-const PILIHAN = [
-    { mode: 'tabel', label: 'Tampilan tabel', icon: List },
-    { mode: 'grid', label: 'Tampilan kartu', icon: LayoutGrid },
-] as const;
-
 /**
  * Pengalih antara tampilan tabel dan kartu.
  *
@@ -22,15 +18,16 @@ const PILIHAN = [
  * dibagikan, sama seperti penyaring.
  */
 export function ViewToggle({ nilai, onChange, labels }: ViewToggleProps) {
+    const { t } = useTranslation('common');
     const pilihan = [
-        { mode: 'tabel' as const, label: labels?.tabel ?? PILIHAN[0].label, icon: List },
-        { mode: 'grid' as const, label: labels?.grid ?? PILIHAN[1].label, icon: LayoutGrid },
+        { mode: 'tabel' as const, label: labels?.tabel ?? t('ui.tampilanTabel'), icon: List },
+        { mode: 'grid' as const, label: labels?.grid ?? t('ui.tampilanKartu'), icon: LayoutGrid },
     ];
 
     return (
         <div
             role="group"
-            aria-label="Mode tampilan"
+            aria-label={t('ui.modeTampilan')}
             className="flex shrink-0 rounded-lg border border-line bg-surface p-0.5"
         >
             {pilihan.map(({ mode, label, icon: Icon }) => (

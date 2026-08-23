@@ -5,6 +5,8 @@ import { Select } from '@/Components/ui/Select';
 import { cn } from '@/lib/cn';
 import { Check, Globe, LockKeyhole, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 export interface NilaiAkses {
     is_private: boolean;
@@ -51,6 +53,8 @@ export function AccessMechanismPicker({
     jenjang,
     error,
 }: AccessMechanismPickerProps) {
+    const { t } = useTranslation('documentForm');
+
     function ubah(sebagian: Partial<NilaiAkses>) {
         onChange({ ...nilai, ...sebagian });
     }
@@ -81,7 +85,7 @@ export function AccessMechanismPicker({
     return (
         <div className="space-y-3">
             {error && (
-                <Alert variant="danger" title="Mekanisme akses belum diatur">
+                <Alert variant="danger" title={t('documentForm:aksesMekanisme.galat.judul')}>
                     {error}
                 </Alert>
             )}
@@ -90,8 +94,8 @@ export function AccessMechanismPicker({
                 aktif={nilai.is_private}
                 onToggle={ubahAksesPribadi}
                 icon={LockKeyhole}
-                judul="Hanya saya"
-                keterangan="Hanya Anda dan Superadmin untuk audit serta pemulihan yang dapat membuka dokumen ini."
+                judul={t('documentForm:aksesMekanisme.hanyaSaya.judul')}
+                keterangan={t('documentForm:aksesMekanisme.hanyaSaya.keterangan')}
             />
 
             {!nilai.is_private && <>
@@ -99,8 +103,8 @@ export function AccessMechanismPicker({
                 aktif={nilai.is_shared_to_all}
                 onToggle={() => ubah({ is_shared_to_all: !nilai.is_shared_to_all })}
                 icon={Globe}
-                judul="Bagikan ke semua"
-                keterangan="Seluruh pengguna internal dapat melihat dokumen ini."
+                judul={t('documentForm:aksesMekanisme.bagikanSemua.judul')}
+                keterangan={t('documentForm:aksesMekanisme.bagikanSemua.keterangan')}
             />
 
             <Mekanisme
@@ -114,8 +118,8 @@ export function AccessMechanismPicker({
                     })
                 }
                 icon={ShieldCheck}
-                judul="Bagikan ke jabatan tertentu ke atas"
-                keterangan="Semua pengguna aktif pada jenjang yang dipilih dapat membuka, di seluruh unit kerja."
+                judul={t('documentForm:aksesMekanisme.bagikanJenjang.judul')}
+                keterangan={t('documentForm:aksesMekanisme.bagikanJenjang.keterangan')}
             >
                 <JenjangPicker
                     jenjang={jenjang}
@@ -127,11 +131,11 @@ export function AccessMechanismPicker({
             <Mekanisme
                 aktif={nilai.unit_ids.length > 0}
                 icon={Users}
-                judul="Bagikan ke unit"
+                judul={t('documentForm:aksesMekanisme.bagikanUnit.judul')}
                 keterangan={
                     nilai.unit_ids.length > 0
-                        ? `${nilai.unit_ids.length} unit dipilih.`
-                        : 'Pilih unit kerja yang berhak melihat.'
+                        ? t('documentForm:aksesMekanisme.bagikanUnit.keteranganDipilih', { jumlah: nilai.unit_ids.length })
+                        : t('documentForm:aksesMekanisme.bagikanUnit.keteranganKosong')
                 }
                 selaluTerbuka
             >
@@ -145,11 +149,11 @@ export function AccessMechanismPicker({
             <Mekanisme
                 aktif={nilai.shared_users.length > 0}
                 icon={Users}
-                judul="Bagikan ke orang tertentu"
+                judul={t('documentForm:aksesMekanisme.bagikanOrang.judul')}
                 keterangan={
                     nilai.shared_users.length > 0
-                        ? `${nilai.shared_users.length} orang dipilih.`
-                        : 'Cari orang berdasarkan nama, lintas unit dan jabatan.'
+                        ? t('documentForm:aksesMekanisme.bagikanOrang.keteranganDipilih', { jumlah: nilai.shared_users.length })
+                        : t('documentForm:aksesMekanisme.bagikanOrang.keteranganKosong')
                 }
                 selaluTerbuka
             >
@@ -190,6 +194,7 @@ function JenjangPicker({
     terpilih: number | null;
     onChange: (tingkat: number) => void;
 }) {
+    const { t } = useTranslation('documentForm');
     const termasuk = jenjang.filter((j) => terpilih !== null && j.tingkat <= terpilih);
     const diluar = jenjang.filter((j) => terpilih !== null && j.tingkat > terpilih);
     const total = termasuk.reduce((jumlah, j) => jumlah + j.jumlah, 0);
@@ -197,19 +202,19 @@ function JenjangPicker({
     return (
         <>
             <Select
-                aria-label="Jabatan minimum yang dapat melihat"
+                aria-label={t('documentForm:aksesMekanisme.jenjangPicker.ariaLabel')}
                 value={terpilih ?? ''}
                 onChange={(e) => onChange(Number(e.target.value))}
                 options={jenjang.map((j) => ({
                     value: j.tingkat,
-                    label: `${namaJenjang(j)} ke atas`,
+                    label: t('documentForm:aksesMekanisme.jenjangPicker.opsiKeAtas', { nama: namaJenjang(j) }),
                 }))}
             />
 
             {terpilih !== null && (
                 <div className="mt-2.5 space-y-2 rounded-lg bg-surface-sunken p-3">
                     <p className="text-xs font-semibold text-ink">
-                        {total} orang akan dapat melihat dokumen ini:
+                        {t('documentForm:aksesMekanisme.jenjangPicker.jumlahOrangMelihat', { jumlah: total })}
                     </p>
 
                     <ul className="space-y-1">
@@ -233,7 +238,7 @@ function JenjangPicker({
 
                     {diluar.length > 0 && (
                         <p className="border-t border-line pt-2 text-xs text-ink-subtle">
-                            <span className="font-medium">Tidak termasuk:</span>{' '}
+                            <span className="font-medium">{t('documentForm:aksesMekanisme.jenjangPicker.tidakTermasuk')}</span>{' '}
                             {diluar
                                 .flatMap((j) => j.jabatan.map((p) => p.nama))
                                 .join(', ')}
@@ -253,12 +258,13 @@ function JenjangPicker({
 function ringkasJenjang(
     jenjang: readonly JenjangJabatan[],
     tingkat: number,
+    t: TFunction,
 ): string {
     const termasuk = jenjang.filter((j) => j.tingkat <= tingkat);
     const jumlah = termasuk.reduce((total, j) => total + j.jumlah, 0);
     const nama = termasuk.flatMap((j) => j.jabatan.map((p) => p.nama));
 
-    return `${jumlah} orang berjabatan ${nama.join(', ')}`;
+    return t('documentForm:aksesMekanisme.ringkasJenjang', { jumlah, nama: nama.join(', ') });
 }
 
 /**
@@ -369,29 +375,28 @@ function Pratinjau({
     units: readonly UnitPilihan[];
     jenjang: readonly JenjangJabatan[];
 }) {
+    const { t } = useTranslation('documentForm');
+
     if (jumlahAktif === 0) {
         return (
-            <Alert variant="warning" title="Belum ada mekanisme akses yang aktif">
-                Aktifkan minimal satu mekanisme berbagi atau pilih Hanya saya.
+            <Alert variant="warning" title={t('documentForm:aksesMekanisme.pratinjau.kosong.judul')}>
+                {t('documentForm:aksesMekanisme.pratinjau.kosong.keterangan')}
             </Alert>
         );
     }
 
     if (nilai.is_private) {
         return (
-            <Alert variant="info" title="Dokumen pribadi">
-                Dokumen ini hanya dapat dilihat oleh Anda sebagai pengunggah dan
-                {' '}Superadmin untuk audit serta pemulihan.
+            <Alert variant="info" title={t('documentForm:aksesMekanisme.pratinjau.pribadi.judul')}>
+                {t('documentForm:aksesMekanisme.pratinjau.pribadi.keterangan')}
             </Alert>
         );
     }
 
     if (nilai.is_shared_to_all) {
         return (
-            <Alert variant="info" title="Dokumen ini akan terlihat semua orang">
-                Mekanisme lain yang aktif tidak menambah apa pun — semua pengguna
-                internal sudah dapat melihatnya lewat mekanisme &ldquo;bagikan ke
-                semua&rdquo;.
+            <Alert variant="info" title={t('documentForm:aksesMekanisme.pratinjau.keSemua.judul')}>
+                {t('documentForm:aksesMekanisme.pratinjau.keSemua.keterangan')}
             </Alert>
         );
     }
@@ -404,28 +409,35 @@ function Pratinjau({
         <div className="rounded-card border border-brand-200 bg-brand-50 p-4">
             <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-brand-700">
                 <TriangleAlert className="size-3.5" aria-hidden />
-                Yang akan dapat melihat dokumen ini
+                {t('documentForm:aksesMekanisme.pratinjau.judulDaftar')}
             </p>
 
             <ul className="mt-2 space-y-1.5 text-sm text-ink">
                 {nilai.min_tingkat_akses !== null && (
                     <li>
-                        {ringkasJenjang(jenjang, nilai.min_tingkat_akses)}, di unit mana
-                        pun
+                        {t('documentForm:aksesMekanisme.pratinjau.jenjangDiUnitManaPun', {
+                            ringkasan: ringkasJenjang(jenjang, nilai.min_tingkat_akses, t),
+                        })}
                     </li>
                 )}
                 {namaUnit.length > 0 && (
-                    <li>Anggota {namaUnit.length} unit: {namaUnit.join(', ')}</li>
+                    <li>
+                        {t('documentForm:aksesMekanisme.pratinjau.anggotaUnit', {
+                            jumlah: namaUnit.length,
+                            nama: namaUnit.join(', '),
+                        })}
+                    </li>
                 )}
                 {nilai.shared_users.length > 0 && (
                     <li>
-                        {nilai.shared_users.length} orang tertentu:{' '}
-                        {nilai.shared_users.map((p) => p.nama).join(', ')}
+                        {t('documentForm:aksesMekanisme.pratinjau.orangTertentu', {
+                            jumlah: nilai.shared_users.length,
+                            nama: nilai.shared_users.map((p) => p.nama).join(', '),
+                        })}
                     </li>
                 )}
                 <li className="text-ink-muted">
-                    Anda sendiri sebagai pengunggah, Superadmin, dan jabatan tingkat
-                    tertinggi
+                    {t('documentForm:aksesMekanisme.pratinjau.andaSendiri')}
                 </li>
             </ul>
         </div>

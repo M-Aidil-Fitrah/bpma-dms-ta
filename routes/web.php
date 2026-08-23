@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentWorkspaceController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,17 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', static fn () => redirect()->route(
     auth()->check() ? 'dashboard' : 'login'
 ));
+
+/*
+|--------------------------------------------------------------------------
+| Bahasa — dua bahasa (id/en)
+|--------------------------------------------------------------------------
+|
+| Sengaja di luar middleware `auth`: halaman masuk juga butuh pemilih bahasa.
+|
+*/
+
+Route::put('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
 /*
 |--------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 export interface SharedPageProps {
     [key: string]: unknown;
+    locale: 'id' | 'en';
     auth: {
         user: App.Data.AuthUserData | null;
         password_confirmed_until: string | null;

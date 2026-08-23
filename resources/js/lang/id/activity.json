@@ -1,0 +1,56 @@
+{
+    "index": {
+        "pageTitle": "Riwayat Aktivitas",
+        "filters": {
+            "typeLabel": "Jenis aktivitas",
+            "typePlaceholder": "Semua jenis",
+            "fromLabel": "Dari tanggal",
+            "toLabel": "Sampai tanggal"
+        },
+        "searchPlaceholder": "Cari aktivitas…",
+        "chips": {
+            "keyword": "Kata kunci: {{value}}",
+            "type": "Jenis: {{value}}",
+            "from": "Dari: {{value}}",
+            "to": "Sampai: {{value}}"
+        },
+        "emptyFiltered": {
+            "title": "Tidak ada aktivitas yang cocok",
+            "description": "Tidak ada aktivitas yang sesuai dengan penyaring yang sedang aktif. Coba longgarkan atau bersihkan penyaringnya.",
+            "clearFilters": "Bersihkan semua filter"
+        },
+        "emptyNone": {
+            "title": "Belum ada aktivitas",
+            "description": "Aktivitas yang dapat Anda akses akan muncul di sini."
+        }
+    },
+    "adminIndex": {
+        "pageTitle": "Log Aktivitas",
+        "filters": {
+            "typeLabel": "Jenis aktivitas",
+            "typePlaceholder": "Semua jenis",
+            "userLabel": "Pengguna",
+            "unitLabel": "Unit kerja pengguna",
+            "fromLabel": "Dari tanggal",
+            "toLabel": "Sampai tanggal"
+        },
+        "searchPlaceholder": "Cari aktivitas…",
+        "chips": {
+            "keyword": "Kata kunci: {{value}}",
+            "type": "Jenis: {{value}}",
+            "user": "Pengguna: {{value}}",
+            "unit": "Unit: {{value}}",
+            "from": "Dari: {{value}}",
+            "to": "Sampai: {{value}}"
+        },
+        "emptyFiltered": {
+            "title": "Tidak ada aktivitas yang cocok",
+            "description": "Tidak ada aktivitas yang sesuai dengan penyaring yang sedang aktif. Coba longgarkan atau bersihkan penyaringnya.",
+            "clearFilters": "Bersihkan semua filter"
+        },
+        "emptyNone": {
+            "title": "Belum ada aktivitas",
+            "description": "Aktivitas seluruh pengguna akan muncul di sini."
+        }
+    }
+}

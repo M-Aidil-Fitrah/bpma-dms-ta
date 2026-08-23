@@ -1,0 +1,84 @@
+{
+    "kategori": {
+        "label": "Category",
+        "labelKecil": "category"
+    },
+    "jabatan": {
+        "label": "Position",
+        "labelKecil": "position"
+    },
+    "unit": {
+        "label": "Work Unit",
+        "labelSingkat": "Unit",
+        "labelKecil": "work unit"
+    },
+    "form": {
+        "informasiJudul": "{{label}} Information",
+        "namaLabel": "{{label}} Name",
+        "tingkatAkses": {
+            "label": "Access level",
+            "hint": "1 is the highest level; a larger number means lower authority."
+        },
+        "unitInduk": {
+            "label": "Parent unit",
+            "hint": "Leave empty for a top-level unit.",
+            "placeholder": "No parent unit"
+        },
+        "tipeUnit": {
+            "label": "Unit type",
+            "opsi": {
+                "sekretaris": "Secretary",
+                "deputi": "Deputy",
+                "divisi": "Division"
+            }
+        },
+        "deskripsi": {
+            "label": "Description",
+            "hint": "Optional; describe the type of documents that belong in this category."
+        },
+        "menyimpan": "Saving…"
+    },
+    "table": {
+        "kolom": {
+            "nama": "Name",
+            "keterangan": "Description",
+            "status": "Status",
+            "aksi": "Actions"
+        }
+    },
+    "editor": {
+        "ubahNama": "Edit — {{nama}}"
+    },
+    "index": {
+        "filter": {
+            "statusLabel": "Status",
+            "semuaStatus": "All statuses",
+            "chipKataKunci": "Keyword: {{kata}}",
+            "chipStatus": "Status: {{status}}"
+        },
+        "cariPlaceholder": "Search {{singular}}…",
+        "kosong": {
+            "tidakCocok": "No {{singular}} matches",
+            "belumAda": "No {{singular}} yet",
+            "deskripsiFilter": "Try loosening or clearing the active filters.",
+            "deskripsiKosong": "Add the first {{singular}} to complete the organizational structure.",
+            "bersihkanFilter": "Clear all filters"
+        }
+    },
+    "actions": {
+        "ubahLabel": "Edit {{label}}",
+        "nonaktifkanLabel": "Deactivate {{label}}",
+        "aktifkanKembaliLabel": "Reactivate {{label}}",
+        "confirm": {
+            "judul": "Deactivate {{nama}}?",
+            "setuju": "Yes, deactivate",
+            "tidakMuncul": "{{label}} will no longer appear in new selections, but will not be removed from existing history.",
+            "masihTerkaitAwalan": "Still linked to",
+            "masihTerkaitAkhiran": ". That data remains intact.",
+            "tidakAdaTerkait": "No users or documents are linked to it yet."
+        }
+    },
+    "umum": {
+        "tambahEntitas": "Add {{label}}"
+    }
+}

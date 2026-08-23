@@ -1,0 +1,208 @@
+{
+    "index": {
+        "title": "All Documents",
+        "uploadButton": "Upload Document",
+        "searchPlaceholder": "Search by number, title, description, or document content…",
+        "labelItemDokumen": "documents",
+        "filter": {
+            "kategori": { "label": "Category", "placeholder": "All categories" },
+            "pengunggah": { "label": "Uploader", "placeholder": "All uploaders" },
+            "unit": { "label": "Origin Unit" },
+            "tipe": {
+                "label": "File Type",
+                "placeholder": "All types",
+                "options": { "pdf": "PDF", "gambar": "Image", "word": "Word", "teks": "Text", "lainnya": "Other" }
+            },
+            "statusEkstraksi": {
+                "label": "Content Search",
+                "placeholder": "All statuses",
+                "options": {
+                    "completed": "Searchable",
+                    "reviewRequired": "Needs review",
+                    "pending": "Processing",
+                    "notApplicable": "Plain attachment"
+                }
+            },
+            "status": { "label": "Status", "placeholder": "All statuses" },
+            "dari": { "label": "Start Date" },
+            "sampai": { "label": "End Date" }
+        },
+        "chip": {
+            "kataKunci": "Keyword: {{nilai}}",
+            "kategori": "Category: {{nilai}}",
+            "unit": "Unit: {{nilai}}",
+            "status": "Status: {{nilai}}",
+            "pengunggah": "Uploader: {{nilai}}",
+            "tipe": "Type: {{nilai}}",
+            "statusEkstraksi": "Extraction: {{nilai}}",
+            "sejak": "Since {{nilai}}",
+            "hingga": "Until {{nilai}}"
+        },
+        "kosong": {
+            "tanpaHasil": {
+                "judul": "No matching documents",
+                "deskripsi": "No documents match the currently active filters. Try loosening or clearing the filters.",
+                "aksi": "Clear all filters"
+            },
+            "belumAdaDokumen": {
+                "judul": "No documents yet",
+                "deskripsi": "There are no documents you can access yet. Documents will appear here once uploaded and shared with you.",
+                "aksi": "Upload Your First Document"
+            }
+        }
+    },
+    "actions": {
+        "lihatDetail": "View details",
+        "unduhBerkas": "Download file",
+        "aksiLainnya": "More actions",
+        "pratinjauTabBaru": "Preview in new tab",
+        "lihatPengaturanAkses": "View access settings"
+    },
+    "headerActions": {
+        "pindahkanKeSampah": "Move to Trash",
+        "aktifkanKembali": "Reactivate",
+        "errorPasswordKosong": "Enter your password to continue.",
+        "errorPasswordTidakValid": "Password could not be confirmed.",
+        "errorPasswordGagalProses": "Password confirmation could not be processed. Try again.",
+        "konfirmasiSandi": {
+            "judul": "Confirm password",
+            "labelSetuju": "Confirm and move",
+            "labelKataSandi": "Password"
+        },
+        "konfirmasiSampah": {
+            "judul": "Move document to Trash?",
+            "teksUtama": "will disappear from the list and search results while in Trash.",
+            "teksLanjutan": "You can restore it within 30 days. After that, the file and its versions are permanently deleted; the audit activity summary is still kept."
+        }
+    },
+    "preview": {
+        "sedangDisiapkan": "Preview is being prepared in the background…",
+        "videoTidakDidukung": "Your browser does not support video playback.",
+        "audioTidakDidukung": "Your browser does not support audio playback.",
+        "perkecil": "Zoom out",
+        "perbesar": "Zoom in",
+        "keluarLayarPenuh": "Exit fullscreen",
+        "layarPenuh": "Fullscreen",
+        "peringatanTeksEkstraksi": "What is shown is the text content read from the file, not its original layout. Download the file to see the actual format.",
+        "tipeTidakDapatDitampilkan": "This file type cannot be displayed in the browser",
+        "unduhBerkas": "Download File",
+        "menyiapkanPratinjau": "Preparing preview…"
+    },
+    "versionHistory": {
+        "terbaru": "Latest",
+        "versiTerbaru": "Latest version",
+        "jenis": {
+            "content": "File content change",
+            "metadata": "Metadata or access change",
+            "restoration": "Archived version restoration"
+        },
+        "penggunaTidakDiketahui": "Unknown user",
+        "lihat": "View",
+        "jadikanVersiTerbaru": "Make {{label}} the latest version",
+        "keteranganPemulihan": "The system creates a new major version from this snapshot. The {{label}} archive stays unchanged.",
+        "labelCatatanPemulihan": "Restoration note",
+        "placeholderCatatanPemulihan": "Reason for making this version the latest",
+        "submitJadikanVersiTerbaru": "Make latest version",
+        "belumAdaVersi": "No document versions yet.",
+        "tampilkanLagi": "Show {{jumlah}} more",
+        "tampilkanSemua": "Show all"
+    },
+    "extractionStatus": {
+        "notApplicable": { "label": "Plain attachment", "keterangan": "This file type does not support content search." },
+        "pending": { "label": "Processing", "keterangan": "The document content is being read in the background." },
+        "completed": { "label": "Searchable", "keterangan": "The document content has been read and can be found through search." },
+        "reviewRequired": { "label": "Needs review", "keterangan": "OCR finished, but the result is not reliable enough for content search." },
+        "failed": { "label": "Extraction failed", "keterangan": "Content could not be read. The file can still be downloaded as usual." },
+        "progres": "OCR page {{selesai}} of {{total}}",
+        "progresDenganEstimasi": "OCR page {{selesai}} of {{total}} · about {{durasi}} left",
+        "durasi": {
+            "kurangSatuMenit": "less than 1 minute",
+            "menit": "{{menit}} minutes",
+            "menitDetik": "{{menit}} minutes {{detik}} seconds"
+        }
+    },
+    "fileType": {
+        "pdf": "PDF",
+        "word": "Word",
+        "excel": "Excel",
+        "ppt": "PPT",
+        "gambar": "Image",
+        "video": "Video",
+        "audio": "Audio",
+        "teks": "Text",
+        "zip": "ZIP",
+        "berkas": "File"
+    },
+    "pdfViewer": {
+        "tidakDapatDitampilkan": "This PDF file cannot be displayed in the browser.",
+        "halamanDari": "Page {{halaman}} of {{total}}",
+        "halamanAriaLabel": "Page {{nomor}} of {{judul}}"
+    },
+    "searchMatch": {
+        "cocokDi": "Matched in:",
+        "ditemukanKali": "Found {{jumlah}} times in the document content"
+    },
+    "table": {
+        "headers": {
+            "namaDokumen": "Document Name",
+            "tipe": "Type",
+            "tanggal": "Date",
+            "pengunggahUnitAsal": "Uploader & Origin Unit",
+            "status": "Status",
+            "aksi": "Actions"
+        }
+    },
+    "shared": {
+        "terlihatKarena": "Visible because: {{alasan}}"
+    },
+    "grid": {
+        "pengunggah": "Uploader",
+        "unitAsal": "Origin unit"
+    },
+    "show": {
+        "tabs": {
+            "detail": "Details",
+            "akses": "Access",
+            "riwayat": "History",
+            "ariaLabel": "Document sections"
+        },
+        "nonaktif": {
+            "judul": "This document is inactive",
+            "deskripsi": "Hidden from the document list and search results. You opened it through version history. Archives cannot be changed; the chain owner can make it the latest version from the History panel."
+        },
+        "detail": {
+            "nomorDokumen": "Document Number",
+            "judul": "Title",
+            "versiDokumen": "Document Version",
+            "deskripsiPerubahan": "Change description: {{catatan}}",
+            "deskripsi": "Description",
+            "kategori": "Category",
+            "unitAsal": "Origin Unit",
+            "tanggalDokumen": "Document Date",
+            "masaBerlaku": "Validity Period",
+            "tanpaBatasWaktu": "No time limit",
+            "status": "Status",
+            "namaBerkas": "File Name",
+            "tipeUkuran": "Type & Size",
+            "pencarianIsi": "Content Search",
+            "lihatTeksEkstraksi": "View extracted text",
+            "diunggahOleh": "Uploaded By",
+            "diunggahPada": "Uploaded On",
+            "terakhirDiperbarui": "Last Updated"
+        },
+        "modal": {
+            "judul": "Extracted text",
+            "salinTeks": "Copy extracted text",
+            "sudahDisalin": "Extracted text copied",
+            "keterangan": "This text is used for content search and may differ from the original file layout."
+        },
+        "riwayat": {
+            "tabVersi": "Versions ({{jumlah}})",
+            "tabAktivitas": "Activity",
+            "kosong": {
+                "judul": "No activity yet",
+                "deskripsi": "Activity you can access will appear here."
+            }
+        }
+    }
+}

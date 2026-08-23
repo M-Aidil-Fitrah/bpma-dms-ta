@@ -1,18 +1,26 @@
+import i18next from '@/lib/i18n';
+
 /**
- * Fungsi pemformat murni — tanpa efek samping, tanpa ketergantungan pada React.
+ * Fungsi pemformat murni — tanpa ketergantungan pada React (tidak memakai
+ * hook), meski tetap sadar bahasa aktif lewat instans i18next singleton.
+ * Sengaja bukan komponen/hook: dipanggil dari mana saja tanpa perlu berada
+ * di dalam pohon render, dan pemanggilnya tidak perlu berubah saat bahasa
+ * berganti — signature setiap fungsi di sini tetap sama.
  *
  * Seluruh tampilan tanggal, ukuran berkas, dan angka melewati berkas ini supaya
  * formatnya seragam di seluruh aplikasi. Menuliskan `toLocaleDateString`
  * langsung di komponen akan membuat format berbeda-beda antar halaman.
  */
 
-const LOCALE = 'id-ID';
+function localeAktif(): string {
+    return i18next.language === 'en' ? 'en-US' : 'id-ID';
+}
 
 /** "2026-08-14" menjadi "14 Agu 2026". */
 export function formatTanggal(value: string | null | undefined): string {
     if (!value) return '—';
 
-    return new Date(value).toLocaleDateString(LOCALE, {
+    return new Date(value).toLocaleDateString(localeAktif(), {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -23,7 +31,7 @@ export function formatTanggal(value: string | null | undefined): string {
 export function formatTanggalPanjang(value: string | null | undefined): string {
     if (!value) return '—';
 
-    return new Date(value).toLocaleDateString(LOCALE, {
+    return new Date(value).toLocaleDateString(localeAktif(), {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -36,7 +44,7 @@ export function formatWaktu(value: string | null | undefined): string {
 
     const date = new Date(value);
 
-    return `${formatTanggal(value)}, ${date.toLocaleTimeString(LOCALE, {
+    return `${formatTanggal(value)}, ${date.toLocaleTimeString(localeAktif(), {
         hour: '2-digit',
         minute: '2-digit',
     })}`;
@@ -48,11 +56,11 @@ export function formatWaktuRelatif(value: string | null | undefined): string {
 
     const detik = Math.floor((Date.now() - new Date(value).getTime()) / 1000);
 
-    if (detik < 60) return 'Baru saja';
-    if (detik < 3600) return `${Math.floor(detik / 60)} menit lalu`;
-    if (detik < 86_400) return `${Math.floor(detik / 3600)} jam lalu`;
-    if (detik < 172_800) return 'Kemarin';
-    if (detik < 604_800) return `${Math.floor(detik / 86_400)} hari lalu`;
+    if (detik < 60) return i18next.t('common:format.baruSaja');
+    if (detik < 3600) return i18next.t('common:format.menitLalu', { n: Math.floor(detik / 60) });
+    if (detik < 86_400) return i18next.t('common:format.jamLalu', { n: Math.floor(detik / 3600) });
+    if (detik < 172_800) return i18next.t('common:format.kemarin');
+    if (detik < 604_800) return i18next.t('common:format.hariLalu', { n: Math.floor(detik / 86_400) });
 
     return formatTanggal(value);
 }
@@ -68,31 +76,32 @@ export function formatUkuranBerkas(bytes: number | null | undefined): string {
     );
     const nilai = bytes / 1024 ** tingkat;
 
-    return `${nilai.toLocaleString(LOCALE, {
+    return `${nilai.toLocaleString(localeAktif(), {
         maximumFractionDigits: tingkat === 0 ? 0 : 1,
     })} ${satuan[tingkat]}`;
 }
 
 /** 1245 menjadi "1.245". */
 export function formatAngka(value: number): string {
-    return value.toLocaleString(LOCALE);
+    return value.toLocaleString(localeAktif());
 }
 
 /**
  * Label tipe berkas ringkas dari MIME, untuk lencana di daftar dokumen.
  */
 export function labelTipeBerkas(mime: string): string {
+    // PDF/Word/Excel/PPT sudah berupa singkatan universal — tidak diterjemahkan.
     if (mime === 'application/pdf') return 'PDF';
     if (mime.includes('wordprocessingml') || mime === 'application/msword') return 'Word';
     if (mime.includes('spreadsheetml') || mime === 'application/vnd.ms-excel') return 'Excel';
     if (mime.includes('presentationml') || mime === 'application/vnd.ms-powerpoint') return 'PPT';
-    if (mime.startsWith('image/')) return 'Gambar';
-    if (mime.startsWith('video/')) return 'Video';
-    if (mime.startsWith('audio/')) return 'Audio';
-    if (mime === 'text/plain') return 'Teks';
-    if (mime.includes('zip') || mime.includes('compressed')) return 'ZIP';
+    if (mime.startsWith('image/')) return i18next.t('common:format.tipeBerkas.gambar');
+    if (mime.startsWith('video/')) return i18next.t('common:format.tipeBerkas.video');
+    if (mime.startsWith('audio/')) return i18next.t('common:format.tipeBerkas.audio');
+    if (mime === 'text/plain') return i18next.t('common:format.tipeBerkas.teks');
+    if (mime.includes('zip') || mime.includes('compressed')) return i18next.t('common:format.tipeBerkas.zip');
 
-    return 'Berkas';
+    return i18next.t('common:format.tipeBerkas.berkas');
 }
 
 /**

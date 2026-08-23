@@ -5,6 +5,7 @@ import { Input } from '@/Components/ui/Input';
 import { Modal } from '@/Components/ui/Modal';
 import { useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface ResetPasswordDialogProps {
     terbuka: boolean;
@@ -19,6 +20,7 @@ export interface ResetPasswordDialogProps {
  * apa pun.
  */
 export function ResetPasswordDialog({ terbuka, onTutup, userId, nama }: ResetPasswordDialogProps) {
+    const { t } = useTranslation(['users', 'common']);
     const konfirmasikan = usePasswordConfirmation();
     const { data, setData, patch, processing, errors, reset } = useForm({
         password: '',
@@ -43,21 +45,21 @@ export function ResetPasswordDialog({ terbuka, onTutup, userId, nama }: ResetPas
         <Modal
             terbuka={terbuka}
             onTutup={onTutup}
-            judul={`Atur ulang kata sandi ${nama}`}
-            keterangan="Sampaikan kata sandi baru ini langsung kepada pemiliknya — tidak ada tautan surel yang dikirim."
+            judul={t('users:resetPasswordDialog.title', { name: nama })}
+            keterangan={t('users:resetPasswordDialog.description')}
             footer={
                 <>
                     <Button type="button" variant="secondary" onClick={onTutup} disabled={processing} className="w-full sm:w-auto">
-                        Batal
+                        {t('users:resetPasswordDialog.cancel')}
                     </Button>
                     <Button type="submit" form={`reset-sandi-${userId}`} loading={processing} className="w-full sm:w-auto">
-                        Atur Ulang
+                        {t('users:resetPasswordDialog.submit')}
                     </Button>
                 </>
             }
         >
             <form id={`reset-sandi-${userId}`} onSubmit={handleSubmit} className="space-y-3">
-                <Field label="Kata Sandi Baru" error={errors.password} required>
+                <Field label={t('users:resetPasswordDialog.newPasswordLabel')} error={errors.password} required>
                     {(props) => (
                         <Input
                             {...props}
@@ -69,7 +71,7 @@ export function ResetPasswordDialog({ terbuka, onTutup, userId, nama }: ResetPas
                     )}
                 </Field>
 
-                <Field label="Konfirmasi Kata Sandi" error={errors.password_confirmation}>
+                <Field label={t('users:resetPasswordDialog.confirmPasswordLabel')} error={errors.password_confirmation}>
                     {(props) => (
                         <Input
                             {...props}

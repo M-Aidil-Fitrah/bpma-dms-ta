@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Data\DocumentListData;
+use App\Http\Requests\DocumentIndexRequest;
 use App\Models\Document;
 use App\Models\DocumentFolder;
-use App\Models\DocumentRecent;
 use App\Models\DocumentStar;
+use App\Models\User;
+use App\Services\DocumentListingService;
 use App\Services\DocumentWorkspaceService;
+use Closure;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -17,97 +22,101 @@ use Inertia\Response;
 
 final class DocumentWorkspaceController extends Controller
 {
-    public function mine(Request $request): Response
+    public function mine(DocumentIndexRequest $request, DocumentListingService $listing): Response
     {
         $user = $request->user();
 
         return $this->renderWorkspace(
+            request: $request,
+            listing: $listing,
             title: 'Dokumen Saya',
             folder: null,
             folders: DocumentFolder::query()->ownedBy($user)->notTrashed()->whereNull('parent_id')->orderBy('name')->get(),
-            documents: Document::query()
+            queryDasarDokumen: Document::query()
                 ->active()
                 ->notTrashed()
                 ->where('uploaded_by', $user->id)
                 ->whereDoesntHave('placements', fn ($query) => $query
                     ->where('owner_id', $user->id)
-                    ->whereHas('folder', fn ($folderQuery) => $folderQuery->notTrashed()))
-                ->select(Document::KOLOM_DAFTAR)
-                ->latest('id')
-                ->get(),
+                    ->whereHas('folder', fn ($folderQuery) => $folderQuery->notTrashed())),
             userId: $user->id,
         );
     }
 
-    public function folder(Request $request, DocumentFolder $folder): Response
+    public function folder(DocumentIndexRequest $request, DocumentFolder $folder, DocumentListingService $listing): Response
     {
         $this->authorize('view', $folder);
         abort_if($folder->trashed_at !== null, 404);
         $user = $request->user();
 
         return $this->renderWorkspace(
+            request: $request,
+            listing: $listing,
             title: $folder->name,
             folder: $folder,
             folders: $folder->children()->notTrashed()->orderBy('name')->get(),
-            documents: Document::query()
+            queryDasarDokumen: Document::query()
                 ->active()
                 ->notTrashed()
                 ->where('uploaded_by', $user->id)
-                ->whereHas('placements', fn ($query) => $query->where('owner_id', $user->id)->where('folder_id', $folder->id))
-                ->select(Document::KOLOM_DAFTAR)
-                ->latest('id')
-                ->get(),
+                ->whereHas('placements', fn ($query) => $query->where('owner_id', $user->id)->where('folder_id', $folder->id)),
             userId: $user->id,
         );
     }
 
-    public function starred(Request $request): Response
+    public function starred(DocumentIndexRequest $request, DocumentListingService $listing): Response
     {
         $user = $request->user();
 
-        return $this->renderCollection(
-            'Berbintang',
+        $dokumen = $listing->paginasi(
             Document::query()
                 ->visibleTo($user)
                 ->active()
-                ->whereHas('stars', fn ($query) => $query->where('user_id', $user->id))
-                ->select(Document::KOLOM_DAFTAR)
-                ->orderByDesc(DocumentStar::query()->select('created_at')->whereColumn('document_id', 'documents.id')->where('user_id', $user->id))
-                ->get(),
-            $user->id,
+                ->whereHas('stars', fn ($query) => $query->where('user_id', $user->id)),
+            $request,
+            $user,
+            // Sudah pasti berbintang oleh definisi daftar ini — tidak perlu
+            // query tambahan untuk memastikannya per baris.
+            fn (Document $document): DocumentListData => DocumentListData::untukWorkspace($document, $user, distarai: true),
         );
+
+        return Inertia::render('Workspace/Collection', ['title' => 'Berbintang', 'dokumen' => $dokumen, 'filter' => $request->filterAktif()]);
     }
 
-    public function recent(Request $request): Response
+    public function recent(DocumentIndexRequest $request, DocumentListingService $listing): Response
     {
         $user = $request->user();
 
-        return $this->renderCollection(
-            'Terbaru Dibuka',
+        $dokumen = $listing->paginasi(
             Document::query()
                 ->visibleTo($user)
                 ->active()
-                ->whereHas('recents', fn ($query) => $query->where('user_id', $user->id))
-                ->select(Document::KOLOM_DAFTAR)
-                ->orderByDesc(DocumentRecent::query()->select('last_opened_at')->whereColumn('document_id', 'documents.id')->where('user_id', $user->id))
-                ->get(),
-            $user->id,
+                ->whereHas('recents', fn ($query) => $query->where('user_id', $user->id)),
+            $request,
+            $user,
+            $this->pemetaanDenganBintang($user),
         );
+
+        return Inertia::render('Workspace/Collection', ['title' => 'Terbaru Dibuka', 'dokumen' => $dokumen, 'filter' => $request->filterAktif()]);
     }
 
-    public function trash(Request $request): Response
+    public function trash(DocumentIndexRequest $request, DocumentListingService $listing): Response
     {
         $user = $request->user();
-        $documents = Document::query()
-            ->whereNotNull('trashed_at')
-            ->when(! $user->isSuperadmin(), fn ($query) => $query->where('uploaded_by', $user->id))
-            ->select([...Document::KOLOM_DAFTAR, 'trashed_at', 'purge_after'])
-            ->latest('trashed_at')
-            ->get();
+
+        $dokumen = $listing->paginasi(
+            Document::query()
+                ->whereNotNull('trashed_at')
+                ->when(! $user->isSuperadmin(), fn ($query) => $query->where('uploaded_by', $user->id)),
+            $request,
+            $user,
+            fn (Document $document): DocumentListData => DocumentListData::untukWorkspace($document, $user, distarai: false),
+        );
         $folders = DocumentFolder::query()->ownedBy($user)->whereNotNull('trashed_at')->latest('trashed_at')->get();
 
         return Inertia::render('Workspace/Trash', [
-            'documents' => $this->documents($documents, $user->id),
+            'dokumen' => $dokumen,
+            'filter' => $request->filterAktif(),
             'folders' => $folders->map(fn (DocumentFolder $folder): array => [
                 'id' => $folder->id,
                 'name' => $folder->name,
@@ -185,10 +194,19 @@ final class DocumentWorkspaceController extends Controller
 
     /**
      * @param  Collection<int, DocumentFolder>  $folders
-     * @param  Collection<int, Document>  $documents
+     * @param  Builder<Document>  $queryDasarDokumen
      */
-    private function renderWorkspace(string $title, ?DocumentFolder $folder, Collection $folders, Collection $documents, int $userId): Response
-    {
+    private function renderWorkspace(
+        DocumentIndexRequest $request,
+        DocumentListingService $listing,
+        string $title,
+        ?DocumentFolder $folder,
+        Collection $folders,
+        Builder $queryDasarDokumen,
+        int $userId,
+    ): Response {
+        $user = $request->user();
+
         return Inertia::render('Workspace/Index', [
             'title' => $title,
             'folder' => $folder === null ? null : ['id' => $folder->id, 'name' => $folder->name, 'parent_id' => $folder->parent_id],
@@ -201,8 +219,24 @@ final class DocumentWorkspaceController extends Controller
                 ->get(['id', 'name'])
                 ->map(fn (DocumentFolder $item): array => ['id' => $item->id, 'name' => $item->name])
                 ->all(),
-            'documents' => $this->documents($documents, $userId),
+            'dokumen' => $listing->paginasi($queryDasarDokumen, $request, $user, $this->pemetaanDenganBintang($user)),
+            'filter' => $request->filterAktif(),
         ]);
+    }
+
+    /** @return Closure(Document): DocumentListData */
+    private function pemetaanDenganBintang(User $user): Closure
+    {
+        // Dihitung per halaman, bukan per baris (N+1 pada halaman dokumen
+        // milik sendiri yang jarang lebih dari selusin baris cukup murah
+        // sebagai satu kueri terindeks per baris — bandingkan dengan
+        // menyimpan seluruh `document_id` berbintang milik pengguna di
+        // memori, yang bisa berjumlah ratusan pada akun lama).
+        return fn (Document $document): DocumentListData => DocumentListData::untukWorkspace(
+            $document,
+            $user,
+            distarai: DocumentStar::query()->where('user_id', $user->id)->where('document_id', $document->id)->exists(),
+        );
     }
 
     /** @return list<array{label: string, href: string}> */
@@ -219,32 +253,5 @@ final class DocumentWorkspaceController extends Controller
             ['label' => 'Dokumen Saya', 'href' => route('documents.mine')],
             ...array_reverse($ancestors),
         ];
-    }
-
-    /** @param Collection<int, Document> $documents */
-    private function renderCollection(string $title, Collection $documents, int $userId): Response
-    {
-        return Inertia::render('Workspace/Collection', ['title' => $title, 'documents' => $this->documents($documents, $userId)]);
-    }
-
-    /**
-     * @param  Collection<int, Document>  $documents
-     * @return list<array{id: int, judul: string, nomor: string, tipe: string, thumbnail_tersedia: bool, is_private: bool, starred: bool, trashed_at: string|null, purge_after: string|null}>
-     */
-    private function documents(Collection $documents, int $userId): array
-    {
-        $starredIds = DocumentStar::query()->where('user_id', $userId)->whereIn('document_id', $documents->pluck('id'))->pluck('document_id')->all();
-
-        return $documents->map(fn (Document $document): array => [
-            'id' => $document->id,
-            'judul' => $document->judul,
-            'nomor' => $document->nomor,
-            'tipe' => $document->file_mime_type,
-            'thumbnail_tersedia' => $document->thumbnail_path !== null,
-            'is_private' => $document->is_private,
-            'starred' => in_array($document->id, $starredIds, true),
-            'trashed_at' => $document->trashed_at?->toIso8601String(),
-            'purge_after' => $document->purge_after?->toIso8601String(),
-        ])->all();
     }
 }

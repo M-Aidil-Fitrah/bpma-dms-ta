@@ -89,6 +89,10 @@ class Document extends Model
         'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path',
         'is_shared_to_all', 'is_private', 'min_tingkat_akses',
         'uploaded_by', 'is_active', 'created_at',
+        // Dipakai halaman Sampah lewat DocumentListData::untukWorkspace() —
+        // tanpanya `$document->purge_after` selalu null walau kolomnya
+        // terisi di database, karena baris ini tidak pernah ikut ter-SELECT.
+        'trashed_at', 'purge_after',
     ];
 
     protected function casts(): array
@@ -375,7 +379,13 @@ class Document extends Model
         }
 
         if ($user->isPimpinanTertinggi()) {
-            return $query->where('documents.is_private', false);
+            // Bypass keempat mekanisme berbagi, tapi pemilik dokumen tetap
+            // harus dapat melihat dokumennya sendiri — termasuk yang ia
+            // tandai "Hanya saya" — sama seperti jabatan lain mana pun.
+            return $query->where(function (Builder $group) use ($user): void {
+                $group->where('documents.uploaded_by', $user->id)
+                    ->orWhere('documents.is_private', false);
+            });
         }
 
         $tingkatAkses = $user->jabatan?->tingkat_akses;

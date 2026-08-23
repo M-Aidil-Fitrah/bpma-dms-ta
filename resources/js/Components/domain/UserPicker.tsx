@@ -4,6 +4,7 @@ import { Input } from '@/Components/ui/Input';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Loader2, Search, UserPlus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface PenggunaTerpilih {
     id: number;
@@ -25,6 +26,7 @@ export interface UserPickerProps {
  * salah pilih berarti dokumen terbuka bagi orang yang keliru.
  */
 export function UserPicker({ terpilih, onChange }: UserPickerProps) {
+    const { t } = useTranslation('documentForm');
     const [kata, setKata] = useState('');
     const [hasil, setHasil] = useState<PenggunaTerpilih[]>([]);
     const [mencari, setMencari] = useState(false);
@@ -75,8 +77,8 @@ export function UserPicker({ terpilih, onChange }: UserPickerProps) {
                     type="search"
                     icon={Search}
                     value={kata}
-                    placeholder="Ketik nama, minimal 2 huruf…"
-                    aria-label="Cari pengguna"
+                    placeholder={t('documentForm:pemilihPengguna.placeholderCari')}
+                    aria-label={t('documentForm:pemilihPengguna.ariaCari')}
                     onChange={(e) => setKata(e.target.value)}
                     className="[&::-webkit-search-cancel-button]:appearance-none"
                 />
@@ -90,7 +92,7 @@ export function UserPicker({ terpilih, onChange }: UserPickerProps) {
 
             {kata.trim().length >= 2 && !mencari && tersedia.length === 0 && (
                 <p className="px-1 text-sm text-ink-subtle">
-                    Tidak ada pengguna aktif yang cocok.
+                    {t('documentForm:pemilihPengguna.tidakAdaHasil')}
                 </p>
             )}
 
@@ -144,7 +146,7 @@ export function UserPicker({ terpilih, onChange }: UserPickerProps) {
                             </span>
                             <IconButton
                                 icon={X}
-                                label={`Hapus ${pengguna.nama}`}
+                                label={t('documentForm:pemilihPengguna.hapusPengguna', { nama: pengguna.nama })}
                                 variant="ghost"
                                 size="sm"
                                 onClick={() =>

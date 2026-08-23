@@ -12,7 +12,9 @@ import { useDocumentFilters, type FilterDokumen } from '@/hooks/useDocumentFilte
 import { AppLayout } from '@/Layouts/AppLayout';
 import { Link } from '@inertiajs/react';
 import { FileText, SearchX, Upload } from 'lucide-react';
+import type { TFunction } from 'i18next';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface OpsiFilter {
     kategori: { id: number; nama: string }[];
@@ -27,59 +29,93 @@ interface DocumentsIndexProps {
     opsi?: OpsiFilter;
 }
 
-const STATUS_OPTIONS = [
-    { value: 'berlaku', label: 'Berlaku' },
-    { value: 'kadaluarsa', label: 'Kadaluarsa' },
-] as const;
-const EKSTRAKSI_OPTIONS = [
-    { value: 'completed', label: 'Dapat dicari' },
-    { value: 'review_required', label: 'Perlu ditinjau' },
-    { value: 'pending', label: 'Memproses' },
-    { value: 'failed', label: 'Gagal' },
-    { value: 'not_applicable', label: 'Lampiran biasa' },
-] as const;
-const TIPE_OPTIONS = [
-    { value: 'pdf', label: 'PDF' }, { value: 'gambar', label: 'Gambar' },
-    { value: 'word', label: 'Word' }, { value: 'teks', label: 'Teks' }, { value: 'lainnya', label: 'Lainnya' },
-] as const;
+function buatOpsiStatus(t: TFunction) {
+    return [
+        { value: 'berlaku', label: t('common:status.berlaku') },
+        { value: 'kadaluarsa', label: t('common:status.kedaluwarsa') },
+    ] as const;
+}
+
+function buatOpsiEkstraksi(t: TFunction) {
+    return [
+        { value: 'completed', label: t('documentBrowse:index.filter.statusEkstraksi.options.completed') },
+        { value: 'review_required', label: t('documentBrowse:index.filter.statusEkstraksi.options.reviewRequired') },
+        { value: 'pending', label: t('documentBrowse:index.filter.statusEkstraksi.options.pending') },
+        { value: 'failed', label: t('common:status.gagal') },
+        { value: 'not_applicable', label: t('documentBrowse:index.filter.statusEkstraksi.options.notApplicable') },
+    ] as const;
+}
+
+function buatOpsiTipe(t: TFunction) {
+    return [
+        { value: 'pdf', label: t('documentBrowse:index.filter.tipe.options.pdf') },
+        { value: 'gambar', label: t('documentBrowse:index.filter.tipe.options.gambar') },
+        { value: 'word', label: t('documentBrowse:index.filter.tipe.options.word') },
+        { value: 'teks', label: t('documentBrowse:index.filter.tipe.options.teks') },
+        { value: 'lainnya', label: t('documentBrowse:index.filter.tipe.options.lainnya') },
+    ] as const;
+}
 
 export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
+    const { t } = useTranslation(['documentBrowse', 'common']);
     const { ubah, urutkan, ubahTampilan, bersihkan } = useDocumentFilters(filter);
+
+    const statusOptions = useMemo(() => buatOpsiStatus(t), [t]);
+    const ekstraksiOptions = useMemo(() => buatOpsiEkstraksi(t), [t]);
+    const tipeOptions = useMemo(() => buatOpsiTipe(t), [t]);
 
     const definisi = useMemo<FilterDefinition[]>(
         () => [
             {
                 kunci: 'kategori',
-                label: 'Kategori',
+                label: t('documentBrowse:index.filter.kategori.label'),
                 tipe: 'select',
-                placeholder: 'Semua kategori',
+                placeholder: t('documentBrowse:index.filter.kategori.placeholder'),
                 options: (opsi?.kategori ?? []).map((k) => ({ value: k.id, label: k.nama })),
             },
-            { kunci: 'pengunggah', label: 'Pengunggah', tipe: 'select', placeholder: 'Semua pengunggah', options: (opsi?.pengunggah ?? []).map((p) => ({ value: p.id, label: p.name })) },
+            {
+                kunci: 'pengunggah',
+                label: t('documentBrowse:index.filter.pengunggah.label'),
+                tipe: 'select',
+                placeholder: t('documentBrowse:index.filter.pengunggah.placeholder'),
+                options: (opsi?.pengunggah ?? []).map((p) => ({ value: p.id, label: p.name })),
+            },
             {
                 kunci: 'unit',
-                label: 'Unit Asal',
+                label: t('documentBrowse:index.filter.unit.label'),
                 tipe: 'tree',
                 treeUnits: opsi?.unit_pohon ?? [],
             },
-            { kunci: 'tipe', label: 'Tipe Berkas', tipe: 'select', placeholder: 'Semua tipe', options: TIPE_OPTIONS },
-            { kunci: 'status_ekstraksi', label: 'Pencarian Isi', tipe: 'select', placeholder: 'Semua status', options: EKSTRAKSI_OPTIONS },
+            {
+                kunci: 'tipe',
+                label: t('documentBrowse:index.filter.tipe.label'),
+                tipe: 'select',
+                placeholder: t('documentBrowse:index.filter.tipe.placeholder'),
+                options: tipeOptions,
+            },
+            {
+                kunci: 'status_ekstraksi',
+                label: t('documentBrowse:index.filter.statusEkstraksi.label'),
+                tipe: 'select',
+                placeholder: t('documentBrowse:index.filter.statusEkstraksi.placeholder'),
+                options: ekstraksiOptions,
+            },
             {
                 kunci: 'status',
-                label: 'Status',
+                label: t('documentBrowse:index.filter.status.label'),
                 tipe: 'select',
-                placeholder: 'Semua status',
-                options: STATUS_OPTIONS,
+                placeholder: t('documentBrowse:index.filter.status.placeholder'),
+                options: statusOptions,
             },
-            { kunci: 'dari', label: 'Tanggal Mulai', tipe: 'date' },
-            { kunci: 'sampai', label: 'Tanggal Akhir', tipe: 'date' },
+            { kunci: 'dari', label: t('documentBrowse:index.filter.dari.label'), tipe: 'date' },
+            { kunci: 'sampai', label: t('documentBrowse:index.filter.sampai.label'), tipe: 'date' },
         ],
-        [opsi],
+        [opsi, t, tipeOptions, ekstraksiOptions, statusOptions],
     );
 
     const chips = useMemo<FilterChip[]>(
-        () => susunChip(filter, opsi),
-        [filter, opsi],
+        () => susunChip(filter, opsi, t, statusOptions, ekstraksiOptions, tipeOptions),
+        [filter, opsi, t, statusOptions, ekstraksiOptions, tipeOptions],
     );
 
     const nilaiFilter = useMemo<Record<string, string>>(
@@ -100,14 +136,14 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
 
     return (
         <AppLayout
-            title="Semua Dokumen"
+            title={t('documentBrowse:index.title')}
             actions={
                 <Link href="/documents/create">
                     <Button icon={Upload}>
                         {/* Di ponsel hanya ikonnya yang tersisa; label penuh
                             memakan hampir separuh lebar bilah atas. */}
-                        <span className="hidden sm:inline">Unggah Dokumen</span>
-                        <span className="sr-only sm:hidden">Unggah Dokumen</span>
+                        <span className="hidden sm:inline">{t('documentBrowse:index.uploadButton')}</span>
+                        <span className="sr-only sm:hidden">{t('documentBrowse:index.uploadButton')}</span>
                     </Button>
                 </Link>
             }
@@ -124,7 +160,7 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
                     <SearchInput
                         value={filter.cari ?? ''}
                         onChange={(nilai) => ubah('cari', nilai)}
-                        placeholder="Cari nomor, judul, deskripsi, atau isi dokumen…"
+                        placeholder={t('documentBrowse:index.searchPlaceholder')}
                         className="flex-1"
                     />
 
@@ -133,7 +169,7 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
 
                 <Card>
                     {dokumen.data.length === 0 ? (
-                        <KeadaanKosong adaPenyaring={adaPenyaring} onReset={bersihkan} />
+                        <KeadaanKosong adaPenyaring={adaPenyaring} onReset={bersihkan} t={t} />
                     ) : (
                         <>
                             {filter.tampilan === 'grid' ? (
@@ -158,7 +194,7 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
 
                     {dokumen.total > 0 && (
                         <CardFooter>
-                            <Pagination meta={dokumen} labelItem="dokumen" />
+                            <Pagination meta={dokumen} labelItem={t('documentBrowse:index.labelItemDokumen')} />
                         </CardFooter>
                     )}
                 </Card>
@@ -177,23 +213,25 @@ export default function Index({ dokumen, filter, opsi }: DocumentsIndexProps) {
 function KeadaanKosong({
     adaPenyaring,
     onReset,
+    t,
 }: {
     adaPenyaring: boolean;
     onReset: () => void;
+    t: TFunction;
 }) {
     if (adaPenyaring) {
         return (
             <EmptyState
                 icon={SearchX}
-                title="Tidak ada dokumen yang cocok"
-                description="Tidak ada dokumen yang sesuai dengan penyaring yang sedang aktif. Coba longgarkan atau bersihkan penyaringnya."
+                title={t('documentBrowse:index.kosong.tanpaHasil.judul')}
+                description={t('documentBrowse:index.kosong.tanpaHasil.deskripsi')}
                 action={
                     <button
                         type="button"
                         onClick={onReset}
                         className="text-sm font-medium text-brand-700 hover:text-brand-800"
                     >
-                        Bersihkan semua filter
+                        {t('documentBrowse:index.kosong.tanpaHasil.aksi')}
                     </button>
                 }
             />
@@ -203,56 +241,63 @@ function KeadaanKosong({
     return (
         <EmptyState
             icon={FileText}
-            title="Belum ada dokumen"
-            description="Belum ada dokumen yang dapat Anda akses. Dokumen akan tampil di sini setelah diunggah dan dibagikan kepada Anda."
+            title={t('documentBrowse:index.kosong.belumAdaDokumen.judul')}
+            description={t('documentBrowse:index.kosong.belumAdaDokumen.deskripsi')}
             action={
                 <Link href="/documents/create">
-                    <Button icon={Upload}>Unggah Dokumen Pertama</Button>
+                    <Button icon={Upload}>{t('documentBrowse:index.kosong.belumAdaDokumen.aksi')}</Button>
                 </Link>
             }
         />
     );
 }
 
-function susunChip(filter: FilterDokumen, opsi?: OpsiFilter): FilterChip[] {
+function susunChip(
+    filter: FilterDokumen,
+    opsi: OpsiFilter | undefined,
+    t: TFunction,
+    statusOptions: ReturnType<typeof buatOpsiStatus>,
+    ekstraksiOptions: ReturnType<typeof buatOpsiEkstraksi>,
+    tipeOptions: ReturnType<typeof buatOpsiTipe>,
+): FilterChip[] {
     const chips: FilterChip[] = [];
 
     if (filter.cari) {
-        chips.push({ kunci: 'cari', label: `Kata kunci: ${filter.cari}` });
+        chips.push({ kunci: 'cari', label: t('documentBrowse:index.chip.kataKunci', { nilai: filter.cari }) });
     }
 
     if (filter.kategori) {
         const nama = opsi?.kategori.find((k) => k.id === filter.kategori)?.nama;
-        chips.push({ kunci: 'kategori', label: `Kategori: ${nama ?? filter.kategori}` });
+        chips.push({ kunci: 'kategori', label: t('documentBrowse:index.chip.kategori', { nilai: nama ?? filter.kategori }) });
     }
 
     if (filter.unit) {
         const nama = opsi?.unit.find((u) => u.id === filter.unit)?.nama;
-        chips.push({ kunci: 'unit', label: `Unit: ${nama ?? filter.unit}` });
+        chips.push({ kunci: 'unit', label: t('documentBrowse:index.chip.unit', { nilai: nama ?? filter.unit }) });
     }
 
     if (filter.status) {
-        const label = STATUS_OPTIONS.find((s) => s.value === filter.status)?.label;
-        chips.push({ kunci: 'status', label: `Status: ${label ?? filter.status}` });
+        const label = statusOptions.find((s) => s.value === filter.status)?.label;
+        chips.push({ kunci: 'status', label: t('documentBrowse:index.chip.status', { nilai: label ?? filter.status }) });
     }
 
     if (filter.pengunggah) {
         const nama = opsi?.pengunggah.find((pengunggah) => pengunggah.id === filter.pengunggah)?.name;
-        chips.push({ kunci: 'pengunggah', label: `Pengunggah: ${nama ?? filter.pengunggah}` });
+        chips.push({ kunci: 'pengunggah', label: t('documentBrowse:index.chip.pengunggah', { nilai: nama ?? filter.pengunggah }) });
     }
 
     if (filter.tipe) {
-        const label = TIPE_OPTIONS.find((tipe) => tipe.value === filter.tipe)?.label;
-        chips.push({ kunci: 'tipe', label: `Tipe: ${label ?? filter.tipe}` });
+        const label = tipeOptions.find((tipe) => tipe.value === filter.tipe)?.label;
+        chips.push({ kunci: 'tipe', label: t('documentBrowse:index.chip.tipe', { nilai: label ?? filter.tipe }) });
     }
 
     if (filter.status_ekstraksi) {
-        const label = EKSTRAKSI_OPTIONS.find((status) => status.value === filter.status_ekstraksi)?.label;
-        chips.push({ kunci: 'status_ekstraksi', label: `Ekstraksi: ${label ?? filter.status_ekstraksi}` });
+        const label = ekstraksiOptions.find((status) => status.value === filter.status_ekstraksi)?.label;
+        chips.push({ kunci: 'status_ekstraksi', label: t('documentBrowse:index.chip.statusEkstraksi', { nilai: label ?? filter.status_ekstraksi }) });
     }
 
-    if (filter.dari) chips.push({ kunci: 'dari', label: `Sejak ${filter.dari}` });
-    if (filter.sampai) chips.push({ kunci: 'sampai', label: `Hingga ${filter.sampai}` });
+    if (filter.dari) chips.push({ kunci: 'dari', label: t('documentBrowse:index.chip.sejak', { nilai: filter.dari }) });
+    if (filter.sampai) chips.push({ kunci: 'sampai', label: t('documentBrowse:index.chip.hingga', { nilai: filter.sampai }) });
 
     return chips;
 }

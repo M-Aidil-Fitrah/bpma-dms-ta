@@ -17,6 +17,7 @@ import {
     useState,
     type ReactNode,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type StatusToast = 'success' | 'error' | 'warning' | 'info';
 
@@ -188,7 +189,6 @@ const GAYA: Record<
     StatusToast,
     {
         icon: LucideIcon;
-        label: string;
         warnaIkon: string;
         warnaLabel: string;
         latarBilah: string;
@@ -198,7 +198,6 @@ const GAYA: Record<
 > = {
     success: {
         icon: CircleCheck,
-        label: 'Berhasil',
         warnaIkon: 'text-success',
         warnaLabel: 'text-success-strong',
         latarBilah: 'bg-success',
@@ -207,7 +206,6 @@ const GAYA: Record<
     },
     error: {
         icon: CircleX,
-        label: 'Gagal',
         warnaIkon: 'text-danger',
         warnaLabel: 'text-danger-strong',
         latarBilah: 'bg-danger',
@@ -216,7 +214,6 @@ const GAYA: Record<
     },
     warning: {
         icon: CircleAlert,
-        label: 'Perlu Diperhatikan',
         warnaIkon: 'text-warning',
         warnaLabel: 'text-warning-strong',
         latarBilah: 'bg-warning',
@@ -225,7 +222,6 @@ const GAYA: Record<
     },
     info: {
         icon: Info,
-        label: 'Informasi',
         warnaIkon: 'text-brand-700',
         warnaLabel: 'text-brand-700',
         latarBilah: 'bg-brand-700',
@@ -242,8 +238,10 @@ const GAYA: Record<
 const DURASI_TOAST = 5000;
 
 function KartuToast({ toast, onTutup, onHapus }: { toast: Toast; onTutup: () => void; onHapus: () => void }) {
-    const { icon: Icon, label, warnaIkon, warnaLabel, latarBilah, latarIkon, garis } =
+    const { t } = useTranslation('common');
+    const { icon: Icon, warnaIkon, warnaLabel, latarBilah, latarIkon, garis } =
         GAYA[toast.status];
+    const label = t(`toastStatus.${toast.status}`);
     const durasi = DURASI_TOAST;
 
     const [tertahan, setTertahan] = useState(false);
@@ -370,7 +368,7 @@ function KartuToast({ toast, onTutup, onHapus }: { toast: Toast; onTutup: () => 
             <button
                 type="button"
                 onClick={onTutup}
-                aria-label="Tutup pemberitahuan"
+                aria-label={t('ui.tutupPemberitahuan')}
                 className="-mr-1 flex size-8 shrink-0 items-center justify-center rounded text-ink-subtle transition-colors hover:bg-surface-sunken hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-700"
             >
                 <X className="size-4" aria-hidden />

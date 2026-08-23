@@ -1,5 +1,6 @@
 import { ReferenceResourceActions, type ReferenceResourceKind } from '@/Components/domain/ReferenceResourceActions';
 import { Badge } from '@/Components/ui/Badge';
+import { useTranslation } from 'react-i18next';
 
 interface ReferenceResourceTableProps {
     jenis: ReferenceResourceKind;
@@ -8,15 +9,17 @@ interface ReferenceResourceTableProps {
 
 /** Tabel daftar referensi untuk layar lebar; kartu ponsel dipisah agar tetap ringkas. */
 export function ReferenceResourceTable({ jenis, referensi }: ReferenceResourceTableProps) {
+    const { t } = useTranslation(['reference', 'common']);
+
     return (
         <div className="hidden overflow-x-auto lg:block">
             <table className="w-full table-fixed">
                 <thead className="border-b border-line bg-surface-sunken">
                     <tr>
-                        <Header className="w-[40%]">Nama</Header>
-                        <Header className="w-[34%]">Keterangan</Header>
-                        <Header className="w-[14%]">Status</Header>
-                        <Header className="w-[12%] text-right">Aksi</Header>
+                        <Header className="w-[40%]">{t('reference:table.kolom.nama')}</Header>
+                        <Header className="w-[34%]">{t('reference:table.kolom.keterangan')}</Header>
+                        <Header className="w-[14%]">{t('reference:table.kolom.status')}</Header>
+                        <Header className="w-[12%] text-right">{t('reference:table.kolom.aksi')}</Header>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -34,7 +37,7 @@ export function ReferenceResourceTable({ jenis, referensi }: ReferenceResourceTa
                             <td className="px-4 py-3 text-sm text-ink-muted">{item.keterangan || '—'}</td>
                             <td className="px-4 py-3">
                                 <Badge variant={item.is_active ? 'success' : 'neutral'} size="sm">
-                                    {item.is_active ? 'Aktif' : 'Nonaktif'}
+                                    {item.is_active ? t('common:status.aktif') : t('common:status.nonaktif')}
                                 </Badge>
                             </td>
                             <td className="px-4 py-3">

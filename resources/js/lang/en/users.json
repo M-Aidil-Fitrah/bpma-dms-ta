@@ -107,12 +107,6 @@
             "docsPerPageHint": "Default: {{value}}.",
             "docsUnit": "{{value}} documents"
         },
-        "dashboardSection": {
-            "title": "Dashboard",
-            "evalRangeLabel": "Initial evaluation period range",
-            "evalRangeHint": "Used when a user has not chosen their own range. Default: {{value}} days.",
-            "daysUnit": "{{value}} days"
-        },
         "saving": "Saving…",
         "save": "Save Settings",
         "useDefault": "Use Default Values",

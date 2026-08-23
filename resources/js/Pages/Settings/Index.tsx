@@ -23,7 +23,6 @@ export default function Index({ pengaturan }: SettingsProps) {
     const { data, setData, patch, processing, errors } = useForm({
         unggah_batas_kb: String(pengaturan.unggah_batas_kb),
         dokumen_per_halaman: String(pengaturan.dokumen_per_halaman),
-        dokumen_rentang_evaluasi_awal: String(pengaturan.dokumen_rentang_evaluasi_awal),
     });
 
     function submit(event: FormEvent) {
@@ -35,7 +34,7 @@ export default function Index({ pengaturan }: SettingsProps) {
         // String kosong dikonversi Laravel menjadi null. PengaturanService
         // kemudian menghapus override, sehingga perubahan config di masa depan
         // tetap diikuti — tidak sekadar menyalin angka bawaan hari ini.
-        setData({ unggah_batas_kb: '', dokumen_per_halaman: '', dokumen_rentang_evaluasi_awal: '' });
+        setData({ unggah_batas_kb: '', dokumen_per_halaman: '' });
     }
 
     return (
@@ -55,15 +54,6 @@ export default function Index({ pengaturan }: SettingsProps) {
                         </Field>
                         <Field label={t('users:settings.filesSection.docsPerPageLabel')} required error={errors.dokumen_per_halaman} hint={t('users:settings.filesSection.docsPerPageHint', { value: pengaturan.dokumen_per_halaman_bawaan })}>
                             {(props) => <Select {...props} placeholder={String(pengaturan.dokumen_per_halaman_bawaan)} value={data.dokumen_per_halaman} invalid={Boolean(errors.dokumen_per_halaman)} options={[10, 20, 50, 100].map((nilai) => ({ value: nilai, label: t('users:settings.filesSection.docsUnit', { value: nilai }) }))} onChange={(event) => setData('dokumen_per_halaman', event.target.value)} />}
-                        </Field>
-                    </CardBody>
-                </Card>
-
-                <Card>
-                    <CardHeader><CardTitle>{t('users:settings.dashboardSection.title')}</CardTitle></CardHeader>
-                    <CardBody>
-                        <Field label={t('users:settings.dashboardSection.evalRangeLabel')} required error={errors.dokumen_rentang_evaluasi_awal} hint={t('users:settings.dashboardSection.evalRangeHint', { value: pengaturan.dokumen_rentang_evaluasi_awal_bawaan })}>
-                            {(props) => <Select {...props} placeholder={String(pengaturan.dokumen_rentang_evaluasi_awal_bawaan)} value={data.dokumen_rentang_evaluasi_awal} invalid={Boolean(errors.dokumen_rentang_evaluasi_awal)} options={pengaturan.rentang_evaluasi_pilihan.map((nilai) => ({ value: nilai, label: t('users:settings.dashboardSection.daysUnit', { value: nilai }) }))} onChange={(event) => setData('dokumen_rentang_evaluasi_awal', event.target.value)} />}
                         </Field>
                     </CardBody>
                 </Card>

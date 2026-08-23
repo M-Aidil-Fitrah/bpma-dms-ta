@@ -36,7 +36,6 @@ final class PengaturanService
     public const DIIZINKAN = [
         'unggah.batas_kb' => 'dms.dokumen.ukuran_maksimum_kb',
         'dokumen.per_halaman' => 'dms.dokumen.per_halaman',
-        'dokumen.rentang_evaluasi_awal' => 'dms.dokumen.rentang_evaluasi_awal',
     ];
 
     /**

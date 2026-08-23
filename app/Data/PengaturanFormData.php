@@ -13,9 +13,6 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 final class PengaturanFormData extends Data
 {
-    /**
-     * @param  list<int>  $rentang_evaluasi_pilihan
-     */
     public function __construct(
         public int $unggah_batas_kb,
         public int $unggah_batas_kb_bawaan,
@@ -23,9 +20,6 @@ final class PengaturanFormData extends Data
         public bool $unggah_dibatasi_php,
         public int $dokumen_per_halaman,
         public int $dokumen_per_halaman_bawaan,
-        public int $dokumen_rentang_evaluasi_awal,
-        public int $dokumen_rentang_evaluasi_awal_bawaan,
-        public array $rentang_evaluasi_pilihan,
     ) {}
 
     public static function dariService(PengaturanService $pengaturan): self
@@ -37,9 +31,6 @@ final class PengaturanFormData extends Data
             unggah_dibatasi_php: BatasUnggah::dibatasiPhp(),
             dokumen_per_halaman: (int) $pengaturan->integer('dokumen.per_halaman'),
             dokumen_per_halaman_bawaan: (int) config('dms.dokumen.per_halaman'),
-            dokumen_rentang_evaluasi_awal: (int) $pengaturan->integer('dokumen.rentang_evaluasi_awal'),
-            dokumen_rentang_evaluasi_awal_bawaan: (int) config('dms.dokumen.rentang_evaluasi_awal'),
-            rentang_evaluasi_pilihan: config('dms.dokumen.rentang_evaluasi_pilihan'),
         );
     }
 }

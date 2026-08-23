@@ -30,7 +30,6 @@ final class PengaturanController extends Controller
 
         $this->pengaturan->simpan('unggah.batas_kb', $nilai['unggah_batas_kb'] ?? null, $request->user()->id);
         $this->pengaturan->simpan('dokumen.per_halaman', $nilai['dokumen_per_halaman'] ?? null, $request->user()->id);
-        $this->pengaturan->simpan('dokumen.rentang_evaluasi_awal', $nilai['dokumen_rentang_evaluasi_awal'] ?? null, $request->user()->id);
 
         return redirect()->route('admin.settings.index')->with('success', 'Pengaturan berhasil disimpan.');
     }

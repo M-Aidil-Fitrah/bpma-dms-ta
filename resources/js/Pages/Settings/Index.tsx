@@ -20,9 +20,12 @@ interface SettingsProps {
 export default function Index({ pengaturan }: SettingsProps) {
     const { t } = useTranslation(['users', 'common']);
     const konfirmasikan = usePasswordConfirmation();
+    const opsiDokumenPerHalaman = [10, 20, 50, 100].filter((nilai) => nilai !== pengaturan.dokumen_per_halaman_bawaan);
     const { data, setData, patch, processing, errors } = useForm({
         unggah_batas_kb: String(pengaturan.unggah_batas_kb),
-        dokumen_per_halaman: String(pengaturan.dokumen_per_halaman),
+        dokumen_per_halaman: pengaturan.dokumen_per_halaman === pengaturan.dokumen_per_halaman_bawaan
+            ? ''
+            : String(pengaturan.dokumen_per_halaman),
     });
 
     function submit(event: FormEvent) {
@@ -53,7 +56,7 @@ export default function Index({ pengaturan }: SettingsProps) {
                             {(props) => <Input {...props} type="number" min="1024" max="1048576" value={data.unggah_batas_kb} placeholder={String(pengaturan.unggah_batas_kb_bawaan)} invalid={Boolean(errors.unggah_batas_kb)} onChange={(event) => setData('unggah_batas_kb', event.target.value)} />}
                         </Field>
                         <Field label={t('users:settings.filesSection.docsPerPageLabel')} required error={errors.dokumen_per_halaman} hint={t('users:settings.filesSection.docsPerPageHint', { value: pengaturan.dokumen_per_halaman_bawaan })}>
-                            {(props) => <Select {...props} placeholder={String(pengaturan.dokumen_per_halaman_bawaan)} value={data.dokumen_per_halaman} invalid={Boolean(errors.dokumen_per_halaman)} options={[10, 20, 50, 100].map((nilai) => ({ value: nilai, label: t('users:settings.filesSection.docsUnit', { value: nilai }) }))} onChange={(event) => setData('dokumen_per_halaman', event.target.value)} />}
+                            {(props) => <Select {...props} placeholder={t('users:settings.filesSection.docsUnit', { value: pengaturan.dokumen_per_halaman_bawaan })} value={data.dokumen_per_halaman} invalid={Boolean(errors.dokumen_per_halaman)} options={opsiDokumenPerHalaman.map((nilai) => ({ value: nilai, label: t('users:settings.filesSection.docsUnit', { value: nilai }) }))} onChange={(event) => setData('dokumen_per_halaman', event.target.value)} />}
                         </Field>
                     </CardBody>
                 </Card>

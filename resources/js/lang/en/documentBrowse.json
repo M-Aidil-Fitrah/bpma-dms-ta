@@ -68,6 +68,12 @@
     },
     "preview": {
         "sedangDisiapkan": "Preview is being prepared in the background…",
+        "pratinjauGagal": "Preview could not be created",
+        "pratinjauGagalKeterangan": "Download the original file to view its complete contents.",
+        "memuatCsv": "Loading CSV data…",
+        "csvGagalDimuat": "CSV data could not be loaded. Download the original file to view all data.",
+        "csvTabel": "CSV data preview",
+        "csvTerpotong": "Preview is limited to 10,000 rows. Download the original file to view all data.",
         "videoTidakDidukung": "Your browser does not support video playback.",
         "audioTidakDidukung": "Your browser does not support audio playback.",
         "perkecil": "Zoom out",

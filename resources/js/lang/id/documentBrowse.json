@@ -68,6 +68,12 @@
     },
     "preview": {
         "sedangDisiapkan": "Pratinjau sedang disiapkan di latar belakang…",
+        "pratinjauGagal": "Pratinjau tidak dapat dibuat",
+        "pratinjauGagalKeterangan": "Unduh berkas asli untuk melihat isi lengkap.",
+        "memuatCsv": "Memuat data CSV…",
+        "csvGagalDimuat": "Data CSV tidak dapat dimuat. Unduh berkas asli untuk melihat seluruh data.",
+        "csvTabel": "Pratinjau data CSV",
+        "csvTerpotong": "Pratinjau dibatasi hingga 10.000 baris. Unduh berkas asli untuk melihat seluruh data.",
         "videoTidakDidukung": "Peramban Anda tidak mendukung pemutaran video.",
         "audioTidakDidukung": "Peramban Anda tidak mendukung pemutaran audio.",
         "perkecil": "Perkecil",

@@ -17,7 +17,7 @@ import { Tabs, type TabItem } from '@/Components/ui/Tabs';
 import { useDocumentReloadPolling } from '@/hooks/useDocumentReloadPolling';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
-import { dalamJendelaWaktu, formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
+import { formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, Check, Copy, FileText, History, Info, ShieldCheck } from 'lucide-react';
 import type { TFunction } from 'i18next';
@@ -59,20 +59,12 @@ function isTab(value: string): value is Tab {
     return TAB_VALID.some((tab) => tab === value);
 }
 
-/**
- * Batas atas menunggu konversi pratinjau Office. Melewati ini, kartu
- * berhenti menganggapnya "sedang disiapkan" — kemungkinan besar job gagal
- * permanen (perkakas server tidak terpasang) dan tidak akan pernah selesai.
- */
-const JENDELA_PRATINJAU_MENIT = 5;
-
 export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: ShowProps) {
     const { t } = useTranslation(['documentBrowse', 'common']);
     const [tab, setTab] = useState<Tab>(tabDariHash);
     const tabItems = useMemo(() => buatTabItems(t), [t]);
 
-    const masihMenyiapkanPratinjau =
-        dokumen.pratinjau_sedang_disiapkan && dalamJendelaWaktu(dokumen.diunggah_pada, JENDELA_PRATINJAU_MENIT);
+    const masihMenyiapkanPratinjau = dokumen.preview_status === 'processing';
 
     useDocumentReloadPolling(dokumen.extraction_status === 'pending' || masihMenyiapkanPratinjau, pollingKonfigurasi);
 
@@ -102,7 +94,7 @@ export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: Sh
                     membuka halaman ini, bukan daftar metadatanya. */}
                 <Card className="min-h-0 overflow-hidden xl:col-span-3">
                     <div className="h-[28rem] xl:h-full">
-                        <DocumentPreview dokumen={dokumen} sedangMenyiapkanPratinjau={masihMenyiapkanPratinjau} />
+                        <DocumentPreview dokumen={dokumen} />
                     </div>
                 </Card>
 

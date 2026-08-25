@@ -11,7 +11,7 @@
             "tipe": {
                 "label": "Tipe Berkas",
                 "placeholder": "Semua tipe",
-                "options": { "pdf": "PDF", "gambar": "Gambar", "word": "Word", "teks": "Teks", "lainnya": "Lainnya" }
+                "options": { "pdf": "PDF", "gambar": "Gambar", "word": "Word", "excel": "Excel", "ppt": "PowerPoint", "teks": "Teks", "lainnya": "Lainnya" }
             },
             "evaluasi": { "label": "Masa Berlaku", "hari": "{{hari}} hari" },
             "status": { "label": "Status", "placeholder": "Semua status" },

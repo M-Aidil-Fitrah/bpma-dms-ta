@@ -11,7 +11,7 @@
             "tipe": {
                 "label": "File Type",
                 "placeholder": "All types",
-                "options": { "pdf": "PDF", "gambar": "Image", "word": "Word", "teks": "Text", "lainnya": "Other" }
+                "options": { "pdf": "PDF", "gambar": "Image", "word": "Word", "excel": "Excel", "ppt": "PowerPoint", "teks": "Text", "lainnya": "Other" }
             },
             "evaluasi": { "label": "Validity Period", "hari": "{{hari}} days" },
             "status": { "label": "Status", "placeholder": "All statuses" },

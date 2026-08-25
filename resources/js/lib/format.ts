@@ -92,9 +92,9 @@ export function formatAngka(value: number): string {
 export function labelTipeBerkas(mime: string): string {
     // PDF/Word/Excel/PPT sudah berupa singkatan universal — tidak diterjemahkan.
     if (mime === 'application/pdf') return 'PDF';
-    if (mime.includes('wordprocessingml') || mime === 'application/msword') return 'Word';
-    if (mime.includes('spreadsheetml') || mime === 'application/vnd.ms-excel') return 'Excel';
-    if (mime.includes('presentationml') || mime === 'application/vnd.ms-powerpoint') return 'PPT';
+    if (mime.includes('wordprocessingml') || mime.includes('msword')) return 'Word';
+    if (mime.includes('spreadsheetml') || mime.includes('ms-excel')) return 'Excel';
+    if (mime.includes('presentationml') || mime.includes('ms-powerpoint')) return 'PPT';
     if (mime.startsWith('image/')) return i18next.t('common:format.tipeBerkas.gambar');
     if (mime.startsWith('video/')) return i18next.t('common:format.tipeBerkas.video');
     if (mime.startsWith('audio/')) return i18next.t('common:format.tipeBerkas.audio');

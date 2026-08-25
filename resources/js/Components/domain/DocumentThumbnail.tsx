@@ -176,13 +176,13 @@ function IkonBerkas({ mime }: { mime: string }) {
 
 function petakan(mime: string): { icon: LucideIcon; warna: string } {
     if (mime === 'application/pdf') return { icon: FileText, warna: 'text-danger' };
-    if (mime.includes('wordprocessingml') || mime === 'application/msword') {
+    if (mime.includes('wordprocessingml') || mime.includes('msword')) {
         return { icon: FileText, warna: 'text-info' };
     }
-    if (mime.includes('spreadsheetml') || mime === 'application/vnd.ms-excel') {
+    if (mime.includes('spreadsheetml') || mime.includes('ms-excel')) {
         return { icon: FileSpreadsheet, warna: 'text-success' };
     }
-    if (mime.includes('presentationml') || mime === 'application/vnd.ms-powerpoint') {
+    if (mime.includes('presentationml') || mime.includes('ms-powerpoint')) {
         return { icon: Presentation, warna: 'text-warning' };
     }
     if (mime.startsWith('audio/')) return { icon: FileAudio, warna: 'text-brand-600' };

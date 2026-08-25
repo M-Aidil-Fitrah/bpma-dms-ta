@@ -42,6 +42,8 @@ function buatOpsiTipe(t: TFunction) {
         { value: 'pdf', label: t('documentBrowse:index.filter.tipe.options.pdf') },
         { value: 'gambar', label: t('documentBrowse:index.filter.tipe.options.gambar') },
         { value: 'word', label: t('documentBrowse:index.filter.tipe.options.word') },
+        { value: 'excel', label: t('documentBrowse:index.filter.tipe.options.excel') },
+        { value: 'ppt', label: t('documentBrowse:index.filter.tipe.options.ppt') },
         { value: 'teks', label: t('documentBrowse:index.filter.tipe.options.teks') },
         { value: 'lainnya', label: t('documentBrowse:index.filter.tipe.options.lainnya') },
     ] as const;

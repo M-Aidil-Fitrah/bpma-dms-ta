@@ -32,13 +32,13 @@ function petakan(mime: string, t: TFunction): TipeBerkas {
     if (mime === 'application/pdf') {
         return { label: t('documentBrowse:fileType.pdf'), variant: 'danger', icon: FileText };
     }
-    if (mime.includes('wordprocessingml') || mime === 'application/msword') {
+    if (mime.includes('wordprocessingml') || mime.includes('msword')) {
         return { label: t('documentBrowse:fileType.word'), variant: 'info', icon: FileText };
     }
-    if (mime.includes('spreadsheetml') || mime === 'application/vnd.ms-excel') {
+    if (mime.includes('spreadsheetml') || mime.includes('ms-excel')) {
         return { label: t('documentBrowse:fileType.excel'), variant: 'success', icon: FileSpreadsheet };
     }
-    if (mime.includes('presentationml') || mime === 'application/vnd.ms-powerpoint') {
+    if (mime.includes('presentationml') || mime.includes('ms-powerpoint')) {
         return { label: t('documentBrowse:fileType.ppt'), variant: 'warning', icon: Presentation };
     }
     if (mime.startsWith('image/')) {

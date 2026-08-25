@@ -148,7 +148,7 @@ final class DocumentShowTest extends TestCase
                 ->where('dokumen.dibagikan_ke_semua', false)
                 ->where('dokumen.min_tingkat_akses', 2)
                 ->has('dokumen.unit_tujuan', 1)
-                ->where('dokumen.jabatan_tujuan', ['Kepala Badan', 'Deputi'])
+                ->where('dokumen.jabatan_tujuan', ['Kepala Badan', 'Pimpinan BPMA', 'Deputi'])
                 ->where('dokumen.orang_tertentu.0.nama', $this->berhak->name)
                 ->where('dokumen.orang_tertentu.0.unit', $this->berhak->unit?->nama));
     }
@@ -273,6 +273,72 @@ final class DocumentShowTest extends TestCase
             ->assertOk()
             ->assertHeader('content-disposition', 'inline; filename=notulen.pdf')
             ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_csv_dikirim_sebagai_data_pratinjau_privat_tanpa_mencatat_unduhan(): void
+    {
+        $isi = "Nama,Nilai\n\"Sari, S.T.\",=1+1\n";
+        $document = $this->buatDokumen([
+            'file_name_original' => 'rekap.csv',
+            'file_mime_type' => 'text/csv',
+            'file_size' => strlen($isi),
+        ]);
+        Storage::disk('local')->put($document->file_path, $isi);
+
+        $this->actingAs($this->berhak)
+            ->getJson("/documents/{$document->id}/csv-preview")
+            ->assertOk()
+            ->assertHeader('cache-control', 'no-store, private')
+            ->assertJsonPath('headers', ['Nama', 'Nilai'])
+            ->assertJsonPath('rows.0', ['Sari, S.T.', '=1+1'])
+            ->assertJsonPath('truncated', false);
+    }
+
+    public function test_csv_terlalu_besar_hanya_menyediakan_unduhan(): void
+    {
+        config()->set('dms.preview.csv_maks_bytes', 5);
+        $document = $this->buatDokumen([
+            'file_name_original' => 'rekap.csv',
+            'file_mime_type' => 'text/csv',
+            'file_size' => 6,
+        ]);
+
+        $this->actingAs($this->berhak)
+            ->getJson("/documents/{$document->id}/csv-preview")
+            ->assertUnprocessable()
+            ->assertHeader('cache-control', 'no-store, private');
+    }
+
+    public function test_csv_membatasi_baris_dan_menandai_data_yang_terpotong(): void
+    {
+        config()->set('dms.preview.csv_maks_baris', 1);
+        $isi = "Nama\nSari\nBudi\n";
+        $document = $this->buatDokumen([
+            'file_name_original' => 'rekap.csv',
+            'file_mime_type' => 'text/csv',
+            'file_size' => strlen($isi),
+        ]);
+        Storage::disk('local')->put($document->file_path, $isi);
+
+        $this->actingAs($this->berhak)
+            ->getJson("/documents/{$document->id}/csv-preview")
+            ->assertOk()
+            ->assertJsonPath('rows', [['Sari']])
+            ->assertJsonPath('truncated', true);
+    }
+
+    public function test_csv_ditolak_bagi_pengguna_tanpa_hak_akses(): void
+    {
+        $document = $this->buatDokumen([
+            'file_name_original' => 'rahasia.csv',
+            'file_mime_type' => 'text/csv',
+            'file_size' => 10,
+            'is_shared_to_all' => false,
+        ]);
+
+        $this->actingAs($this->tidakBerhak)
+            ->getJson("/documents/{$document->id}/csv-preview")
+            ->assertForbidden();
     }
 
     public function test_gambar_mini_memakai_proteksi_yang_sama_dengan_berkas_asli(): void

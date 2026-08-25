@@ -103,8 +103,8 @@ export function DocumentForm({
             file: null,
             replaces_document_id: replacesDocumentId,
         });
-    const unitPenerbitDitentukan = opsi.unit_akun_id !== null || !opsi.unit_kerja_wajib;
-    const keteranganUnitKerja = t('documentForm:form.unitPenerbit.keteranganPilih');
+    const unitKerjaDitentukan = opsi.unit_akun_id !== null || !opsi.unit_kerja_wajib;
+    const keteranganUnitKerja = t('documentForm:form.unitKerja.keteranganPilih');
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
@@ -278,11 +278,11 @@ export function DocumentForm({
                                     baris di bawah, meliputi kedua kolom, sama seperti
                                     pola pada Masa Berlaku di bawah. */}
                                 <Field
-                                    label={t('documentForm:form.unitPenerbit.label')}
+                                    label={t('documentForm:form.unitKerja.label')}
                                     error={errors.origin_unit_id}
-                                    required={!unitPenerbitDitentukan}
+                                    required={!unitKerjaDitentukan}
                                 >
-                                    {(props) => unitPenerbitDitentukan ? (
+                                    {(props) => unitKerjaDitentukan ? (
                                         <Input
                                             {...props}
                                             value={opsi.unit_akun_nama ?? 'Pimpinan BPMA'}
@@ -292,7 +292,7 @@ export function DocumentForm({
                                     ) : (
                                         <Select
                                             {...props}
-                                            placeholder={t('documentForm:form.unitPenerbit.placeholderSelect')}
+                                            placeholder={t('documentForm:form.unitKerja.placeholderSelect')}
                                             value={data.origin_unit_id}
                                             invalid={Boolean(errors.origin_unit_id)}
                                             options={opsi.unit.map((u) => ({
@@ -305,8 +305,8 @@ export function DocumentForm({
                                 </Field>
                             </div>
                             <p className="text-xs text-ink-muted">
-                                {unitPenerbitDitentukan
-                                    ? t('documentForm:form.unitPenerbit.keteranganDitentukan')
+                                {unitKerjaDitentukan
+                                    ? t('documentForm:form.unitKerja.keteranganDitentukan')
                                     : keteranganUnitKerja}
                             </p>
                         </div>

@@ -23,8 +23,8 @@
             "label": "Nomor Dokumen",
             "placeholder": "042/BPMA/DPR-TPL/VIII/2026"
         },
-        "unitPenerbit": {
-            "label": "Unit Penerbit",
+        "unitKerja": {
+            "label": "Unit Kerja",
             "placeholderSelect": "Pilih unit kerja",
             "keteranganDitentukan": "Ditentukan dari akun Anda dan tidak dapat diubah di formulir.",
             "keteranganPilih": "Pilih unit kerja yang bertanggung jawab atas dokumen ini."

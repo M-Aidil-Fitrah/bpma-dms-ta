@@ -13,6 +13,8 @@ export interface DocumentCardListProps {
     dokumen: readonly App.Data.DocumentListData[];
     /** Menimpa `DocumentActions` baku — dipakai halaman workspace yang butuh aksi berbeda (mis. lepas bintang, pulihkan). */
     aksi?: (document: App.Data.DocumentListData) => ReactNode;
+    /** Sampah hanya mendukung pemulihan; detailnya tidak dapat dibuka sebelum dipulihkan. */
+    dapatDibuka?: boolean;
 }
 
 /**
@@ -22,12 +24,12 @@ export interface DocumentCardListProps {
  * mendatar. Kolom yang berada di luar layar praktis tidak pernah dilihat orang,
  * jadi informasinya disusun ulang menurun sesuai kepentingannya.
  */
-export function DocumentCardList({ dokumen, aksi }: DocumentCardListProps) {
+export function DocumentCardList({ dokumen, aksi, dapatDibuka = true }: DocumentCardListProps) {
     return (
         <ul className="divide-y divide-line lg:hidden">
             {dokumen.map((item) => (
                 <li key={item.id}>
-                    <DocumentCard document={item} aksi={aksi} />
+                    <DocumentCard document={item} aksi={aksi} dapatDibuka={dapatDibuka} />
                 </li>
             ))}
         </ul>
@@ -37,9 +39,11 @@ export function DocumentCardList({ dokumen, aksi }: DocumentCardListProps) {
 const DocumentCard = memo(function DocumentCard({
     document,
     aksi,
+    dapatDibuka,
 }: {
     document: App.Data.DocumentListData;
     aksi?: (document: App.Data.DocumentListData) => ReactNode;
+    dapatDibuka: boolean;
 }) {
     const { t } = useTranslation('documentBrowse');
 
@@ -114,7 +118,7 @@ const DocumentCard = memo(function DocumentCard({
         </>
     );
 
-    if (!aksi) {
+    if (!aksi && dapatDibuka) {
         return (
             <Link
                 href={`/documents/${document.id}`}
@@ -125,13 +129,15 @@ const DocumentCard = memo(function DocumentCard({
         );
     }
 
+    if (!aksi) return <div className="px-4 py-3.5">{isi}</div>;
+
     return (
         <div className="relative px-4 py-3.5 transition-colors hover:bg-surface-sunken">
-            <Link
+            {dapatDibuka && <Link
                 href={`/documents/${document.id}`}
                 className="absolute inset-0 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-700"
                 aria-label={document.judul}
-            />
+            />}
             {isi}
             <div className="relative z-10 mt-2.5 flex justify-end">{aksi(document)}</div>
         </div>

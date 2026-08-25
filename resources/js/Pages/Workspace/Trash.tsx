@@ -83,7 +83,7 @@ export default function Trash({ dokumen, filter, folders }: Props) {
                                         ) : undefined}
                                     />
                                 ) : filter.tampilan === 'grid' ? (
-                                    <DocumentGrid dokumen={dokumen.data} aksi={(item) => <WorkspaceTrashActions document={item} />} />
+                                    <DocumentGrid dokumen={dokumen.data} aksi={(item) => <WorkspaceTrashActions document={item} />} dapatDibuka={false} />
                                 ) : (
                                     <>
                                         <DocumentTable
@@ -92,8 +92,9 @@ export default function Trash({ dokumen, filter, folders }: Props) {
                                             arahUrut={filter.arah}
                                             onSort={urutkan}
                                             aksi={(item) => <WorkspaceTrashActions document={item} />}
+                                            dapatDibuka={false}
                                         />
-                                        <DocumentCardList dokumen={dokumen.data} aksi={(item) => <WorkspaceTrashActions document={item} />} />
+                                        <DocumentCardList dokumen={dokumen.data} aksi={(item) => <WorkspaceTrashActions document={item} />} dapatDibuka={false} />
                                     </>
                                 )}
 

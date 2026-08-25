@@ -16,6 +16,8 @@ export interface DocumentTableProps {
     onSort: (kunci: string, arah: 'asc' | 'desc') => void;
     /** Menimpa `DocumentActions` baku — dipakai halaman workspace yang butuh aksi berbeda (mis. lepas bintang, pulihkan). */
     aksi?: (document: App.Data.DocumentListData) => ReactNode;
+    /** Sampah hanya mendukung pemulihan; detailnya tidak dapat dibuka sebelum dipulihkan. */
+    dapatDibuka?: boolean;
 }
 
 /**
@@ -31,6 +33,7 @@ export function DocumentTable({
     arahUrut,
     onSort,
     aksi,
+    dapatDibuka = true,
 }: DocumentTableProps) {
     const { t } = useTranslation('documentBrowse');
 
@@ -75,7 +78,7 @@ export function DocumentTable({
 
                 <tbody className="divide-y divide-line">
                     {dokumen.map((item) => (
-                        <DocumentTableRow key={item.id} document={item} aksi={aksi} />
+                        <DocumentTableRow key={item.id} document={item} aksi={aksi} dapatDibuka={dapatDibuka} />
                     ))}
                 </tbody>
             </table>
@@ -90,28 +93,25 @@ export function DocumentTable({
 const DocumentTableRow = memo(function DocumentTableRow({
     document,
     aksi,
+    dapatDibuka,
 }: {
     document: App.Data.DocumentListData;
     aksi?: (document: App.Data.DocumentListData) => ReactNode;
+    dapatDibuka: boolean;
 }) {
     return (
         <tr className="transition-colors hover:bg-surface-sunken">
             <td className="px-4 py-3">
-                <Link
-                    href={`/documents/${document.id}`}
-                    className="block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700"
-                >
-                    <p className="truncate text-sm font-medium text-ink">{document.judul}</p>
-                    <p className="mt-0.5 truncate font-mono text-xs text-ink-subtle">
-                        {document.nomor}
-                    </p>
-                    <DocumentSearchMatch
-                        kecocokan={document.kecocokan_pencarian}
-                        cuplikan={document.cuplikan_pencarian}
-                        jumlahFrasa={document.jumlah_frasa_pencarian}
-                        masaBerlaku={document.masa_berlaku}
-                    />
-                </Link>
+                {dapatDibuka ? (
+                    <Link
+                        href={`/documents/${document.id}`}
+                        className="block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700"
+                    >
+                        <DocumentTitle document={document} />
+                    </Link>
+                ) : (
+                    <DocumentTitle document={document} />
+                )}
             </td>
 
             <td className="px-4 py-3">
@@ -147,16 +147,10 @@ const DocumentTableRow = memo(function DocumentTableRow({
                         <p className="truncate text-sm font-medium text-ink">
                             {document.pengunggah ?? '—'}
                         </p>
-                        <p
-                            className="truncate text-xs text-ink-muted"
-                            title={document.jabatan_pengunggah ?? undefined}
-                        >
+                        <p className="truncate text-xs text-ink-muted" title={document.jabatan_pengunggah ?? undefined}>
                             {document.jabatan_pengunggah ?? '—'}
                         </p>
-                        <p
-                            className="truncate text-xs text-ink-subtle"
-                            title={document.unit_asal ?? undefined}
-                        >
+                        <p className="truncate text-xs text-ink-subtle" title={document.unit_asal ?? undefined}>
                             {document.unit_asal ?? '—'}
                         </p>
                     </div>
@@ -177,3 +171,20 @@ const DocumentTableRow = memo(function DocumentTableRow({
         </tr>
     );
 });
+
+function DocumentTitle({ document }: { document: App.Data.DocumentListData }) {
+    return (
+        <>
+            <p className="truncate text-sm font-medium text-ink">{document.judul}</p>
+            <p className="mt-0.5 truncate font-mono text-xs text-ink-subtle">
+                {document.nomor}
+            </p>
+            <DocumentSearchMatch
+                kecocokan={document.kecocokan_pencarian}
+                cuplikan={document.cuplikan_pencarian}
+                jumlahFrasa={document.jumlah_frasa_pencarian}
+                masaBerlaku={document.masa_berlaku}
+            />
+        </>
+    );
+}

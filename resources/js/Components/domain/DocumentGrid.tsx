@@ -14,6 +14,8 @@ export interface DocumentGridProps {
     dokumen: readonly App.Data.DocumentListData[];
     /** Menimpa `DocumentActions` baku — dipakai halaman workspace yang butuh aksi berbeda (mis. lepas bintang, pulihkan). */
     aksi?: (document: App.Data.DocumentListData) => ReactNode;
+    /** Sampah hanya mendukung pemulihan; detailnya tidak dapat dibuka sebelum dipulihkan. */
+    dapatDibuka?: boolean;
 }
 
 /**
@@ -25,12 +27,12 @@ export interface DocumentGridProps {
  * pengunggah antar dokumen. Keduanya disediakan karena keduanya punya
  * kegunaannya sendiri.
  */
-export function DocumentGrid({ dokumen, aksi }: DocumentGridProps) {
+export function DocumentGrid({ dokumen, aksi, dapatDibuka = true }: DocumentGridProps) {
     return (
         <ul className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {dokumen.map((item) => (
                 <li key={item.id}>
-                    <DocumentGridCard document={item} aksi={aksi} />
+                    <DocumentGridCard document={item} aksi={aksi} dapatDibuka={dapatDibuka} />
                 </li>
             ))}
         </ul>
@@ -40,9 +42,11 @@ export function DocumentGrid({ dokumen, aksi }: DocumentGridProps) {
 const DocumentGridCard = memo(function DocumentGridCard({
     document,
     aksi,
+    dapatDibuka,
 }: {
     document: App.Data.DocumentListData;
     aksi?: (document: App.Data.DocumentListData) => ReactNode;
+    dapatDibuka: boolean;
 }) {
     const { t } = useTranslation('documentBrowse');
 
@@ -65,14 +69,20 @@ const DocumentGridCard = memo(function DocumentGridCard({
                     />
                 </div>
 
-                <Link
-                    href={`/documents/${document.id}`}
-                    className="mt-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700"
-                >
-                    <h3 className="line-clamp-2 text-sm font-medium text-ink">
+                {dapatDibuka ? (
+                    <Link
+                        href={`/documents/${document.id}`}
+                        className="mt-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700"
+                    >
+                        <h3 className="line-clamp-2 text-sm font-medium text-ink">
+                            {document.judul}
+                        </h3>
+                    </Link>
+                ) : (
+                    <h3 className="mt-3 line-clamp-2 text-sm font-medium text-ink">
                         {document.judul}
                     </h3>
-                </Link>
+                )}
 
                 <p className="mt-1 truncate font-mono text-xs text-ink-subtle">
                     {document.nomor}

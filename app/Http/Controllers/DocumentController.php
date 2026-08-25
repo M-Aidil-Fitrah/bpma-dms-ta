@@ -13,6 +13,7 @@ use App\Enums\ActivityLogName;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentStatus;
 use App\Enums\ExtractionStatus;
+use App\Enums\PreviewStatus;
 use App\Http\Requests\DocumentIndexRequest;
 use App\Http\Requests\StoreDocumentRequest;
 use App\Http\Requests\UpdateDocumentRequest;
@@ -36,6 +37,7 @@ use App\Support\JenjangAkses;
 use App\Support\PenyajianBerkas;
 use App\Support\UnitOptions;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -217,7 +219,15 @@ final class DocumentController extends Controller
             ExtractDocumentTextJob::dispatch($document);
         }
 
-        if (app(DocumentThumbnailService::class)->didukung($document->file_mime_type)) {
+        $thumbnail = app(DocumentThumbnailService::class);
+        if ($thumbnail->didukung($document->file_mime_type)) {
+            if ($thumbnail->adalahOffice($document->file_mime_type)) {
+                $document->update([
+                    'preview_status' => PreviewStatus::Processing,
+                    'preview_message' => null,
+                ]);
+            }
+
             // Antrean terpisah dari ekstraksi teks (`default`) — OCR PDF
             // pindaian bisa memakan waktu 15 menit; tanpa pemisahan ini,
             // gambar mini dokumen lain ikut tertahan di belakang satu OCR
@@ -636,6 +646,70 @@ final class DocumentController extends Controller
     }
 
     /**
+     * Mengirim data CSV yang kecil sebagai JSON untuk tabel pratinjau internal.
+     *
+     * Ini sengaja bukan rute unduhan: kebijakan aksesnya sama, responsnya tidak
+     * dicatat sebagai unduhan, dan batasnya mencegah CSV besar memenuhi memori
+     * aplikasi atau browser. Nilai tetap berupa string agar formula maupun HTML
+     * tidak pernah dievaluasi oleh React.
+     */
+    public function previewCsv(Document $document): JsonResponse
+    {
+        $this->authorize('view', $document);
+
+        if (! $this->adalahCsv($document)) {
+            abort(404);
+        }
+
+        $disk = Storage::disk('local');
+        abort_unless($disk->exists($document->file_path), 404);
+
+        $batasByte = (int) config('dms.preview.csv_maks_bytes');
+        if ($disk->size($document->file_path) > $batasByte) {
+            return response()->json([
+                'message' => 'CSV terlalu besar untuk dipratinjau. Unduh berkas asli untuk melihat seluruh data.',
+            ], 422, ['Cache-Control' => 'private, no-store']);
+        }
+
+        $berkas = fopen($disk->path($document->file_path), 'rb');
+        if ($berkas === false) {
+            abort(404);
+        }
+
+        try {
+            $header = fgetcsv($berkas);
+            if ($header === false) {
+                return response()->json([
+                    'headers' => [],
+                    'rows' => [],
+                    'truncated' => false,
+                ], headers: ['Cache-Control' => 'private, no-store']);
+            }
+
+            $header = array_map(static fn ($nilai): string => (string) $nilai, $header);
+            $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', $header[0]) ?? $header[0];
+            $maksBaris = (int) config('dms.preview.csv_maks_baris');
+            $baris = [];
+
+            while (count($baris) < $maksBaris && ($barisCsv = fgetcsv($berkas)) !== false) {
+                if ($barisCsv === [null]) {
+                    continue;
+                }
+
+                $baris[] = array_map(static fn ($nilai): string => (string) $nilai, $barisCsv);
+            }
+
+            return response()->json([
+                'headers' => $header,
+                'rows' => $baris,
+                'truncated' => fgetcsv($berkas) !== false,
+            ], headers: ['Cache-Control' => 'private, no-store']);
+        } finally {
+            fclose($berkas);
+        }
+    }
+
+    /**
      * Menyajikan turunan JPG yang dibuat server untuk kartu grid.
      *
      * Gambar mini tetap dokumen turunan yang sensitif: ia tidak boleh diberi
@@ -667,6 +741,13 @@ final class DocumentController extends Controller
             $request,
             $request->user(),
         );
+    }
+
+    private function adalahCsv(Document $document): bool
+    {
+        return $document->file_mime_type === 'text/csv'
+            || ($document->file_mime_type === 'text/plain'
+                && strtolower(pathinfo($document->file_name_original, PATHINFO_EXTENSION)) === 'csv');
     }
 
     /**

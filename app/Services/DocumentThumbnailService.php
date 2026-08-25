@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\PreviewStatus;
 use App\Models\Document;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
@@ -19,18 +20,23 @@ use RuntimeException;
  */
 final class DocumentThumbnailService
 {
-    /**
-     * Tipe Office yang pratinjau detailnya bergantung pada `preview_path`
-     * (PDF hasil konversi LibreOffice) — dipakai juga oleh `DocumentDetailData`
-     * untuk tahu tipe mana yang wajar menampilkan "pratinjau sedang
-     * disiapkan" alih-alih langsung ke fallback unduh.
-     */
+    /** Tipe Office dan filter ekspor PDF LibreOffice yang sesuai aplikasinya. */
+    private const FILTER_OFFICE = [
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'writer_pdf_Export',
+        'application/msword' => 'writer_pdf_Export',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'calc_pdf_Export',
+        'application/vnd.ms-excel' => 'calc_pdf_Export',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'impress_pdf_Export',
+        'application/vnd.ms-powerpoint' => 'impress_pdf_Export',
+    ];
+
+    /** @var list<string> */
     public const MIME_OFFICE = [
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         'application/msword',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         'application/vnd.ms-powerpoint',
     ];
 
@@ -49,6 +55,16 @@ final class DocumentThumbnailService
             || in_array($mime, self::MIME_GAMBAR, true);
     }
 
+    public function adalahOffice(string $mime): bool
+    {
+        return $this->filterOffice($mime) !== null;
+    }
+
+    public function filterOffice(string $mime): ?string
+    {
+        return self::FILTER_OFFICE[$mime] ?? null;
+    }
+
     public function generate(Document $document): void
     {
         if (! $this->didukung($document->file_mime_type)) {
@@ -65,6 +81,9 @@ final class DocumentThumbnailService
         $ruangKerja = storage_path('app/dms-thumbnail/'.Str::uuid());
         mkdir($ruangKerja, 0755, true);
 
+        $thumbnailPath = null;
+        $previewPath = null;
+
         try {
             $nama = Str::uuid()->toString();
             $folder = now()->format('Y/m');
@@ -76,7 +95,7 @@ final class DocumentThumbnailService
             } else {
                 $pdf = $document->file_mime_type === 'application/pdf'
                     ? $sumber
-                    : $this->konversiOfficeKePdf($sumber, $ruangKerja);
+                    : $this->konversiOfficeKePdf($sumber, $ruangKerja, $document->file_mime_type);
 
                 if ($pdf !== $sumber) {
                     $previewSementara = $pdf;
@@ -94,15 +113,21 @@ final class DocumentThumbnailService
                 $previewPath = "previews/{$folder}/{$nama}.pdf";
                 $disk->put($previewPath, (string) file_get_contents($previewSementara));
                 $kolom['preview_path'] = $previewPath;
+                $kolom['preview_status'] = PreviewStatus::Ready;
+                $kolom['preview_message'] = null;
             }
 
             $document->update($kolom);
+        } catch (\Throwable $e) {
+            $disk->delete(array_filter([$thumbnailPath, $previewPath]));
+
+            throw $e;
         } finally {
             $this->hapusRuangKerja($ruangKerja);
         }
     }
 
-    private function konversiOfficeKePdf(string $sumber, string $ruangKerja): string
+    private function konversiOfficeKePdf(string $sumber, string $ruangKerja, string $mime): string
     {
         // Profil pengguna unik per konversi (bukan profil default bersama)
         // mencegah LibreOffice gagal intermiten dengan "another instance is
@@ -111,10 +136,15 @@ final class DocumentThumbnailService
         // LibreOffice sendiri dan job ini gagal permanen kalau terjadi.
         $profil = $ruangKerja.'/profil-libreoffice';
 
+        $filter = $this->filterOffice($mime);
+        if ($filter === null) {
+            throw new RuntimeException('Tipe Office tidak memiliki filter PDF yang didukung.');
+        }
+
         $hasil = Process::timeout((int) config('dms.thumbnail.libreoffice_timeout_detik'))->run([
             'libreoffice', '--headless',
             '-env:UserInstallation=file://'.$profil,
-            '--convert-to', 'pdf:writer_pdf_Export', '--outdir', $ruangKerja, $sumber,
+            '--convert-to', "pdf:{$filter}", '--outdir', $ruangKerja, $sumber,
         ]);
 
         if ($hasil->failed()) {

@@ -39,7 +39,7 @@ export const DocumentRow = memo(function DocumentRow({ document, tampilkanMasaBe
             </div>
 
             <div className="hidden shrink-0 items-center gap-2 sm:flex">
-                <FileTypeBadge mime={document.tipe_berkas} />
+                <FileTypeBadge mime={document.tipe_berkas} namaBerkas={document.nama_berkas} />
                 <span className="w-20 text-right font-mono text-xs text-ink-muted">
                     {formatTanggal(tanggal)}
                 </span>

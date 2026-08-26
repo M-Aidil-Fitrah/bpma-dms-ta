@@ -216,7 +216,7 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
 
             <Baris label={t('documentBrowse:show.detail.tipeUkuran')}>
                 <span className="flex flex-wrap items-center gap-2">
-                    <FileTypeBadge mime={dokumen.tipe_berkas} />
+                    <FileTypeBadge mime={dokumen.tipe_berkas} namaBerkas={dokumen.nama_berkas} />
                     <span className="font-mono text-sm text-ink-muted">
                         {formatUkuranBerkas(dokumen.ukuran_berkas)}
                     </span>

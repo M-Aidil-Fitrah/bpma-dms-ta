@@ -1,4 +1,5 @@
 import i18next from '@/lib/i18n';
+import { jenisBerkas } from '@/lib/fileType';
 
 /**
  * Fungsi pemformat murni — tanpa ketergantungan pada React (tidak memakai
@@ -89,17 +90,18 @@ export function formatAngka(value: number): string {
 /**
  * Label tipe berkas ringkas dari MIME, untuk lencana di daftar dokumen.
  */
-export function labelTipeBerkas(mime: string): string {
+export function labelTipeBerkas(mime: string, namaBerkas?: string): string {
     // PDF/Word/Excel/PPT sudah berupa singkatan universal — tidak diterjemahkan.
-    if (mime === 'application/pdf') return 'PDF';
-    if (mime.includes('wordprocessingml') || mime.includes('msword')) return 'Word';
-    if (mime.includes('spreadsheetml') || mime.includes('ms-excel')) return 'Excel';
-    if (mime.includes('presentationml') || mime.includes('ms-powerpoint')) return 'PPT';
-    if (mime.startsWith('image/')) return i18next.t('common:format.tipeBerkas.gambar');
-    if (mime.startsWith('video/')) return i18next.t('common:format.tipeBerkas.video');
-    if (mime.startsWith('audio/')) return i18next.t('common:format.tipeBerkas.audio');
-    if (mime === 'text/plain') return i18next.t('common:format.tipeBerkas.teks');
-    if (mime.includes('zip') || mime.includes('compressed')) return i18next.t('common:format.tipeBerkas.zip');
+    const jenis = jenisBerkas(mime, namaBerkas);
+    if (jenis === 'pdf') return 'PDF';
+    if (jenis === 'word') return 'Word';
+    if (jenis === 'excel') return 'Excel';
+    if (jenis === 'ppt') return 'PowerPoint';
+    if (jenis === 'gambar') return i18next.t('common:format.tipeBerkas.gambar');
+    if (jenis === 'video') return i18next.t('common:format.tipeBerkas.video');
+    if (jenis === 'audio') return i18next.t('common:format.tipeBerkas.audio');
+    if (jenis === 'teks') return i18next.t('common:format.tipeBerkas.teks');
+    if (jenis === 'zip') return i18next.t('common:format.tipeBerkas.zip');
 
     return i18next.t('common:format.tipeBerkas.berkas');
 }

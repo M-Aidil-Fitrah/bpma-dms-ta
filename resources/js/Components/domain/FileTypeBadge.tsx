@@ -1,4 +1,5 @@
 import { Badge } from '@/Components/ui/Badge';
+import { jenisBerkas } from '@/lib/fileType';
 import {
     File,
     FileArchive,
@@ -26,34 +27,35 @@ interface TipeBerkas {
  * sudah tertanam di kepala pengguna membuat tipe berkas terbaca sekilas tanpa
  * perlu membaca tulisannya.
  */
-function petakan(mime: string, t: TFunction): TipeBerkas {
+function petakan(mime: string, namaBerkas: string | undefined, t: TFunction): TipeBerkas {
     const bawaan: TipeBerkas = { label: t('documentBrowse:fileType.berkas'), variant: 'neutral', icon: File };
+    const jenis = jenisBerkas(mime, namaBerkas);
 
-    if (mime === 'application/pdf') {
+    if (jenis === 'pdf') {
         return { label: t('documentBrowse:fileType.pdf'), variant: 'danger', icon: FileText };
     }
-    if (mime.includes('wordprocessingml') || mime.includes('msword')) {
+    if (jenis === 'word') {
         return { label: t('documentBrowse:fileType.word'), variant: 'info', icon: FileText };
     }
-    if (mime.includes('spreadsheetml') || mime.includes('ms-excel')) {
+    if (jenis === 'excel') {
         return { label: t('documentBrowse:fileType.excel'), variant: 'success', icon: FileSpreadsheet };
     }
-    if (mime.includes('presentationml') || mime.includes('ms-powerpoint')) {
+    if (jenis === 'ppt') {
         return { label: t('documentBrowse:fileType.ppt'), variant: 'warning', icon: Presentation };
     }
-    if (mime.startsWith('image/')) {
+    if (jenis === 'gambar') {
         return { label: t('documentBrowse:fileType.gambar'), variant: 'brand', icon: Image };
     }
-    if (mime.startsWith('video/')) {
+    if (jenis === 'video') {
         return { label: t('documentBrowse:fileType.video'), variant: 'brand', icon: FileVideo };
     }
-    if (mime.startsWith('audio/')) {
+    if (jenis === 'audio') {
         return { label: t('documentBrowse:fileType.audio'), variant: 'brand', icon: FileAudio };
     }
-    if (mime === 'text/plain') {
+    if (jenis === 'teks') {
         return { label: t('documentBrowse:fileType.teks'), variant: 'neutral', icon: FileType };
     }
-    if (mime.includes('zip') || mime.includes('compressed') || mime.includes('tar')) {
+    if (jenis === 'zip') {
         // Bukan "Arsip". Di sistem manajemen dokumen, kata itu jauh lebih kuat
         // berarti "dokumen lama yang disimpan" ketimbang "berkas terkompresi" —
         // dua hal yang sama sekali berbeda, dan salah satunya adalah fitur
@@ -66,12 +68,13 @@ function petakan(mime: string, t: TFunction): TipeBerkas {
 
 export interface FileTypeBadgeProps {
     mime: string;
+    namaBerkas?: string;
     size?: 'sm' | 'md';
 }
 
-export function FileTypeBadge({ mime, size = 'sm' }: FileTypeBadgeProps) {
+export function FileTypeBadge({ mime, namaBerkas, size = 'sm' }: FileTypeBadgeProps) {
     const { t } = useTranslation('documentBrowse');
-    const { label, variant, icon: Icon } = petakan(mime, t);
+    const { label, variant, icon: Icon } = petakan(mime, namaBerkas, t);
 
     return (
         <Badge variant={variant} size={size}>

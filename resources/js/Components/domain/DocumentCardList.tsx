@@ -74,7 +74,7 @@ const DocumentCard = memo(function DocumentCard({
             />
 
             <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-ink-muted">
-                <FileTypeBadge mime={document.tipe_berkas} />
+                <FileTypeBadge mime={document.tipe_berkas} namaBerkas={document.nama_berkas} />
                 <span className="font-mono">{formatTanggal(document.tanggal)}</span>
                 <span className="font-mono">{formatUkuranBerkas(document.ukuran_berkas)}</span>
             </div>

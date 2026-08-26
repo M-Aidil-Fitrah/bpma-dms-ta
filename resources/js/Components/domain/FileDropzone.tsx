@@ -72,7 +72,7 @@ export function FileDropzone({
         return (
             <div className="space-y-2">
                 <div className="flex items-center gap-3 rounded-card border border-line bg-surface p-3">
-                    <FileTypeBadge mime={berkas.type || 'application/octet-stream'} size="md" />
+                    <FileTypeBadge mime={berkas.type || 'application/octet-stream'} namaBerkas={berkas.name} size="md" />
 
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-ink">{berkas.name}</p>

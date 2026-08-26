@@ -109,6 +109,19 @@ final class DocumentIndexTest extends TestCase
                 ->where('dokumen.data.2.bisa_pratinjau_di_tab_baru', false));
     }
 
+    public function test_daftar_mengirim_nama_berkas_asli_untuk_label_tipe_di_antarmuka(): void
+    {
+        $document = $this->buatDokumen([
+            'file_name_original' => 'rekap-anggaran.csv',
+            'file_mime_type' => 'text/csv',
+        ]);
+
+        $this->actingAs($this->anggota)->get('/documents')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->where('dokumen.data.0.id', $document->id)
+                ->where('dokumen.data.0.nama_berkas', 'rekap-anggaran.csv'));
+    }
+
     public function test_dokumen_nonaktif_tidak_tampil(): void
     {
         $this->buatDokumen(['judul' => 'Aktif']);

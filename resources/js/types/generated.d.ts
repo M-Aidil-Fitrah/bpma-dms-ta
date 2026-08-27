@@ -57,7 +57,9 @@ halaman_ekstraksi_selesai: number | null,
 estimasi_ekstraksi_detik: number | null,
 pesan_ekstraksi: string | null,
 preview_tersedia: boolean,
-pratinjau_sedang_disiapkan: boolean,
+preview_status: App.Enums.PreviewStatus,
+pesan_preview: string | null,
+csv_pratinjau_tersedia: boolean,
 isi_teks: string | null,
 pengunggah: string | null,
 jabatan_pengunggah: string | null,
@@ -212,5 +214,6 @@ export type DocumentEditScope = 'owner_only' | 'match_visibility';
 export type DocumentStatus = 'berlaku' | 'kadaluarsa';
 export type DocumentVersionKind = 'content' | 'metadata' | 'restoration';
 export type ExtractionStatus = 'not_applicable' | 'pending' | 'completed' | 'review_required' | 'failed';
+export type PreviewStatus = 'not_applicable' | 'processing' | 'ready' | 'failed';
 }
 }

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\PreviewStatus;
 use App\Jobs\GenerateDocumentThumbnailJob;
 use App\Models\Document;
 use App\Services\DocumentThumbnailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -82,6 +84,7 @@ final class DocumentThumbnailServiceTest extends TestCase
         $document->refresh();
         $this->assertNotNull($document->thumbnail_path);
         $this->assertNotNull($document->preview_path);
+        $this->assertSame(PreviewStatus::Ready, $document->preview_status);
         Storage::disk('local')->assertExists($document->thumbnail_path);
         Storage::disk('local')->assertExists($document->preview_path);
         $this->assertSame('%PDF-', file_get_contents(Storage::disk('local')->path($document->preview_path), false, null, 0, 5));
@@ -98,6 +101,16 @@ final class DocumentThumbnailServiceTest extends TestCase
         $this->assertNull($document->preview_path);
     }
 
+    public function test_setiap_jenis_office_memakai_filter_pdf_aplikasi_yang_tepat(): void
+    {
+        $this->assertSame('writer_pdf_Export', $this->thumbnail->filterOffice('application/msword'));
+        $this->assertSame('writer_pdf_Export', $this->thumbnail->filterOffice('application/vnd.openxmlformats-officedocument.wordprocessingml.document'));
+        $this->assertSame('calc_pdf_Export', $this->thumbnail->filterOffice('application/vnd.ms-excel'));
+        $this->assertSame('calc_pdf_Export', $this->thumbnail->filterOffice('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));
+        $this->assertSame('impress_pdf_Export', $this->thumbnail->filterOffice('application/vnd.ms-powerpoint'));
+        $this->assertSame('impress_pdf_Export', $this->thumbnail->filterOffice('application/vnd.openxmlformats-officedocument.presentationml.presentation'));
+    }
+
     public function test_job_thumbnail_gagal_tetap_membiarkan_dokumen_dapat_dipakai(): void
     {
         $path = 'documents/2026/08/rusak.pdf';
@@ -112,5 +125,29 @@ final class DocumentThumbnailServiceTest extends TestCase
         $document->refresh();
         $this->assertNull($document->thumbnail_path);
         $this->assertNull($document->preview_path);
+    }
+
+    public function test_job_office_gagal_menandai_pratinjau_gagal_tanpa_mengubah_berkas_asli(): void
+    {
+        $path = 'documents/2026/08/rusak.docx';
+        $isiAsli = 'isi dokumen asli';
+        Storage::disk('local')->put($path, $isiAsli);
+        $document = Document::factory()->create([
+            'file_path' => $path,
+            'file_name_original' => 'rusak.docx',
+            'file_mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'preview_status' => PreviewStatus::Processing,
+        ]);
+        Process::fake([
+            '*' => Process::result(errorOutput: 'LibreOffice tidak dapat membaca dokumen.', exitCode: 1),
+        ]);
+
+        (new GenerateDocumentThumbnailJob($document))->handle($this->thumbnail);
+
+        $document->refresh();
+        $this->assertSame(PreviewStatus::Failed, $document->preview_status);
+        $this->assertNotNull($document->preview_message);
+        $this->assertNull($document->preview_path);
+        $this->assertSame($isiAsli, Storage::disk('local')->get($path));
     }
 }

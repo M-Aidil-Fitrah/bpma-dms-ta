@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Enums\PreviewStatus;
 use App\Models\Document;
 use App\Services\DocumentThumbnailService;
 use Illuminate\Bus\Queueable;
@@ -23,12 +24,11 @@ final class GenerateDocumentThumbnailJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * Satu kesempatan tambahan untuk kegagalan sementara (mis. proses
-     * `libreoffice`/`gs` bentrok sesaat dengan job lain di worker yang sama).
-     * Turunan visual tetap tidak kritis — kalau kedua percobaan gagal, kartu
-     * kembali memakai ikon dan aplikasi tidak terganggu.
+     * Kegagalan konversi segera menjadi status yang dapat dijelaskan di UI.
+     * Menahan dokumen Office pada spinner melalui retry buta tidak membantu
+     * ketika LibreOffice atau Ghostscript memang belum tersedia di server.
      */
-    public int $tries = 2;
+    public int $tries = 1;
 
     public bool $deleteWhenMissingModels = true;
 
@@ -39,6 +39,13 @@ final class GenerateDocumentThumbnailJob implements ShouldQueue
         try {
             $thumbnail->generate($this->document);
         } catch (Throwable $e) {
+            if ($thumbnail->adalahOffice($this->document->file_mime_type)) {
+                $this->document->forceFill([
+                    'preview_status' => PreviewStatus::Failed,
+                    'preview_message' => 'Pratinjau tidak dapat dibuat. Unduh berkas asli untuk melihat isi lengkap.',
+                ])->save();
+            }
+
             Log::warning('Gambar mini dokumen tidak dapat dibuat.', [
                 'document_id' => $this->document->id,
                 'mime' => $this->document->file_mime_type,

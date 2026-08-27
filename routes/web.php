@@ -86,6 +86,8 @@ Route::middleware(['auth'])->group(function (): void {
     Route::delete('/documents/{document}/star', [DocumentWorkspaceController::class, 'unstar'])->name('documents.unstar');
     Route::put('/documents/{document}/folder', [DocumentWorkspaceController::class, 'place'])->name('documents.folder');
     Route::delete('/documents/{document}/folder', [DocumentWorkspaceController::class, 'moveToRoot'])->name('documents.folder-root');
+    Route::get('/documents/{document}/csv-preview', [DocumentController::class, 'previewCsv'])
+        ->name('documents.csv-preview');
     Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
 
     // Ubah, nonaktifkan, dan aktifkan kembali — FEAT-10.

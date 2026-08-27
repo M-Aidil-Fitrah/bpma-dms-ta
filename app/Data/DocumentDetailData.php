@@ -7,8 +7,8 @@ namespace App\Data;
 use App\Enums\DocumentEditScope;
 use App\Enums\DocumentStatus;
 use App\Enums\ExtractionStatus;
+use App\Enums\PreviewStatus;
 use App\Models\Document;
-use App\Services\DocumentThumbnailService;
 use App\Support\Inisial;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -52,12 +52,9 @@ final class DocumentDetailData extends Data
         public ?int $estimasi_ekstraksi_detik,
         public ?string $pesan_ekstraksi,
         public bool $preview_tersedia,
-        /**
-         * Berkas Office yang PDF konversinya belum jadi — antarmuka
-         * menunggu, bukan langsung menyerah ke fallback unduh, karena job
-         * `GenerateDocumentThumbnailJob` masih mungkin berjalan.
-         */
-        public bool $pratinjau_sedang_disiapkan,
+        public PreviewStatus $preview_status,
+        public ?string $pesan_preview,
+        public bool $csv_pratinjau_tersedia,
         /** Isi teks hasil ekstraksi; dasar pratinjau untuk berkas non-visual. */
         public ?string $isi_teks,
 
@@ -132,8 +129,9 @@ final class DocumentDetailData extends Data
             estimasi_ekstraksi_detik: $document->extraction_estimated_seconds,
             pesan_ekstraksi: $document->extraction_message,
             preview_tersedia: $document->preview_path !== null,
-            pratinjau_sedang_disiapkan: $document->preview_path === null
-                && in_array($document->file_mime_type, DocumentThumbnailService::MIME_OFFICE, true),
+            preview_status: $document->preview_status,
+            pesan_preview: $document->preview_message,
+            csv_pratinjau_tersedia: self::csvDapatDipratinjau($document),
             isi_teks: $document->extracted_text,
 
             pengunggah: $document->getAttribute('pengunggah_nama') ?? $document->uploader?->name,
@@ -176,5 +174,14 @@ final class DocumentDetailData extends Data
             boleh_aktifkan: $bolehAktifkan,
             boleh_pulihkan_versi: $bolehPulihkanVersi,
         );
+    }
+
+    private static function csvDapatDipratinjau(Document $document): bool
+    {
+        $adalahCsv = $document->file_mime_type === 'text/csv'
+            || ($document->file_mime_type === 'text/plain'
+                && strtolower(pathinfo($document->file_name_original, PATHINFO_EXTENSION)) === 'csv');
+
+        return $adalahCsv && $document->file_size <= (int) config('dms.preview.csv_maks_bytes');
     }
 }

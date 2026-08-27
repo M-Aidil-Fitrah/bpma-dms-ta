@@ -1,5 +1,6 @@
 import { Button } from '@/Components/ui/Button';
 import { IconButton } from '@/Components/ui/IconButton';
+import { CsvPreview } from '@/Components/domain/CsvPreview';
 import { formatUkuranBerkas } from '@/lib/format';
 import { Download, FileQuestion, Loader2, Maximize, Minimize, ZoomIn, ZoomOut } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
@@ -17,13 +18,6 @@ const PdfViewer = lazy(() =>
 
 export interface DocumentPreviewProps {
     dokumen: App.Data.DocumentDetailData;
-    /**
-     * Job konversi Office masih mungkin berjalan (dalam jendela waktu wajar
-     * sejak unggah) — ditampilkan alih-alih langsung lompat ke fallback teks
-     * atau unduh, karena tab ini sedang di-polling dan akan otomatis berganti
-     * begitu `preview_tersedia` jadi true.
-     */
-    sedangMenyiapkanPratinjau?: boolean;
 }
 
 /**
@@ -33,7 +27,7 @@ export interface DocumentPreviewProps {
  * Bila tidak, panel teks hasil ekstraksi tetap menjadi fallback yang lebih
  * berguna daripada ikon kosong.
  */
-export function DocumentPreview({ dokumen, sedangMenyiapkanPratinjau = false }: DocumentPreviewProps) {
+export function DocumentPreview({ dokumen }: DocumentPreviewProps) {
     const url = `/documents/${dokumen.id}/preview`;
     const mime = dokumen.tipe_berkas;
 
@@ -60,7 +54,9 @@ export function DocumentPreview({ dokumen, sedangMenyiapkanPratinjau = false }: 
                     return <PratinjauAudio url={url} layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />;
                 }
 
-                if (sedangMenyiapkanPratinjau) return <MenyiapkanPratinjau />;
+                if (dokumen.csv_pratinjau_tersedia) return <CsvPreview dokumen={dokumen} />;
+                if (dokumen.preview_status === 'processing') return <MenyiapkanPratinjau />;
+                if (dokumen.preview_status === 'failed') return <PratinjauGagal dokumen={dokumen} />;
                 if (dokumen.isi_teks) return <PanelTeks teks={dokumen.isi_teks} mime={mime} layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />;
 
                 return <TanpaPratinjau dokumen={dokumen} />;
@@ -296,6 +292,27 @@ function TanpaPratinjau({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
                 </p>
             </div>
 
+            <a href={`/documents/${dokumen.id}/file`} download>
+                <Button icon={Download}>{t('documentBrowse:preview.unduhBerkas')}</Button>
+            </a>
+        </div>
+    );
+}
+
+function PratinjauGagal({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
+    const { t } = useTranslation('documentBrowse');
+
+    return (
+        <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
+            <span className="inline-flex size-14 items-center justify-center rounded-full bg-danger-soft text-danger-strong">
+                <FileQuestion className="size-7" aria-hidden />
+            </span>
+            <div>
+                <p className="text-sm font-medium text-ink">{t('documentBrowse:preview.pratinjauGagal')}</p>
+                <p className="mt-1 max-w-md text-sm text-ink-muted">
+                    {dokumen.pesan_preview ?? t('documentBrowse:preview.pratinjauGagalKeterangan')}
+                </p>
+            </div>
             <a href={`/documents/${dokumen.id}/file`} download>
                 <Button icon={Download}>{t('documentBrowse:preview.unduhBerkas')}</Button>
             </a>

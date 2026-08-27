@@ -8,6 +8,7 @@ use App\Enums\DocumentEditScope;
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentVersionKind;
 use App\Enums\ExtractionStatus;
+use App\Enums\PreviewStatus;
 use Database\Factories\DocumentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 #[Fillable([
     'nomor', 'judul', 'category_id', 'origin_unit_id',
     'tanggal', 'masa_berlaku', 'status', 'deskripsi',
-    'file_path', 'file_name_original', 'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path',
+    'file_path', 'file_name_original', 'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path', 'preview_status', 'preview_message',
     'extracted_text', 'extraction_status', 'extraction_pages_total', 'extraction_pages_processed',
     'extraction_estimated_seconds', 'extraction_message', 'extraction_started_at',
     'nomor_normalized', 'replaces_document_id', 'version_root_id',
@@ -86,7 +87,7 @@ class Document extends Model
     public const KOLOM_DAFTAR = [
         'id', 'nomor', 'judul', 'category_id', 'origin_unit_id',
         'tanggal', 'masa_berlaku', 'status', 'extraction_status',
-        'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path',
+        'file_mime_type', 'file_size', 'thumbnail_path', 'preview_path', 'preview_status',
         'is_shared_to_all', 'is_private', 'min_tingkat_akses',
         'uploaded_by', 'is_active', 'created_at',
         // Dipakai halaman Sampah lewat DocumentListData::untukWorkspace() —
@@ -102,6 +103,7 @@ class Document extends Model
             'masa_berlaku' => 'date',
             'status' => DocumentStatus::class,
             'extraction_status' => ExtractionStatus::class,
+            'preview_status' => PreviewStatus::class,
             'edit_scope' => DocumentEditScope::class,
             'version_kind' => DocumentVersionKind::class,
             'is_shared_to_all' => 'boolean',

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\DocumentVersionKind;
+use App\Enums\PreviewStatus;
 use App\Models\Document;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +41,8 @@ final class DocumentVersionService
                 // menampilkan gambar mini atau teks dari pendahulunya.
                 'thumbnail_path' => null,
                 'preview_path' => null,
+                'preview_status' => PreviewStatus::NotApplicable,
+                'preview_message' => null,
                 'extracted_text' => null,
                 'extraction_pages_total' => null,
                 'extraction_pages_processed' => null,
@@ -173,6 +176,8 @@ final class DocumentVersionService
             'file_size' => $sumber->file_size,
             'thumbnail_path' => $sumber->thumbnail_path,
             'preview_path' => $sumber->preview_path,
+            'preview_status' => $sumber->preview_status,
+            'preview_message' => $sumber->preview_message,
             'extracted_text' => $sumber->extracted_text,
             'extraction_status' => $sumber->extraction_status,
             'extraction_pages_total' => $sumber->extraction_pages_total,

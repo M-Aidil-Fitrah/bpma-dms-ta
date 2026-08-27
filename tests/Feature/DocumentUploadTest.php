@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Enums\DocumentEditScope;
 use App\Enums\ExtractionStatus;
+use App\Enums\PreviewStatus;
 use App\Jobs\ExtractDocumentTextJob;
 use App\Jobs\GenerateDocumentThumbnailJob;
 use App\Models\Category;
@@ -460,6 +461,18 @@ final class DocumentUploadTest extends TestCase
             GenerateDocumentThumbnailJob::class,
             fn (GenerateDocumentThumbnailJob $job): bool => $job->document->is($document),
         );
+    }
+
+    public function test_unggah_office_mencatat_pratinjau_sedang_diproses_sebelum_job_dijalankan(): void
+    {
+        $this->actingAs($this->pengunggah)->post('/documents', $this->formulir([
+            'file' => UploadedFile::fake()->create('notulen.docx', 100, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+        ]));
+
+        $document = Document::firstWhere('judul', 'Dokumen Uji Unggah');
+
+        $this->assertSame(PreviewStatus::Processing, $document->preview_status);
+        Queue::assertPushed(GenerateDocumentThumbnailJob::class, fn (GenerateDocumentThumbnailJob $job): bool => $job->document->is($document));
     }
 
     public function test_tipe_tak_didukung_tidak_memicu_job(): void

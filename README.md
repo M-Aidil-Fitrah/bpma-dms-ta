@@ -19,6 +19,8 @@ dokumen digital BPMA secara terstruktur.
 | MySQL / MariaDB | 8.0+ / 10.5+ | **Wajib.** SQLite tidak mendukung index FULLTEXT yang dipakai pencarian isi dokumen |
 | Node.js | 20+ | |
 | Tesseract OCR | 5.x | Untuk OCR berkas gambar. Dipasang di level sistem operasi, bukan lewat Composer |
+| LibreOffice | 7.x+ | Mengonversi Word, Excel, dan PowerPoint menjadi PDF pratinjau privat |
+| Ghostscript | 10.x+ | Membuat gambar mini dari halaman pertama PDF hasil konversi |
 
 ### Memasang Tesseract
 
@@ -33,6 +35,21 @@ Verifikasi sebelum lanjut:
 
 ```bash
 tesseract --version
+```
+
+### Memasang perkakas pratinjau Office
+
+| Sistem Operasi | Perintah |
+|---|---|
+| macOS | `brew install --cask libreoffice ghostscript` |
+| Ubuntu / Debian | `sudo apt install libreoffice ghostscript` |
+| Fedora | `sudo dnf install libreoffice ghostscript` |
+
+Verifikasi sebelum deploy:
+
+```bash
+libreoffice --version
+gs --version
 ```
 
 ---
@@ -118,6 +135,20 @@ padat, jalankan **dua** proses `queue:work` terpisah (masing-masing program
 Supervisor/systemd sendiri) — satu `--queue=default`, satu lagi
 `--queue=thumbnail` — supaya keduanya benar-benar berjalan paralel, bukan
 sekadar bergiliran dalam satu proses.
+
+### Backfill pratinjau Office lama
+
+Setelah deploy migrasi ini, masukkan arsip Office lama ke antrean secara
+bertahap; perintah hanya menandai dan mengantrikan dokumen yang belum memiliki
+PDF pratinjau, tanpa mengubah berkas asli:
+
+```bash
+php artisan documents:backfill-previews --chunk=50
+```
+
+Jalankan ulang aman untuk dokumen yang masih `processing` atau sudah `ready`.
+Untuk mencoba ulang dokumen yang sebelumnya gagal, setelah penyebabnya
+diperbaiki, gunakan `php artisan documents:backfill-previews --retry-failed`.
 
 ### Status dokumen kedaluwarsa
 
@@ -295,6 +326,7 @@ php artisan test     # Menjalankan seluruh tes
 | Kontrak tipe | `spatie/laravel-data` + `spatie/laravel-typescript-transformer` | 4.x / 3.x |
 | Ekstraksi teks | `smalot/pdfparser`, `phpoffice/phpword` | 2.x / 1.x |
 | OCR | Tesseract via `thiagoalessio/tesseract_ocr` | 2.x |
+| Pratinjau Office | LibreOffice + Ghostscript | paket sistem |
 
 ### Catatan Versi yang Mudah Keliru
 
@@ -329,6 +361,7 @@ atau enum berubah, lalu ikutkan hasilnya dalam commit.
 | Status ekstraksi macet di "Memproses" | `php artisan queue:work` tidak berjalan |
 | Dokumen tidak pernah berpindah ke Kadaluarsa | `php artisan schedule:work` tidak berjalan |
 | OCR gagal untuk semua berkas gambar | Tesseract belum terpasang di sistem operasi |
+| Pratinjau Word, Excel, atau PowerPoint gagal | LibreOffice atau Ghostscript belum terpasang, atau worker `thumbnail` tidak berjalan |
 | `migrate` gagal saat membuat tabel `documents` | Database mengarah ke SQLite, bukan MySQL/MariaDB — index FULLTEXT tidak didukung |
 | Pencarian tidak menemukan kata pendek | Batasan bawaan InnoDB: kata di bawah 3 huruf tidak diindeks FULLTEXT |
 | Pratinjau PDF kosong setelah `npm run build` | Berkas worker pdf.js belum tersalin ke direktori publik |

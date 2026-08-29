@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Services\DocumentTextExtractor;
 use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\RequiresBinaries;
 use Tests\TestCase;
 use UnexpectedValueException;
 
@@ -18,6 +19,8 @@ use UnexpectedValueException;
  */
 final class DocumentTextExtractorTest extends TestCase
 {
+    use RequiresBinaries;
+
     private DocumentTextExtractor $ekstraktor;
 
     protected function setUp(): void
@@ -57,6 +60,8 @@ final class DocumentTextExtractorTest extends TestCase
 
     public function test_gambar_bernaskah_menghasilkan_teks_ocr(): void
     {
+        $this->requireTesseractLanguages(...explode('+', config('dms.ekstraksi.bahasa_ocr')));
+
         $teks = $this->ekstraktor->gambar(base_path('database/seeders/files/nota-dinas-foto.jpg'))->text;
 
         $this->assertNotSame('', $teks);

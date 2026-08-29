@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\RequiresBinaries;
 use Tests\TestCase;
 
 /**
@@ -22,6 +23,7 @@ use Tests\TestCase;
 final class DocumentThumbnailServiceTest extends TestCase
 {
     use RefreshDatabase;
+    use RequiresBinaries;
 
     private DocumentThumbnailService $thumbnail;
 
@@ -63,6 +65,8 @@ final class DocumentThumbnailServiceTest extends TestCase
 
     public function test_pdf_menghasilkan_thumbnail_halaman_pertama(): void
     {
+        $this->requireBinary('gs');
+
         $document = $this->dokumenDenganBerkas('sop-pengendalian-dokumen.pdf', 'application/pdf');
 
         $this->thumbnail->generate($document);
@@ -75,6 +79,9 @@ final class DocumentThumbnailServiceTest extends TestCase
 
     public function test_docx_menghasilkan_pdf_pratinjau_dan_thumbnail(): void
     {
+        $this->requireBinary('libreoffice');
+        $this->requireBinary('gs');
+
         $document = $this->dokumenDenganBerkas(
             'notulen-rapat-koordinasi.docx',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

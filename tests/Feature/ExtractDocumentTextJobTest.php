@@ -10,6 +10,7 @@ use App\Models\Document;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\RequiresBinaries;
 use Tests\TestCase;
 
 /**
@@ -20,6 +21,7 @@ use Tests\TestCase;
 final class ExtractDocumentTextJobTest extends TestCase
 {
     use RefreshDatabase;
+    use RequiresBinaries;
 
     private function taruhBerkasContoh(string $namaBerkas, string $mime): Document
     {
@@ -52,6 +54,9 @@ final class ExtractDocumentTextJobTest extends TestCase
 
     public function test_pdf_hasil_pindaian_menjadi_completed_dengan_teks_ocr_dan_progres_halaman(): void
     {
+        $this->requireBinary('gs');
+        $this->requireTesseractLanguages(...explode('+', config('dms.ekstraksi.bahasa_ocr')));
+
         // PDF ini sengaja tidak punya text layer. Ia harus diraster halaman
         // demi halaman lalu dibaca Tesseract, bukan dianggap selesai kosong.
         $document = $this->taruhBerkasContoh('nota-dinas-hasil-pindai.pdf', 'application/pdf');
@@ -91,6 +96,8 @@ final class ExtractDocumentTextJobTest extends TestCase
 
     public function test_gambar_bernaskah_menjadi_completed_dengan_teks_ocr(): void
     {
+        $this->requireTesseractLanguages(...explode('+', config('dms.ekstraksi.bahasa_ocr')));
+
         $document = $this->taruhBerkasContoh('nota-dinas-foto.jpg', 'image/jpeg');
 
         app()->call([new ExtractDocumentTextJob($document), 'handle']);

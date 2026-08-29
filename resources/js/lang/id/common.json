@@ -65,6 +65,16 @@
         "warning": "Perlu Diperhatikan",
         "info": "Informasi"
     },
+    "errorBoundary": {
+        "title": "Terjadi kesalahan pada halaman ini",
+        "description": "Silakan muat ulang halaman. Jika masalah berlanjut, kembali ke beranda dan coba lagi.",
+        "reload": "Muat ulang",
+        "home": "Kembali ke Beranda"
+    },
+    "previewError": "Pratinjau gagal dimuat. Anda tetap dapat mengunduh berkas ini.",
+    "networkError": "Terjadi masalah jaringan. Periksa koneksi Anda lalu coba lagi.",
+    "unexpectedResponse": "Aplikasi menerima respons yang tidak dapat diproses. Silakan coba lagi.",
+    "actionFailed": "Aksi tidak dapat diselesaikan. Silakan coba lagi.",
     "ui": {
         "semua": "Semua",
         "tutupPemberitahuan": "Tutup pemberitahuan",

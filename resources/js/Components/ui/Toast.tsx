@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn';
+import { daftarkanPenerimaToast } from '@/lib/toastEvents';
 import {
     CircleAlert,
     CircleCheck,
@@ -87,6 +88,8 @@ export function ToastProvider({ children, posisi = 'auth' }: { children: ReactNo
 
         return id;
     }, []);
+
+    useEffect(() => daftarkanPenerimaToast(tampilkan), [tampilkan]);
 
     const nilai = useMemo<KontrakToast>(
         () => ({

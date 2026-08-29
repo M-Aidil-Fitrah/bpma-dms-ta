@@ -97,6 +97,9 @@ minimal 16 karakter. Sebelum layanan dibuka ke pengguna, rotasi secret awal
 Superadmin menjadi nilai unik, lalu jalankan `php artisan dms:superadmin` untuk
 menyelaraskan kredensial akun dengan secret yang sudah dirotasi.
 
+Untuk rilis Docker Compose atau Supervisor, termasuk urutan migrasi, verifikasi
+pasca-rilis, dan rollback yang aman, ikuti [panduan deployment](./DEPLOYMENT.md).
+
 Jalankan migrasi dan seed:
 
 ```bash

@@ -86,3 +86,12 @@ jobs:
       - name: Audit JavaScript dependencies
         run: npm audit --omit=dev
         continue-on-error: true
+
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production web image
+        run: docker build --target web .

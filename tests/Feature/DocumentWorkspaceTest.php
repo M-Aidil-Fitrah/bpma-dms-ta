@@ -118,6 +118,19 @@ final class DocumentWorkspaceTest extends TestCase
         ]);
     }
 
+    public function test_mutasi_workspace_dibatasi_per_pengguna(): void
+    {
+        foreach (range(1, 30) as $_) {
+            $this->actingAs($this->owner)
+                ->put(route('documents.star', $this->document))
+                ->assertRedirect();
+        }
+
+        $this->actingAs($this->owner)
+            ->put(route('documents.star', $this->document))
+            ->assertTooManyRequests();
+    }
+
     public function test_membuang_dokumen_menyembunyikannya_dan_dapat_dipulihkan(): void
     {
         $this->actingAs($this->owner)

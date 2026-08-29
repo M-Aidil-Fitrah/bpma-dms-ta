@@ -709,4 +709,17 @@ final class DocumentUploadTest extends TestCase
             ->getJson('/documents/cari-pengguna?cari=Zulkarnain')
             ->assertExactJson([]);
     }
+
+    public function test_pencarian_pengguna_dibatasi_per_pengguna(): void
+    {
+        foreach (range(1, 60) as $_) {
+            $this->actingAs($this->pengunggah)
+                ->getJson('/documents/cari-pengguna?cari=Pengguna')
+                ->assertOk();
+        }
+
+        $this->actingAs($this->pengunggah)
+            ->getJson('/documents/cari-pengguna?cari=Pengguna')
+            ->assertTooManyRequests();
+    }
 }

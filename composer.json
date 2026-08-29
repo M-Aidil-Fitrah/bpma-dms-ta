@@ -60,6 +60,7 @@
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
+            "DB_CONNECTION=mysql DB_DATABASE=bpma-dms-ta-testing DB_URL= php artisan migrate:fresh --env=testing --force --no-interaction",
             "@php artisan test"
         ],
         "post-autoload-dump": [

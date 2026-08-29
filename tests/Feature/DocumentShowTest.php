@@ -133,6 +133,7 @@ final class DocumentShowTest extends TestCase
     {
         $unit = Unit::factory()->create();
         Jabatan::factory()->tingkat(1)->create(['nama' => 'Kepala Badan']);
+        Jabatan::factory()->tingkat(1)->create(['nama' => 'Pimpinan BPMA']);
         Jabatan::factory()->tingkat(2)->create(['nama' => 'Deputi']);
         Jabatan::factory()->tingkat(2)->create(['nama' => 'Jabatan Lama', 'is_active' => false]);
         $document = $this->buatDokumen([

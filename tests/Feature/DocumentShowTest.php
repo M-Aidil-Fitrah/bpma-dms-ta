@@ -132,10 +132,22 @@ final class DocumentShowTest extends TestCase
     public function test_seluruh_mekanisme_akses_dikirim_ke_antarmuka(): void
     {
         $unit = Unit::factory()->create();
-        Jabatan::factory()->tingkat(1)->create(['nama' => 'Kepala Badan']);
-        Jabatan::factory()->tingkat(1)->create(['nama' => 'Pimpinan BPMA']);
-        Jabatan::factory()->tingkat(2)->create(['nama' => 'Deputi']);
-        Jabatan::factory()->tingkat(2)->create(['nama' => 'Jabatan Lama', 'is_active' => false]);
+        Jabatan::firstOrCreate(
+            ['nama' => 'Kepala Badan'],
+            ['tingkat_akses' => 1, 'is_active' => true],
+        );
+        Jabatan::firstOrCreate(
+            ['nama' => 'Pimpinan BPMA'],
+            ['tingkat_akses' => 1, 'is_active' => true],
+        );
+        Jabatan::firstOrCreate(
+            ['nama' => 'Deputi'],
+            ['tingkat_akses' => 2, 'is_active' => true],
+        );
+        Jabatan::firstOrCreate(
+            ['nama' => 'Jabatan Lama'],
+            ['tingkat_akses' => 2, 'is_active' => false],
+        );
         $document = $this->buatDokumen([
             'is_shared_to_all' => false,
             'min_tingkat_akses' => 2,

@@ -337,6 +337,8 @@ npm run dev          # Server pengembangan frontend
 npm run build        # Build produksi (menjalankan pemeriksaan TypeScript lebih dulu)
 npm run typecheck    # Pemeriksaan TypeScript saja
 npm test             # Test komponen dan kontrak locale frontend
+npm run lint         # Pemeriksaan kualitas TypeScript/React/a11y
+npm run format:check # Format untuk file test frontend baru
 
 php artisan test     # Menjalankan seluruh tes
 ./vendor/bin/pint    # Merapikan gaya penulisan PHP

@@ -21,14 +21,7 @@ const tanpaAkses: NilaiAkses = {
 
 describe('AccessMechanismPicker', () => {
     it('memperingatkan saat belum ada mekanisme akses yang dipilih', () => {
-        render(
-            <AccessMechanismPicker
-                nilai={tanpaAkses}
-                onChange={vi.fn()}
-                units={[]}
-                jenjang={[]}
-            />,
-        );
+        render(<AccessMechanismPicker nilai={tanpaAkses} onChange={vi.fn()} units={[]} jenjang={[]} />);
 
         expect(screen.getByRole('status')).toBeInTheDocument();
     });
@@ -44,14 +37,7 @@ describe('AccessMechanismPicker', () => {
             shared_users: [{ id: 3, nama: 'Rani', jabatan: null, unit: null }],
         };
 
-        render(
-            <AccessMechanismPicker
-                nilai={nilaiAwal}
-                onChange={onChange}
-                units={[]}
-                jenjang={[]}
-            />,
-        );
+        render(<AccessMechanismPicker nilai={nilaiAwal} onChange={onChange} units={[]} jenjang={[]} />);
 
         await user.click(screen.getByRole('button', { name: /Hanya saya/ }));
 

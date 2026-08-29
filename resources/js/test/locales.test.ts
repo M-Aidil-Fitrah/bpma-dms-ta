@@ -10,7 +10,9 @@ function ratakan(nilai: JsonValue, awalan = ''): string[] {
         return [awalan];
     }
 
-    return Object.entries(nilai).flatMap(([kunci, anak]) => ratakan(anak, awalan === '' ? kunci : `${awalan}.${kunci}`));
+    return Object.entries(nilai).flatMap(([kunci, anak]) =>
+        ratakan(anak, awalan === '' ? kunci : `${awalan}.${kunci}`),
+    );
 }
 
 function bacaLocale(bahasa: 'id' | 'en'): Map<string, string[]> {

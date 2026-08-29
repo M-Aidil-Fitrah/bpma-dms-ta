@@ -180,6 +180,13 @@ php artisan documents:update-expired-status
 Command ini aman dijalankan berulang; dokumen yang sudah Kadaluarsa tidak
 akan diubah atau dicatat lagi.
 
+Scheduler juga mengosongkan aktivitas yang lebih tua dari **365 hari** setiap
+pukul **00.40**, setelah purge Sampah pukul **00.20**. Pembersihan memakai
+`activitylog:clean --force` agar berjalan non-interaktif di produksi dan tidak
+boleh dijalankan dari lebih dari satu scheduler pada saat yang sama. Pastikan
+backup tersedia sebelum mengubah kebijakan retensi karena penghapusan ini tidak
+dapat dipulihkan dari aplikasi.
+
 ### Menjaga `queue:work` tetap hidup di VPS
 
 Proses nomor 3 tidak boleh berhenti begitu sesi terminal ditutup, dan

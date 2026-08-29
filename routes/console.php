@@ -17,3 +17,7 @@ Schedule::command('documents:update-expired-status')
 Schedule::command('documents:purge-trash')
     ->dailyAt('00:20')
     ->withoutOverlapping();
+
+Schedule::command('activitylog:clean --force')
+    ->dailyAt('00:40')
+    ->withoutOverlapping();

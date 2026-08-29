@@ -16,8 +16,7 @@ boot, bukan kesiapan seluruh dependensi.
 - Docker Engine 25+ dan Docker Compose v2 untuk jalur container.
 - Nama DNS/TLS terminator di depan port aplikasi untuk deployment Internet.
 - Secret manager atau berkas `.env` yang hak aksesnya dibatasi (`chmod 600`).
-- Akun database aplikasi non-root dan kata sandi Superadmin unik minimal 16
-  karakter.
+- Akun database aplikasi non-root dan kredensial Superadmin dari secret manager.
 
 Jangan menyalin `.env.example` untuk produksi. Mulai dari template produksi,
 lalu isi seluruh placeholder dan tambahkan secret root MySQL yang hanya
@@ -43,7 +42,7 @@ DB_PASSWORD=ganti-dengan-secret-aplikasi
 MYSQL_ROOT_PASSWORD=ganti-dengan-secret-root-khusus-compose
 
 SUPERADMIN_EMAIL=admin@example.go.id
-SUPERADMIN_PASSWORD=ganti-dengan-secret-superadmin-minimal-16-karakter
+SUPERADMIN_PASSWORD=ganti-dengan-secret-superadmin
 ```
 
 Batas infrastruktur unggah pada artefak ini adalah 2 GB. Superadmin dapat

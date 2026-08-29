@@ -102,10 +102,9 @@ SUPERADMIN_PASSWORD=ganti-dengan-kata-sandi-kuat
 Untuk server produksi, mulai dari `.env.production.example`, bukan
 `.env.example`. Isi `APP_KEY`, kredensial database non-root, dan kredensial
 Superadmin melalui secret manager/environment host; aplikasi menolak boot bila
-`APP_ENV=production` dengan `APP_DEBUG=true`, dan kata sandi Superadmin harus
-minimal 16 karakter. Sebelum layanan dibuka ke pengguna, rotasi secret awal
-Superadmin menjadi nilai unik, lalu jalankan `php artisan dms:superadmin` untuk
-menyelaraskan kredensial akun dengan secret yang sudah dirotasi.
+`APP_ENV=production` dengan `APP_DEBUG=true`. Sebelum layanan dibuka ke
+pengguna, simpan kredensial Superadmin hanya di environment host lalu jalankan
+`php artisan dms:superadmin` untuk menyelaraskan akun dengan nilai tersebut.
 
 Untuk rilis Docker Compose atau Supervisor, termasuk urutan migrasi, verifikasi
 pasca-rilis, dan rollback yang aman, ikuti [panduan deployment](./DEPLOYMENT.md).

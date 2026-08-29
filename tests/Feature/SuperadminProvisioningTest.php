@@ -77,6 +77,18 @@ final class SuperadminProvisioningTest extends TestCase
         $this->assertFalse(Hash::check('kata-sandi-uji', $superadmin->password));
     }
 
+    public function test_kata_sandi_production_mengikuti_kredensial_proyek_tanpa_batas_panjang(): void
+    {
+        config()->set('app.env', 'production');
+        config()->set('dms.superadmin.password', 'superadmin123');
+
+        $this->artisan('dms:superadmin')->assertSuccessful();
+
+        $superadmin = User::where('email', 'superadmin@bpma.internal')->sole();
+
+        $this->assertTrue(Hash::check('superadmin123', $superadmin->password));
+    }
+
     public function test_superadmin_berada_di_luar_struktur_organisasi(): void
     {
         $this->artisan('dms:superadmin')->assertSuccessful();
@@ -107,18 +119,6 @@ final class SuperadminProvisioningTest extends TestCase
         config()->set('dms.superadmin.password', null);
 
         $this->artisan('dms:superadmin')->assertFailed();
-
-        $this->assertSame(0, User::count());
-    }
-
-    public function test_kata_sandi_produksi_harus_memiliki_minimal_enam_belas_karakter(): void
-    {
-        config()->set('app.env', 'production');
-        config()->set('dms.superadmin.password', str_repeat('a', 15));
-
-        $this->artisan('dms:superadmin')
-            ->expectsOutputToContain('minimal 16 karakter')
-            ->assertFailed();
 
         $this->assertSame(0, User::count());
     }

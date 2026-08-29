@@ -76,10 +76,6 @@ final class SuperadminProvisioner
             );
         }
 
-        if (! in_array(config('app.env'), ['local', 'testing'], true) && mb_strlen((string) $kataSandi) < 16) {
-            throw new RuntimeException('SUPERADMIN_PASSWORD minimal 16 karakter di luar lingkungan local/testing.');
-        }
-
         return [$nama, (string) $email, (string) $kataSandi];
     }
 }

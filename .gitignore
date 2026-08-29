@@ -26,9 +26,15 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
-# Dokumen & referensi desain lokal (konteks kerja, bukan kode sumber)
+# Dokumen pitch tetap keluaran lokal; dokumentasi operasional di bawah ini
+# merupakan bagian dari source of truth repository.
 scripts/
-docs/
+docs/*
+!docs/architecture/
+!docs/architecture/**
+!docs/adr/
+!docs/adr/**
+!docs/ENV-REFERENCE.md
 
 # Keluaran sementara Playwright MCP
 .playwright-mcp/

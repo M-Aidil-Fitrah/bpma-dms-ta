@@ -10,6 +10,16 @@ dokumen digital BPMA secara terstruktur.
 
 ---
 
+## Dokumentasi teknis
+
+- [Arsitektur aplikasi](./docs/architecture/README.md)
+- [Referensi environment](./docs/ENV-REFERENCE.md)
+- [Keputusan database testing](./docs/adr/0001-isolate-the-testing-database.md)
+- [Panduan kontribusi](./CONTRIBUTING.md)
+- [Panduan deployment](./DEPLOYMENT.md)
+
+---
+
 ## Prasyarat
 
 | Kebutuhan | Versi | Catatan |

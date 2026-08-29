@@ -7,6 +7,7 @@ namespace App\Providers;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use LogicException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +24,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->app->environment('production') && config('app.debug')) {
+            throw new LogicException('APP_DEBUG wajib false saat APP_ENV=production.');
+        }
+
         Vite::prefetch(concurrency: 3);
 
         if ($this->app->runningInConsole()) {

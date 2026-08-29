@@ -110,4 +110,16 @@ final class SuperadminProvisioningTest extends TestCase
 
         $this->assertSame(0, User::count());
     }
+
+    public function test_kata_sandi_produksi_harus_memiliki_minimal_enam_belas_karakter(): void
+    {
+        config()->set('app.env', 'production');
+        config()->set('dms.superadmin.password', str_repeat('a', 15));
+
+        $this->artisan('dms:superadmin')
+            ->expectsOutputToContain('minimal 16 karakter')
+            ->assertFailed();
+
+        $this->assertSame(0, User::count());
+    }
 }

@@ -71,7 +71,14 @@ Buat database, lalu sesuaikan `DB_*` di `.env`:
 
 ```sql
 CREATE DATABASE `bpma-dms` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'bpma_dms'@'127.0.0.1' IDENTIFIED BY 'ganti-dengan-rahasia-unik';
+GRANT ALL PRIVILEGES ON `bpma-dms`.* TO 'bpma_dms'@'127.0.0.1';
+FLUSH PRIVILEGES;
 ```
+
+Gunakan akun `bpma_dms` tersebut di produksi; jangan gunakan `root`. Ganti
+placeholder kata sandi sebelum mengeksekusi SQL dan simpan nilainya hanya di
+secret manager/environment host.
 
 Isi kredensial Superadmin di `.env` — akun ini satu-satunya jalan masuk pertama
 ke aplikasi, karena **tidak ada registrasi publik**:
@@ -81,6 +88,14 @@ SUPERADMIN_NAME="Administrator BPMA"
 SUPERADMIN_EMAIL=superadmin@bpma.internal
 SUPERADMIN_PASSWORD=ganti-dengan-kata-sandi-kuat
 ```
+
+Untuk server produksi, mulai dari `.env.production.example`, bukan
+`.env.example`. Isi `APP_KEY`, kredensial database non-root, dan kredensial
+Superadmin melalui secret manager/environment host; aplikasi menolak boot bila
+`APP_ENV=production` dengan `APP_DEBUG=true`, dan kata sandi Superadmin harus
+minimal 16 karakter. Sebelum layanan dibuka ke pengguna, rotasi secret awal
+Superadmin menjadi nilai unik, lalu jalankan `php artisan dms:superadmin` untuk
+menyelaraskan kredensial akun dengan secret yang sudah dirotasi.
 
 Jalankan migrasi dan seed:
 

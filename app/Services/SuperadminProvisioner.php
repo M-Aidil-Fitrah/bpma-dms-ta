@@ -21,18 +21,6 @@ use Spatie\Permission\Models\Role;
  */
 final class SuperadminProvisioner
 {
-    /** @var list<string> */
-    private const KATA_SANDI_TERLARANG = [
-        'password',
-        'password123',
-        'passwordpassword',
-        'superadmin123',
-        'admin123',
-        '12345678',
-        '123456789',
-        'qwerty',
-    ];
-
     /**
      * @return array{user: User, dibuat: bool}
      */
@@ -88,17 +76,8 @@ final class SuperadminProvisioner
             );
         }
 
-        if (! in_array(config('app.env'), ['local', 'testing'], true)) {
-            if (mb_strlen((string) $kataSandi) < 16) {
-                throw new RuntimeException('SUPERADMIN_PASSWORD minimal 16 karakter di luar lingkungan local/testing.');
-            }
-
-            $kataSandiNormal = mb_strtolower((string) $kataSandi);
-            $emailNormal = mb_strtolower((string) $email);
-
-            if (in_array($kataSandiNormal, self::KATA_SANDI_TERLARANG, true) || $kataSandiNormal === $emailNormal) {
-                throw new RuntimeException('SUPERADMIN_PASSWORD terlalu mudah ditebak atau tidak boleh sama dengan email.');
-            }
+        if (! in_array(config('app.env'), ['local', 'testing'], true) && mb_strlen((string) $kataSandi) < 16) {
+            throw new RuntimeException('SUPERADMIN_PASSWORD minimal 16 karakter di luar lingkungan local/testing.');
         }
 
         return [$nama, (string) $email, (string) $kataSandi];

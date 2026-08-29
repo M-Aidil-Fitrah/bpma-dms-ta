@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Enums\ExtractionStatus;
 use App\Jobs\ExtractDocumentTextJob;
 use App\Models\Document;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -131,6 +132,10 @@ final class ExtractDocumentTextJobTest extends TestCase
         $job = new ExtractDocumentTextJob($document);
 
         $this->assertSame(2, $job->tries);
+        $this->assertInstanceOf(ShouldBeUnique::class, $job);
+        $this->assertSame('extract-document-'.$document->id, $job->uniqueId());
+        $this->assertSame(1800, $job->uniqueFor);
+        $this->assertSame(config('dms.ekstraksi.pdf_ocr_timeout_detik'), $job->timeout);
         $this->assertTrue($job->deleteWhenMissingModels);
     }
 

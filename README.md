@@ -171,6 +171,12 @@ Proses nomor 3 tidak boleh berhenti begitu sesi terminal ditutup, dan
 Laravel sendiri tidak menyalakannya ulang kalau prosesnya mati. Pakai
 **Supervisor** atau **systemd** supaya proses itu otomatis dijalankan lagi.
 
+Untuk driver `database`, pertahankan `DB_QUEUE_RETRY_AFTER` lebih besar dari
+timeout job terpanjang (default proyek: 1200 detik vs OCR 900 detik). Kedua job
+berat memakai kunci unik per dokumen; pada produksi, gunakan cache lock bersama
+seperti `database` atau Redis—jangan `array`, karena lock `array` tidak dibagi
+antar worker.
+
 Kalau workernya sempat mati, tidak ada data yang rusak — dokumen yang
 terlanjur diunggah selama itu hanya menunggu di tabel `jobs` dengan status
 tetap "Memproses" sampai workernya hidup kembali dan memprosesnya.

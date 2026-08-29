@@ -8,6 +8,7 @@ use App\Enums\PreviewStatus;
 use App\Jobs\GenerateDocumentThumbnailJob;
 use App\Models\Document;
 use App\Services\DocumentThumbnailService;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
@@ -125,6 +126,21 @@ final class DocumentThumbnailServiceTest extends TestCase
         $document->refresh();
         $this->assertNull($document->thumbnail_path);
         $this->assertNull($document->preview_path);
+    }
+
+    public function test_job_thumbnail_memiliki_kunci_unik_dan_timeout_yang_aman(): void
+    {
+        $document = $this->dokumenDenganBerkas('sop-pengendalian-dokumen.pdf', 'application/pdf');
+        $job = new GenerateDocumentThumbnailJob($document);
+
+        $this->assertInstanceOf(ShouldBeUnique::class, $job);
+        $this->assertSame('thumbnail-document-'.$document->id, $job->uniqueId());
+        $this->assertSame(1800, $job->uniqueFor);
+        $this->assertSame(config('dms.thumbnail.job_timeout_detik'), $job->timeout);
+        $this->assertGreaterThan(
+            config('dms.thumbnail.libreoffice_timeout_detik') + config('dms.thumbnail.ghostscript_timeout_detik'),
+            $job->timeout,
+        );
     }
 
     public function test_job_office_gagal_menandai_pratinjau_gagal_tanpa_mengubah_berkas_asli(): void

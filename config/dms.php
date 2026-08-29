@@ -173,6 +173,7 @@ return [
     'thumbnail' => [
         'libreoffice_timeout_detik' => 60,
         'ghostscript_timeout_detik' => 60,
+        'job_timeout_detik' => 180,
     ],
 
     /*

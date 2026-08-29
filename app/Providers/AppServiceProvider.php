@@ -31,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
             // Office) tidak pernah diproses — gambar mini macet selamanya di
             // "Memproses" meski dev server terlihat berjalan normal.
             // Nama 'queue' menimpa bawaan Laravel (README §Menjalankan Aplikasi).
-            DevCommands::artisan('queue:listen --queue=default,thumbnail --tries=1 --timeout=0', 'queue');
+            DevCommands::artisan('queue:listen --queue=default,thumbnail --timeout=1200', 'queue');
 
             // Scheduler (perpindahan status Kadaluarsa & purge Sampah) tidak
             // ikut proses bawaan sama sekali — tanpa ini, `composer run dev`

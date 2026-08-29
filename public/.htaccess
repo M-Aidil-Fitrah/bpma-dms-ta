@@ -1,17 +1,17 @@
 # Batas ukuran unggahan untuk lingkungan Apache.
 #
-# Harus selaras dengan `ukuran_maksimum_kb` di config/dms.php.
+# Harus selaras dengan `ukuran_tertinggi_kb` di config/dms.php.
 # Lingkungan PHP-FPM/CGI diatur lewat public/.user.ini, bukan di sini.
 
-# Berlaku di semua modus Apache. Nilai dalam byte: 1074 MB.
+# Berlaku di semua modus Apache. Nilai dalam byte: 2.098 MB.
 # Tanpa ini, Apache menolak permintaan besar dengan 413 sebelum PHP dijalankan.
-LimitRequestBody 1126170624
+LimitRequestBody 2199912448
 
 # Hanya untuk Apache dengan mod_php. Pembungkus IfModule wajib: pada PHP-FPM,
 # direktif php_value tidak dikenali dan membuat seluruh situs balas 500.
 <IfModule mod_php.c>
-    php_value upload_max_filesize 1024M
-    php_value post_max_size 1074M
+    php_value upload_max_filesize 2048M
+    php_value post_max_size 2098M
     php_value memory_limit 512M
     php_value max_execution_time 0
 </IfModule>

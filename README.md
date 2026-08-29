@@ -210,10 +210,11 @@ tetap "Memproses" sampai workernya hidup kembali dan memprosesnya.
 
 ## Batas Ukuran Unggahan
 
-Aplikasi menetapkan batas **1 GB**, dan angka itu **berlaku sama di semua
-lingkungan** — laptop pengembangan maupun VPS. Batas yang berbeda-beda per mesin
-membuat pengujian tidak dapat dipercaya: berkas yang lolos di laptop bisa
-ditolak di server tanpa satu pun perubahan kode.
+Aplikasi memakai batas unggah bawaan **1 GB**. Superadmin dapat mengubah batas
+operasionalnya dari halaman Pengaturan, mulai 1 MB sampai batas keras
+infrastruktur **2 GB**. Batas 2 GB tetap dikelola melalui rilis/deploy agar
+PHP, web server, dan aplikasi selalu selaras; setelan Superadmin tidak dapat
+melampauinya.
 
 Sebagian besar setelannya **sudah ikut di repositori** dan berlaku otomatis
 saat di-deploy. Yang benar-benar perlu disentuh manual hanya satu, dan itu pun
@@ -253,9 +254,9 @@ menolak permintaan besar **sebelum** PHP dijalankan, jadi berkas apa pun di
 Tambahkan ke blok `server` atau `location`:
 
 ```nginx
-client_max_body_size 1074M;
+client_max_body_size 2048M;
 
-# Unggahan 1 GB pada koneksi lambat butuh waktu. Tanpa tiga baris ini,
+# Unggahan 2 GB pada koneksi lambat butuh waktu. Tanpa tiga baris ini,
 # unggahan besar terputus di tengah dengan galat 504 yang terlihat acak —
 # karena bergantung kecepatan jaringan penggunanya, bukan pada berkasnya.
 client_body_timeout  600s;
@@ -303,7 +304,7 @@ sama.
 Memeriksa batas yang sedang berlaku di dalam server:
 
 ```bash
-php -d upload_max_filesize=1048576K -r 'echo ini_get("upload_max_filesize");'
+php -d upload_max_filesize=2097152K -r 'echo ini_get("upload_max_filesize");'
 ```
 
 ---

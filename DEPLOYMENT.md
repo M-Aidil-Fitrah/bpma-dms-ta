@@ -46,6 +46,11 @@ SUPERADMIN_EMAIL=admin@example.go.id
 SUPERADMIN_PASSWORD=ganti-dengan-secret-superadmin-minimal-16-karakter
 ```
 
+Batas infrastruktur unggah pada artefak ini adalah 2 GB. Superadmin dapat
+memilih batas aplikasi yang lebih kecil dari halaman Pengaturan, tetapi tidak
+dapat menaikkan nilai di atas 2 GB tanpa perubahan konfigurasi web server/PHP
+dan rilis baru.
+
 Gunakan `php artisan key:generate` sebelum kontainer aplikasi dijalankan, atau
 hasilkan `APP_KEY` melalui mekanisme secret manager yang setara. Jangan gunakan
 `DB_USERNAME=root`; Compose membuat akun `DB_USERNAME`/`DB_PASSWORD` untuk

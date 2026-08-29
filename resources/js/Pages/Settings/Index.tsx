@@ -52,8 +52,8 @@ export default function Index({ pengaturan }: SettingsProps) {
                 <Card>
                     <CardHeader><CardTitle>{t('users:settings.filesSection.title')}</CardTitle></CardHeader>
                     <CardBody className="space-y-4">
-                        <Field label={t('users:settings.filesSection.uploadLimitLabel')} required error={errors.unggah_batas_kb} hint={t('users:settings.filesSection.uploadLimitHint', { value: formatKilobyte(pengaturan.unggah_batas_kb_bawaan, t) })}>
-                            {(props) => <Input {...props} type="number" min="1024" max="1048576" value={data.unggah_batas_kb} placeholder={String(pengaturan.unggah_batas_kb_bawaan)} invalid={Boolean(errors.unggah_batas_kb)} onChange={(event) => setData('unggah_batas_kb', event.target.value)} />}
+                        <Field label={t('users:settings.filesSection.uploadLimitLabel')} required error={errors.unggah_batas_kb} hint={t('users:settings.filesSection.uploadLimitHint', { value: formatKilobyte(pengaturan.unggah_batas_kb_bawaan, t), maximum: formatKilobyte(pengaturan.unggah_batas_tertinggi_kb, t) })}>
+                            {(props) => <Input {...props} type="number" min="1024" max={pengaturan.unggah_batas_tertinggi_kb} value={data.unggah_batas_kb} placeholder={String(pengaturan.unggah_batas_kb_bawaan)} invalid={Boolean(errors.unggah_batas_kb)} onChange={(event) => setData('unggah_batas_kb', event.target.value)} />}
                         </Field>
                         <Field label={t('users:settings.filesSection.docsPerPageLabel')} required error={errors.dokumen_per_halaman} hint={t('users:settings.filesSection.docsPerPageHint', { value: pengaturan.dokumen_per_halaman_bawaan })}>
                             {(props) => <Select {...props} placeholder={t('users:settings.filesSection.docsUnit', { value: pengaturan.dokumen_per_halaman_bawaan })} value={data.dokumen_per_halaman} invalid={Boolean(errors.dokumen_per_halaman)} options={opsiDokumenPerHalaman.map((nilai) => ({ value: nilai, label: t('users:settings.filesSection.docsUnit', { value: nilai }) }))} onChange={(event) => setData('dokumen_per_halaman', event.target.value)} />}

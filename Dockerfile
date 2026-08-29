@@ -48,8 +48,8 @@ RUN apt-get update \
         zip \
     && { \
         echo 'expose_php=Off'; \
-        echo 'upload_max_filesize=1024M'; \
-        echo 'post_max_size=1025M'; \
+        echo 'upload_max_filesize=2048M'; \
+        echo 'post_max_size=2098M'; \
         echo 'max_execution_time=300'; \
         echo 'max_input_time=300'; \
         echo 'opcache.enable=1'; \

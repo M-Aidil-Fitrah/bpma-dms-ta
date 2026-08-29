@@ -167,6 +167,7 @@ jumlah: number,
 export type PengaturanFormData = {
 unggah_batas_kb: number,
 unggah_batas_kb_bawaan: number,
+unggah_batas_tertinggi_kb: number,
 unggah_batas_efektif_kb: number | null,
 unggah_dibatasi_php: boolean,
 dokumen_per_halaman: number,

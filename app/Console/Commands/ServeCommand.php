@@ -53,7 +53,7 @@ final class ServeCommand extends BaseServeCommand
      */
     private function opsiIni(): array
     {
-        $batasKb = (int) config('dms.dokumen.ukuran_maksimum_kb', 1048576);
+        $batasKb = (int) config('dms.dokumen.ukuran_tertinggi_kb', 2097152);
         $totalKb = $batasKb + self::CADANGAN_KB;
 
         return [

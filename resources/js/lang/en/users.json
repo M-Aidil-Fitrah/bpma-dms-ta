@@ -102,7 +102,7 @@
         "filesSection": {
             "title": "Files and Document List",
             "uploadLimitLabel": "Application upload limit",
-            "uploadLimitHint": "In KB. Default: {{value}}.",
+            "uploadLimitHint": "In KB. Default: {{value}}; infrastructure maximum: {{maximum}}.",
             "docsPerPageLabel": "Documents per page",
             "docsPerPageHint": "Default: {{value}}.",
             "docsUnit": "{{value}} documents"

@@ -50,6 +50,13 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
         <div className="min-h-dvh bg-surface-sunken">
             <Head title={title} />
 
+            <a
+                href="#konten-utama"
+                className="sr-only fixed left-4 top-4 z-[60] rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-pop focus:not-sr-only focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700"
+            >
+                {t('lewatiKeKonten')}
+            </a>
+
             {/* -- Bilah sisi menetap: tablet ke atas ------------------------ */}
             <aside className="fixed inset-y-0 left-0 z-30 hidden w-sidebar flex-col border-r border-line bg-surface lg:flex">
                 <SidebarBrand />
@@ -132,7 +139,7 @@ export function AppLayout({ title, header, actions, children }: AppLayoutProps) 
                 {/* Pesan kilat ditangani `FlashToast` di `app.tsx`, bukan
                     dirender di sini. Menampilkannya di dua tempat sekaligus
                     membuat satu aksi seolah menghasilkan dua pemberitahuan. */}
-                <main className="px-4 py-5 sm:px-6 sm:py-6">{children}</main>
+                <main id="konten-utama" tabIndex={-1} className="px-4 py-5 sm:px-6 sm:py-6">{children}</main>
             </div>
         </div>
     );

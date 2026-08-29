@@ -28,6 +28,7 @@ final class SuperadminProvisioningTest extends TestCase
         config()->set('dms.superadmin.name', 'Administrator BPMA');
         config()->set('dms.superadmin.email', 'superadmin@bpma.internal');
         config()->set('dms.superadmin.password', 'kata-sandi-uji');
+        config()->set('app.env', 'testing');
     }
 
     public function test_perintah_membuat_akun_superadmin(): void
@@ -118,6 +119,31 @@ final class SuperadminProvisioningTest extends TestCase
 
         $this->artisan('dms:superadmin')
             ->expectsOutputToContain('minimal 16 karakter')
+            ->assertFailed();
+
+        $this->assertSame(0, User::count());
+    }
+
+    public function test_kata_sandi_produksi_yang_berada_di_blacklist_ditolak(): void
+    {
+        config()->set('app.env', 'production');
+        config()->set('dms.superadmin.password', 'passwordpassword');
+
+        $this->artisan('dms:superadmin')
+            ->expectsOutputToContain('terlalu mudah ditebak')
+            ->assertFailed();
+
+        $this->assertSame(0, User::count());
+    }
+
+    public function test_kata_sandi_produksi_tidak_boleh_sama_dengan_email(): void
+    {
+        config()->set('app.env', 'production');
+        config()->set('dms.superadmin.email', 'superadmin@example.go.id');
+        config()->set('dms.superadmin.password', 'superadmin@example.go.id');
+
+        $this->artisan('dms:superadmin')
+            ->expectsOutputToContain('tidak boleh sama dengan email')
             ->assertFailed();
 
         $this->assertSame(0, User::count());

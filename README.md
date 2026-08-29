@@ -336,6 +336,7 @@ dan berguna untuk tiga keadaan:
 npm run dev          # Server pengembangan frontend
 npm run build        # Build produksi (menjalankan pemeriksaan TypeScript lebih dulu)
 npm run typecheck    # Pemeriksaan TypeScript saja
+npm test             # Test komponen dan kontrak locale frontend
 
 php artisan test     # Menjalankan seluruh tes
 ./vendor/bin/pint    # Merapikan gaya penulisan PHP

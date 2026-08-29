@@ -81,6 +81,7 @@ jobs:
       - name: Run JavaScript checks
         run: |
           npm run typecheck
+          npm test
           npm run build
 
       - name: Audit JavaScript dependencies

@@ -82,7 +82,9 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/documents/cari-pengguna', [DocumentController::class, 'cariPengguna'])
         ->middleware('throttle:search')
         ->name('documents.cari-pengguna');
-    Route::post('/documents', [DocumentController::class, 'store'])->name('documents.store');
+    Route::post('/documents', [DocumentController::class, 'store'])
+        ->middleware('throttle:mutation')
+        ->name('documents.store');
     Route::put('/documents/{document}/star', [DocumentWorkspaceController::class, 'star'])->middleware('throttle:mutation')->name('documents.star');
     Route::delete('/documents/{document}/star', [DocumentWorkspaceController::class, 'unstar'])->middleware('throttle:mutation')->name('documents.unstar');
     Route::put('/documents/{document}/folder', [DocumentWorkspaceController::class, 'place'])->middleware('throttle:mutation')->name('documents.folder');

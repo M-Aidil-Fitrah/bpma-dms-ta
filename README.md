@@ -15,8 +15,6 @@ dokumen digital BPMA secara terstruktur.
 - [Arsitektur aplikasi](./docs/architecture/README.md)
 - [Referensi environment](./docs/ENV-REFERENCE.md)
 - [Keputusan database testing](./docs/adr/0001-isolate-the-testing-database.md)
-- [Panduan kontribusi](./CONTRIBUTING.md)
-- [Panduan deployment](./DEPLOYMENT.md)
 
 ---
 
@@ -105,9 +103,6 @@ Superadmin melalui secret manager/environment host; aplikasi menolak boot bila
 `APP_ENV=production` dengan `APP_DEBUG=true`. Sebelum layanan dibuka ke
 pengguna, simpan kredensial Superadmin hanya di environment host lalu jalankan
 `php artisan dms:superadmin` untuk menyelaraskan akun dengan nilai tersebut.
-
-Untuk rilis Docker Compose atau Supervisor, termasuk urutan migrasi, verifikasi
-pasca-rilis, dan rollback yang aman, ikuti [panduan deployment](./DEPLOYMENT.md).
 
 Jalankan migrasi dan seed:
 

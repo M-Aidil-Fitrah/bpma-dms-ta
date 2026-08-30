@@ -39,8 +39,6 @@ Browser
 ## Operasional
 
 - Scheduler menjalankan status kedaluwarsa, purge Sampah, dan retensi aktivitas.
-- Konfigurasi Docker, Nginx, Supervisor, serta rollback ada di
-  [panduan deployment](../../DEPLOYMENT.md).
 - Batas upload adalah batas **per berkas**. Nilai operasional dapat diatur
   Superadmin, tetapi tidak melampaui batas infrastruktur 2 GB.
 - Redis dan Horizon bukan bagian dari scope repository ini. Queue deployment
@@ -48,6 +46,6 @@ Browser
 
 ## Verifikasi
 
-Gunakan database testing terpisah dan jalankan PHPUnit secara serial. Perintah
-serta larangan untuk database testing didokumentasikan di
-[CONTRIBUTING.md](../../CONTRIBUTING.md).
+Gunakan database testing terpisah dan jalankan PHPUnit secara serial. Database
+yang sah untuk test adalah `bpma-dms-ta-testing`; jangan pernah menjalankan
+`migrate:fresh` terhadap database development, production, atau proyek BPMA lain.

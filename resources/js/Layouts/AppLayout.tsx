@@ -34,15 +34,17 @@ export interface AppLayoutProps {
  */
 export function AppLayout({ title, header, actions, children }: AppLayoutProps) {
     const { t } = useTranslation('nav');
-    const { auth } = usePage().props;
+    const { props, url } = usePage();
+    const { auth } = props;
 
     const [drawerOpen, setDrawerOpen] = useState(false);
 
-    // Laci ditutup setiap kali alamat berubah. Tanpa ini, berpindah halaman di
-    // ponsel meninggalkan laci tetap terbuka menutupi isi halaman.
+    // Laci ditutup setiap kali alamat berubah. Dibaca dari `url` Inertia, bukan
+    // `window.location`: navigasi Inertia adalah SPA, sehingga `window.location`
+    // tidak memicu render ulang dan laci tetap terbuka menutupi isi halaman.
     useEffect(() => {
         setDrawerOpen(false);
-    }, [typeof window === 'undefined' ? '' : window.location.pathname]);
+    }, [url]);
 
     const user = auth.user;
 

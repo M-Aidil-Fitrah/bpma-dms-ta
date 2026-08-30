@@ -96,6 +96,11 @@ Route::middleware(['auth'])->group(function (): void {
     // Ubah, nonaktifkan, dan aktifkan kembali — FEAT-10.
     Route::get('/documents/{document}/edit', [DocumentController::class, 'edit'])
         ->name('documents.edit');
+    // Sengaja TANPA `password.confirm` — beda dari `destroy`, `restore-trash`,
+    // dan `restore` di bawah. `update` selalu menghasilkan versi baru yang
+    // immutable dan terekam audit: tidak ada data yang tertimpa, dan
+    // `restore-version` dapat mengembalikannya. Yang butuh step-up adalah aksi
+    // yang mengubah apa yang dilihat orang lain atas data yang sudah ada.
     Route::patch('/documents/{document}', [DocumentController::class, 'update'])
         ->middleware('throttle:mutation')
         ->name('documents.update');

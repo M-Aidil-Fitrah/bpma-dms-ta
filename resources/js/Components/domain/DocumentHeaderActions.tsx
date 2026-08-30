@@ -157,6 +157,7 @@ export function DocumentHeaderActions({
                                 autoComplete="current-password"
                                 icon={LockKeyhole}
                                 value={password}
+                                // eslint-disable-next-line jsx-a11y/no-autofocus -- fokus awal ke field pertama dialog yang baru terbuka (pola dialog WAI-ARIA)
                                 autoFocus
                                 invalid={Boolean(galatPassword)}
                                 onChange={(event) => setPassword(event.target.value)}

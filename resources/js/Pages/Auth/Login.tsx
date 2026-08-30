@@ -67,6 +67,7 @@ export default function Login({ status }: LoginProps) {
                             icon={Mail}
                             value={data.email}
                             autoComplete="username"
+                            // eslint-disable-next-line jsx-a11y/no-autofocus -- layar masuk satu tujuan; fokus awal ke field pertama sudah diharapkan
                             autoFocus
                             placeholder={t('masuk.emailPlaceholder')}
                             invalid={Boolean(errors.email)}

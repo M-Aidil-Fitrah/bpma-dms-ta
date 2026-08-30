@@ -99,7 +99,19 @@ export function PasswordConfirmationProvider({ children }: { children: ReactNode
             >
                 <form id="konfirmasi-password-aksi" onSubmit={kirim}>
                     <Field label={t('auth:modalKonfirmasiPassword.label')} error={galat} required>
-                        {(input) => <Input {...input} type="password" autoComplete="current-password" icon={LockKeyhole} value={password} autoFocus invalid={Boolean(galat)} onChange={(event) => setPassword(event.target.value)} />}
+                        {(input) => (
+                            <Input
+                                {...input}
+                                type="password"
+                                autoComplete="current-password"
+                                icon={LockKeyhole}
+                                value={password}
+                                // eslint-disable-next-line jsx-a11y/no-autofocus -- fokus awal ke field pertama dialog yang baru terbuka (pola dialog WAI-ARIA)
+                                autoFocus
+                                invalid={Boolean(galat)}
+                                onChange={(event) => setPassword(event.target.value)}
+                            />
+                        )}
                     </Field>
                 </form>
             </Modal>

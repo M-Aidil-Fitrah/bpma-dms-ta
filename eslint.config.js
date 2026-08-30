@@ -25,13 +25,10 @@ export default tseslint.config(
             ...jsxA11y.flatConfigs.recommended.rules,
             'react-hooks/rules-of-hooks': 'error',
             'react-hooks/exhaustive-deps': 'warn',
-            // Pemindahan fokus otomatis, tree ARIA, dan video legacy perlu
-            // perubahan UI terpisah. Pertahankan perilaku sekarang, tetapi
-            // tampilkan temuan agar dapat ditutup saat scope UI dibuka lagi.
-            'jsx-a11y/no-autofocus': 'warn',
-            'jsx-a11y/media-has-caption': 'warn',
-            'jsx-a11y/role-has-required-aria-props': 'warn',
-            'jsx-a11y/role-supports-aria-props': 'warn',
+            // Aturan jsx-a11y dijalankan pada tingkat `error` bawaannya. Pemakaian
+            // `autoFocus` yang memang disengaja (layar auth, field pertama
+            // dialog) dan media unggahan tanpa trek teks ditandai per-baris
+            // dengan `eslint-disable-next-line` beserta alasannya.
         },
     },
     prettier,

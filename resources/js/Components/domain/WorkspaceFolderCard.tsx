@@ -49,7 +49,16 @@ export function WorkspaceFolderCard({ folder }: Props) {
             >
                 <form id={`ubah-folder-${folder.id}`} onSubmit={rename}>
                     <Field label={t('workspace:folderCard.ubahNama.dialog.labelNama')} error={errors.name} required>
-                        {(props) => <Input {...props} autoFocus value={data.name} invalid={Boolean(errors.name)} onChange={(event) => setData('name', event.target.value)} />}
+                        {(props) => (
+                            <Input
+                                {...props}
+                                // eslint-disable-next-line jsx-a11y/no-autofocus -- fokus awal ke field nama pada dialog yang baru terbuka (pola dialog WAI-ARIA)
+                                autoFocus
+                                value={data.name}
+                                invalid={Boolean(errors.name)}
+                                onChange={(event) => setData('name', event.target.value)}
+                            />
+                        )}
                     </Field>
                 </form>
             </Modal>

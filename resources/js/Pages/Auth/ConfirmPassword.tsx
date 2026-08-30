@@ -33,6 +33,7 @@ export default function ConfirmPassword() {
                             icon={Lock}
                             value={data.password}
                             autoComplete="current-password"
+                            // eslint-disable-next-line jsx-a11y/no-autofocus -- layar konfirmasi satu tujuan; fokus awal ke field kata sandi sudah diharapkan
                             autoFocus
                             invalid={Boolean(errors.password)}
                             onChange={(e) => setData('password', e.target.value)}

@@ -71,6 +71,25 @@
         "reload": "Reload page",
         "home": "Back to Home"
     },
+    "errorPage": {
+        "forbidden": {
+            "title": "Access denied",
+            "description": "You do not have permission to open this page. If you believe this is a mistake, contact your system administrator."
+        },
+        "notFound": {
+            "title": "Page not found",
+            "description": "The address you requested does not exist or has been moved."
+        },
+        "tooManyRequests": {
+            "title": "Too many requests",
+            "description": "You have sent too many requests in a short time. Wait a moment and try again.",
+            "descriptionWithRetry": "You have sent too many requests in a short time. Try again in {{seconds}} seconds."
+        },
+        "serverError": {
+            "title": "Something went wrong",
+            "description": "The system ran into a problem while processing your request. Please try again in a little while."
+        }
+    },
     "previewError": "The preview could not be loaded. You can still download this file.",
     "networkError": "A network problem occurred. Check your connection and try again.",
     "unexpectedResponse": "The application received a response it could not process. Please try again.",

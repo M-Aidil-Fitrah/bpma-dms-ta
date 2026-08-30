@@ -71,6 +71,25 @@
         "reload": "Muat ulang",
         "home": "Kembali ke Beranda"
     },
+    "errorPage": {
+        "forbidden": {
+            "title": "Akses ditolak",
+            "description": "Anda tidak memiliki izin untuk membuka halaman ini. Bila Anda merasa ini keliru, hubungi administrator sistem."
+        },
+        "notFound": {
+            "title": "Halaman tidak ditemukan",
+            "description": "Alamat yang Anda tuju tidak ada atau sudah dipindahkan."
+        },
+        "tooManyRequests": {
+            "title": "Terlalu banyak permintaan",
+            "description": "Anda mengirim terlalu banyak permintaan dalam waktu singkat. Tunggu sebentar lalu coba lagi.",
+            "descriptionWithRetry": "Anda mengirim terlalu banyak permintaan dalam waktu singkat. Coba lagi dalam {{seconds}} detik."
+        },
+        "serverError": {
+            "title": "Terjadi kesalahan",
+            "description": "Sistem mengalami gangguan saat memproses permintaan Anda. Coba lagi beberapa saat lagi."
+        }
+    },
     "previewError": "Pratinjau gagal dimuat. Anda tetap dapat mengunduh berkas ini.",
     "networkError": "Terjadi masalah jaringan. Periksa koneksi Anda lalu coba lagi.",
     "unexpectedResponse": "Aplikasi menerima respons yang tidak dapat diproses. Silakan coba lagi.",

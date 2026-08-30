@@ -8,7 +8,8 @@ declare global {
         axios: AxiosInstance;
     }
 
-    /* eslint-disable no-var */
+    // Augmentasi global ambient: `var` wajib di sini — `let`/`const` tidak
+    // mendaftarkan properti pada tipe `globalThis`.
     var route: typeof ziggyRoute;
 }
 

@@ -2,7 +2,7 @@ import type { UnitPilihan } from '@/Components/domain/UnitTreePicker';
 import { useUnitTree } from '@/hooks/useUnitTree';
 import { cn } from '@/lib/cn';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export interface UnitTreeSelectProps {
@@ -33,6 +33,7 @@ export function UnitTreeSelect({
     const { induk, anakDari, terbuka, toggleTerbuka } = useUnitTree(units);
     const [menuTerbuka, setMenuTerbuka] = useState(false);
     const pembungkus = useRef<HTMLDivElement>(null);
+    const panelId = useId();
     const pilihan = units.find((unit) => unit.id === nilai);
 
     useEffect(() => {
@@ -57,7 +58,9 @@ export function UnitTreeSelect({
             <button
                 id={id}
                 type="button"
+                role="combobox"
                 aria-haspopup="tree"
+                aria-controls={panelId}
                 aria-expanded={menuTerbuka}
                 aria-describedby={describedBy}
                 aria-invalid={invalid}
@@ -80,6 +83,7 @@ export function UnitTreeSelect({
 
             {menuTerbuka && (
                 <div
+                    id={panelId}
                     role="tree"
                     aria-label={t('documentForm:pilihUnit.ariaLabelPohon')}
                     className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-line bg-surface p-2 shadow-pop"
@@ -91,7 +95,12 @@ export function UnitTreeSelect({
                         const isTerbuka = terbuka.has(unit.id);
 
                         return (
-                            <div key={unit.id} role="treeitem" aria-expanded={anak.length > 0 ? isTerbuka : undefined}>
+                            <div
+                                key={unit.id}
+                                role="treeitem"
+                                aria-selected={nilai === unit.id}
+                                aria-expanded={anak.length > 0 ? isTerbuka : undefined}
+                            >
                                 <div className="flex min-w-0 items-center gap-1">
                                     {anak.length > 0 ? (
                                         <button
@@ -122,7 +131,7 @@ export function UnitTreeSelect({
                                 {isTerbuka && anak.length > 0 && (
                                     <div role="group" className="ml-8 space-y-0.5 border-l border-line pl-2">
                                         {anak.map((divisi) => (
-                                            <div key={divisi.id} role="treeitem">
+                                            <div key={divisi.id} role="treeitem" aria-selected={nilai === divisi.id}>
                                                 <BarisPilih nama={divisi.nama} terpilih={nilai === divisi.id} onClick={() => pilih(divisi.id)} />
                                             </div>
                                         ))}

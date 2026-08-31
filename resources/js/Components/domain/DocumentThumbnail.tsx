@@ -1,5 +1,6 @@
 import { useTampakDiLayar } from '@/hooks/useTampakDiLayar';
 import { cn } from '@/lib/cn';
+import { jenisBerkas } from '@/lib/fileType';
 import { gambarHalamanPertama } from '@/lib/pdf';
 import {
     File,
@@ -9,14 +10,15 @@ import {
     FileText,
     FileType,
     Loader2,
+    Presentation,
     type LucideIcon,
 } from 'lucide-react';
-import { Presentation } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export interface DocumentThumbnailProps {
     id: number;
     mime: string;
+    namaBerkas?: string;
     judul: string;
     tersedia: boolean;
     className?: string;
@@ -33,7 +35,7 @@ export interface DocumentThumbnailProps {
  * membuka halaman grid berarti mengunduh dua puluh berkas sekaligus — sebagian
  * besar untuk kartu yang bahkan belum tergulir ke layar.
  */
-export function DocumentThumbnail({ id, mime, judul, tersedia, className }: DocumentThumbnailProps) {
+export function DocumentThumbnail({ id, mime, namaBerkas, judul, tersedia, className }: DocumentThumbnailProps) {
     const { ref, tampak } = useTampakDiLayar<HTMLDivElement>();
     const url = `/documents/${id}/preview`;
 
@@ -46,9 +48,9 @@ export function DocumentThumbnail({ id, mime, judul, tersedia, className }: Docu
             )}
         >
             {tampak ? (
-                <Isi id={id} mime={mime} url={url} judul={judul} thumbnailTersedia={tersedia} />
+                <Isi id={id} mime={mime} namaBerkas={namaBerkas} url={url} judul={judul} thumbnailTersedia={tersedia} />
             ) : (
-                <IkonBerkas mime={mime} />
+                <IkonBerkas mime={mime} namaBerkas={namaBerkas} />
             )}
         </div>
     );
@@ -57,12 +59,14 @@ export function DocumentThumbnail({ id, mime, judul, tersedia, className }: Docu
 function Isi({
     id,
     mime,
+    namaBerkas,
     url,
     judul,
     thumbnailTersedia,
 }: {
     id: number;
     mime: string;
+    namaBerkas?: string;
     url: string;
     judul: string;
     thumbnailTersedia: boolean;
@@ -113,7 +117,7 @@ function Isi({
         return <PratinjauPdf url={url} judul={judul} />;
     }
 
-    return <IkonBerkas mime={mime} />;
+    return <IkonBerkas mime={mime} namaBerkas={namaBerkas} />;
 }
 
 function PratinjauPdf({ url, judul }: { url: string; judul: string }) {
@@ -168,26 +172,28 @@ function PratinjauPdf({ url, judul }: { url: string; judul: string }) {
     );
 }
 
-function IkonBerkas({ mime }: { mime: string }) {
-    const { icon: Icon, warna } = petakan(mime);
+function IkonBerkas({ mime, namaBerkas }: { mime: string; namaBerkas?: string }) {
+    const { icon: Icon, warna } = petakan(mime, namaBerkas);
 
     return <Icon className={cn('size-10', warna)} aria-hidden />;
 }
 
-function petakan(mime: string): { icon: LucideIcon; warna: string } {
-    if (mime === 'application/pdf') return { icon: FileText, warna: 'text-danger' };
-    if (mime.includes('wordprocessingml') || mime === 'application/msword') {
+function petakan(mime: string, namaBerkas?: string): { icon: LucideIcon; warna: string } {
+    const jenis = jenisBerkas(mime, namaBerkas);
+
+    if (jenis === 'pdf') return { icon: FileText, warna: 'text-danger' };
+    if (jenis === 'word') {
         return { icon: FileText, warna: 'text-info' };
     }
-    if (mime.includes('spreadsheetml') || mime === 'application/vnd.ms-excel') {
+    if (jenis === 'excel') {
         return { icon: FileSpreadsheet, warna: 'text-success' };
     }
-    if (mime.includes('presentationml') || mime === 'application/vnd.ms-powerpoint') {
+    if (jenis === 'ppt') {
         return { icon: Presentation, warna: 'text-warning' };
     }
-    if (mime.startsWith('audio/')) return { icon: FileAudio, warna: 'text-brand-600' };
-    if (mime === 'text/plain') return { icon: FileType, warna: 'text-ink-subtle' };
-    if (mime.includes('zip') || mime.includes('compressed') || mime.includes('tar')) {
+    if (jenis === 'audio') return { icon: FileAudio, warna: 'text-brand-600' };
+    if (jenis === 'teks') return { icon: FileType, warna: 'text-ink-subtle' };
+    if (jenis === 'zip') {
         return { icon: FileArchive, warna: 'text-warning' };
     }
 

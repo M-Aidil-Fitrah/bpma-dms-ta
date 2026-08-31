@@ -5,12 +5,22 @@
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "eslint resources/js",
+        "lint:fix": "eslint resources/js --fix",
+        "format": "prettier --write resources/js/test resources/js/Components/domain/__tests__",
+        "format:check": "prettier --check resources/js/test resources/js/Components/domain/__tests__"
     },
     "devDependencies": {
+        "@eslint/js": "^9.39.5",
         "@headlessui/react": "^2.0.0",
         "@inertiajs/react": "^2.0.0",
         "@tailwindcss/forms": "^0.5.3",
+        "@testing-library/jest-dom": "^7.0.1",
+        "@testing-library/react": "^16.3.3",
+        "@testing-library/user-event": "^14.6.6",
         "@types/node": "^24.13.3",
         "@types/react": "^18.0.28",
         "@types/react-dom": "^18.0.10",
@@ -19,16 +29,24 @@
         "chart.js": "^4.5.1",
         "clsx": "^2.1.1",
         "concurrently": "^10.0.3",
+        "eslint": "^9.39.5",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-jsx-a11y": "^6.10.2",
+        "eslint-plugin-react-hooks": "^7.1.1",
+        "jsdom": "^30.0.1",
         "laravel-vite-plugin": "^3.1",
         "lucide-react": "^1.31.0",
         "pdfjs-dist": "^6.2.108",
         "postcss": "^8.4.31",
+        "prettier": "^3.9.6",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "tailwind-merge": "^3.6.0",
         "tailwindcss": "^3.2.1",
         "typescript": "^5.0.2",
-        "vite": "^8.0.0"
+        "typescript-eslint": "^8.68.0",
+        "vite": "^8.0.0",
+        "vitest": "^4.1.11"
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1"

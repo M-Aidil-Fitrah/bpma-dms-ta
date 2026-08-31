@@ -34,7 +34,11 @@ export function UnitTreePicker({ units, terpilih, onChange }: UnitTreePickerProp
     function ubah(ids: number[], aktif: boolean) {
         const berikutnya = new Set(dipilih);
         for (const id of ids) {
-            aktif ? berikutnya.add(id) : berikutnya.delete(id);
+            if (aktif) {
+                berikutnya.add(id);
+            } else {
+                berikutnya.delete(id);
+            }
         }
         onChange([...berikutnya]);
     }

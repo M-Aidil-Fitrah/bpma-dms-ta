@@ -45,6 +45,21 @@ class PasswordConfirmationTest extends TestCase
         $response->assertSessionHasErrors();
     }
 
+    public function test_konfirmasi_password_dibatasi_per_pengguna(): void
+    {
+        $user = User::factory()->create();
+
+        foreach (range(1, 6) as $_) {
+            $this->actingAs($user)
+                ->post('/confirm-password', ['password' => 'wrong-password'])
+                ->assertSessionHasErrors('password');
+        }
+
+        $this->actingAs($user)
+            ->post('/confirm-password', ['password' => 'wrong-password'])
+            ->assertTooManyRequests();
+    }
+
     public function test_aksi_sensitif_ditolak_sampai_password_dikonfirmasi(): void
     {
         Role::findOrCreate(User::ROLE_SUPERADMIN, 'web');

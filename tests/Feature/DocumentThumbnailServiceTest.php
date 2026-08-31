@@ -8,9 +8,11 @@ use App\Enums\PreviewStatus;
 use App\Jobs\GenerateDocumentThumbnailJob;
 use App\Models\Document;
 use App\Services\DocumentThumbnailService;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\RequiresBinaries;
 use Tests\TestCase;
 
 /**
@@ -21,6 +23,7 @@ use Tests\TestCase;
 final class DocumentThumbnailServiceTest extends TestCase
 {
     use RefreshDatabase;
+    use RequiresBinaries;
 
     private DocumentThumbnailService $thumbnail;
 
@@ -62,6 +65,8 @@ final class DocumentThumbnailServiceTest extends TestCase
 
     public function test_pdf_menghasilkan_thumbnail_halaman_pertama(): void
     {
+        $this->requireBinary('gs');
+
         $document = $this->dokumenDenganBerkas('sop-pengendalian-dokumen.pdf', 'application/pdf');
 
         $this->thumbnail->generate($document);
@@ -74,6 +79,9 @@ final class DocumentThumbnailServiceTest extends TestCase
 
     public function test_docx_menghasilkan_pdf_pratinjau_dan_thumbnail(): void
     {
+        $this->requireBinary('libreoffice');
+        $this->requireBinary('gs');
+
         $document = $this->dokumenDenganBerkas(
             'notulen-rapat-koordinasi.docx',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -125,6 +133,21 @@ final class DocumentThumbnailServiceTest extends TestCase
         $document->refresh();
         $this->assertNull($document->thumbnail_path);
         $this->assertNull($document->preview_path);
+    }
+
+    public function test_job_thumbnail_memiliki_kunci_unik_dan_timeout_yang_aman(): void
+    {
+        $document = $this->dokumenDenganBerkas('sop-pengendalian-dokumen.pdf', 'application/pdf');
+        $job = new GenerateDocumentThumbnailJob($document);
+
+        $this->assertInstanceOf(ShouldBeUnique::class, $job);
+        $this->assertSame('thumbnail-document-'.$document->id, $job->uniqueId());
+        $this->assertSame(1800, $job->uniqueFor);
+        $this->assertSame(config('dms.thumbnail.job_timeout_detik'), $job->timeout);
+        $this->assertGreaterThan(
+            config('dms.thumbnail.libreoffice_timeout_detik') + config('dms.thumbnail.ghostscript_timeout_detik'),
+            $job->timeout,
+        );
     }
 
     public function test_job_office_gagal_menandai_pratinjau_gagal_tanpa_mengubah_berkas_asli(): void

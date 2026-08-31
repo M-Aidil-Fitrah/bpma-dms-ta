@@ -102,7 +102,7 @@
         "filesSection": {
             "title": "Berkas dan Daftar Dokumen",
             "uploadLimitLabel": "Batas unggah aplikasi",
-            "uploadLimitHint": "Dalam KB. Bawaan: {{value}}.",
+            "uploadLimitHint": "Dalam KB. Bawaan: {{value}}; maksimum infrastruktur: {{maximum}}.",
             "docsPerPageLabel": "Dokumen per halaman",
             "docsPerPageHint": "Bawaan: {{value}}.",
             "docsUnit": "{{value}} dokumen"

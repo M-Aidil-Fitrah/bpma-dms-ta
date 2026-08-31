@@ -57,6 +57,21 @@ final class PengaturanManagementTest extends TestCase
             ->assertSessionHasErrors(['unggah_batas_kb', 'dokumen_per_halaman']);
     }
 
+    public function test_superadmin_dapat_memilih_batas_unggah_sampai_batas_infrastruktur(): void
+    {
+        $batasTertinggi = (int) config('dms.dokumen.ukuran_tertinggi_kb');
+
+        $this->actingAs($this->superadmin)
+            ->patch('/admin/settings', ['unggah_batas_kb' => $batasTertinggi])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($batasTertinggi, app(PengaturanService::class)->integer('unggah.batas_kb'));
+
+        $this->actingAs($this->superadmin)
+            ->patch('/admin/settings', ['unggah_batas_kb' => $batasTertinggi + 1])
+            ->assertSessionHasErrors('unggah_batas_kb');
+    }
+
     public function test_nilai_kosong_menghapus_override_dan_kembali_ke_bawaan(): void
     {
         $service = app(PengaturanService::class);

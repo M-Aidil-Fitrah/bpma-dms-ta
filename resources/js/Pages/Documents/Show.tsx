@@ -6,6 +6,7 @@ import { DocumentVersionHistory, KontrolTampilkanLebihBanyak } from '@/Component
 import { DocumentStatusBadge } from '@/Components/domain/DocumentStatusBadge';
 import { ExtractionStatusBadge } from '@/Components/domain/ExtractionStatusBadge';
 import { FileTypeBadge } from '@/Components/domain/FileTypeBadge';
+import { ErrorBoundary } from '@/Components/system/ErrorBoundary';
 import { Alert } from '@/Components/ui/Alert';
 import { Avatar } from '@/Components/ui/Avatar';
 import { Button } from '@/Components/ui/Button';
@@ -18,7 +19,7 @@ import { useDocumentReloadPolling } from '@/hooks/useDocumentReloadPolling';
 import { AppLayout } from '@/Layouts/AppLayout';
 import { cn } from '@/lib/cn';
 import { formatTanggalPanjang, formatUkuranBerkas, formatWaktu } from '@/lib/format';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, Check, Copy, FileText, History, Info, ShieldCheck } from 'lucide-react';
 import type { TFunction } from 'i18next';
 import { useMemo, useState, type ReactNode } from 'react';
@@ -61,6 +62,7 @@ function isTab(value: string): value is Tab {
 
 export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: ShowProps) {
     const { t } = useTranslation(['documentBrowse', 'common']);
+    const { url } = usePage();
     const [tab, setTab] = useState<Tab>(tabDariHash);
     const tabItems = useMemo(() => buatTabItems(t), [t]);
 
@@ -94,7 +96,9 @@ export default function Show({ dokumen, versi, riwayat, pollingKonfigurasi }: Sh
                     membuka halaman ini, bukan daftar metadatanya. */}
                 <Card className="min-h-0 overflow-hidden xl:col-span-3">
                     <div className="h-[28rem] xl:h-full">
-                        <DocumentPreview dokumen={dokumen} />
+                        <ErrorBoundary resetKey={url} variasi="pratinjau">
+                            <DocumentPreview dokumen={dokumen} />
+                        </ErrorBoundary>
                     </div>
                 </Card>
 
@@ -216,7 +220,7 @@ function PanelDetail({ dokumen }: { dokumen: App.Data.DocumentDetailData }) {
 
             <Baris label={t('documentBrowse:show.detail.tipeUkuran')}>
                 <span className="flex flex-wrap items-center gap-2">
-                    <FileTypeBadge mime={dokumen.tipe_berkas} />
+                    <FileTypeBadge mime={dokumen.tipe_berkas} namaBerkas={dokumen.nama_berkas} />
                     <span className="font-mono text-sm text-ink-muted">
                         {formatUkuranBerkas(dokumen.ukuran_berkas)}
                     </span>

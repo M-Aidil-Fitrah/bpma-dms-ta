@@ -58,21 +58,29 @@ return [
         'per_halaman' => 20,
 
         /*
-         * Batas ukuran unggahan, dalam kilobyte. Berlaku SAMA di mana pun —
-         * laptop pengembangan maupun VPS.
+         * Batas ukuran unggahan bawaan, dalam kilobyte. Superadmin dapat
+         * menurunkannya atau menaikkannya sampai batas infrastruktur di bawah.
          *
          * Angka tunggal ini disengaja. Batas yang berbeda-beda per mesin
          * membuat pengujian manual tidak dapat dipercaya: berkas yang lolos di
          * laptop bisa ditolak di server tanpa ada perubahan kode apa pun, dan
          * penguji tidak punya cara mengetahui batas mana yang sedang berlaku.
          *
-         * Lingkungan WAJIB disetel agar sanggup memenuhinya — lihat README
-         * bagian "Batas Ukuran Unggahan". Bila lingkungannya lebih ketat,
+         * Lingkungan WAJIB disetel agar sanggup melayani batas infrastruktur
+         * — lihat README bagian "Batas Ukuran Unggahan". Bila lingkungannya lebih ketat,
          * aplikasi tidak diam: `App\Support\BatasUnggah` mendeteksinya, dan
          * formulir unggah menampilkan peringatan beserta batas yang sebenarnya
          * berlaku.
          */
-        'ukuran_maksimum_kb' => 1048576, // 1 GB
+        'ukuran_maksimum_kb' => 1048576, // 1 GB (bawaan aplikasi)
+
+        /*
+         * Batas keras yang disediakan PHP/web server. Nilai pengaturan
+         * Superadmin tidak boleh melampauinya; untuk menaikkan lagi diperlukan
+         * perubahan konfigurasi infrastruktur dan rilis baru agar seluruh
+         * lapisan tetap selaras.
+         */
+        'ukuran_tertinggi_kb' => 2097152, // 2 GB
 
         /*
          * Ekstensi yang ditolak saat unggah — `PRD.md` §8.2.
@@ -173,6 +181,7 @@ return [
     'thumbnail' => [
         'libreoffice_timeout_detik' => 60,
         'ghostscript_timeout_detik' => 60,
+        'job_timeout_detik' => 180,
     ],
 
     /*

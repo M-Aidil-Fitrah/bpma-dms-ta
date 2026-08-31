@@ -109,6 +109,19 @@ final class DocumentIndexTest extends TestCase
                 ->where('dokumen.data.2.bisa_pratinjau_di_tab_baru', false));
     }
 
+    public function test_daftar_mengirim_nama_berkas_asli_untuk_label_tipe_di_antarmuka(): void
+    {
+        $document = $this->buatDokumen([
+            'file_name_original' => 'rekap-anggaran.csv',
+            'file_mime_type' => 'text/csv',
+        ]);
+
+        $this->actingAs($this->anggota)->get('/documents')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->where('dokumen.data.0.id', $document->id)
+                ->where('dokumen.data.0.nama_berkas', 'rekap-anggaran.csv'));
+    }
+
     public function test_dokumen_nonaktif_tidak_tampil(): void
     {
         $this->buatDokumen(['judul' => 'Aktif']);
@@ -278,6 +291,48 @@ final class DocumentIndexTest extends TestCase
                 ->where('filter.pengunggah', $pengunggahLain->id)
                 ->where('filter.tipe', 'gambar')
                 ->where('filter.status_ekstraksi', 'review_required'));
+    }
+
+    public function test_penyaring_excel_dan_powerpoint_mencakup_format_lama_dan_baru(): void
+    {
+        $this->buatDokumen([
+            'file_name_original' => 'anggaran.xlsx',
+            'file_mime_type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+        $this->buatDokumen([
+            'file_name_original' => 'anggaran.xls',
+            'file_mime_type' => 'application/vnd.ms-excel',
+        ]);
+        $this->buatDokumen([
+            'file_name_original' => 'paparan.pptx',
+            'file_mime_type' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        ]);
+        $this->buatDokumen([
+            'file_name_original' => 'paparan.ppt',
+            'file_mime_type' => 'application/vnd.ms-powerpoint',
+        ]);
+        $lainnya = $this->buatDokumen([
+            'file_name_original' => 'lampiran.zip',
+            'file_mime_type' => 'application/zip',
+        ]);
+
+        $this->actingAs($this->anggota)
+            ->get('/documents?tipe=excel')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 2)
+                ->where('filter.tipe', 'excel'));
+
+        $this->actingAs($this->anggota)
+            ->get('/documents?tipe=ppt')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 2)
+                ->where('filter.tipe', 'ppt'));
+
+        $this->actingAs($this->anggota)
+            ->get('/documents?tipe=lainnya')
+            ->assertInertia(fn (AssertableInertia $p) => $p
+                ->has('dokumen.data', 1)
+                ->where('dokumen.data.0.id', $lainnya->id));
     }
 
     public function test_penyaring_evaluasi_hanya_menampilkan_dokumen_dalam_rentang(): void

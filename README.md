@@ -10,6 +10,14 @@ dokumen digital BPMA secara terstruktur.
 
 ---
 
+## Dokumentasi teknis
+
+- [Arsitektur aplikasi](./docs/architecture/README.md)
+- [Referensi environment](./docs/ENV-REFERENCE.md)
+- [Keputusan database testing](./docs/adr/0001-isolate-the-testing-database.md)
+
+---
+
 ## Prasyarat
 
 | Kebutuhan | Versi | Catatan |
@@ -71,7 +79,14 @@ Buat database, lalu sesuaikan `DB_*` di `.env`:
 
 ```sql
 CREATE DATABASE `bpma-dms` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'bpma_dms'@'127.0.0.1' IDENTIFIED BY 'ganti-dengan-rahasia-unik';
+GRANT ALL PRIVILEGES ON `bpma-dms`.* TO 'bpma_dms'@'127.0.0.1';
+FLUSH PRIVILEGES;
 ```
+
+Gunakan akun `bpma_dms` tersebut di produksi; jangan gunakan `root`. Ganti
+placeholder kata sandi sebelum mengeksekusi SQL dan simpan nilainya hanya di
+secret manager/environment host.
 
 Isi kredensial Superadmin di `.env` — akun ini satu-satunya jalan masuk pertama
 ke aplikasi, karena **tidak ada registrasi publik**:
@@ -81,6 +96,13 @@ SUPERADMIN_NAME="Administrator BPMA"
 SUPERADMIN_EMAIL=superadmin@bpma.internal
 SUPERADMIN_PASSWORD=ganti-dengan-kata-sandi-kuat
 ```
+
+Untuk server produksi, mulai dari `.env.production.example`, bukan
+`.env.example`. Isi `APP_KEY`, kredensial database non-root, dan kredensial
+Superadmin melalui secret manager/environment host; aplikasi menolak boot bila
+`APP_ENV=production` dengan `APP_DEBUG=true`. Sebelum layanan dibuka ke
+pengguna, simpan kredensial Superadmin hanya di environment host lalu jalankan
+`php artisan dms:superadmin` untuk menyelaraskan akun dengan nilai tersebut.
 
 Jalankan migrasi dan seed:
 
@@ -165,11 +187,24 @@ php artisan documents:update-expired-status
 Command ini aman dijalankan berulang; dokumen yang sudah Kadaluarsa tidak
 akan diubah atau dicatat lagi.
 
+Scheduler juga mengosongkan aktivitas yang lebih tua dari **365 hari** setiap
+pukul **00.40**, setelah purge Sampah pukul **00.20**. Pembersihan memakai
+`activitylog:clean --force` agar berjalan non-interaktif di produksi dan tidak
+boleh dijalankan dari lebih dari satu scheduler pada saat yang sama. Pastikan
+backup tersedia sebelum mengubah kebijakan retensi karena penghapusan ini tidak
+dapat dipulihkan dari aplikasi.
+
 ### Menjaga `queue:work` tetap hidup di VPS
 
 Proses nomor 3 tidak boleh berhenti begitu sesi terminal ditutup, dan
 Laravel sendiri tidak menyalakannya ulang kalau prosesnya mati. Pakai
 **Supervisor** atau **systemd** supaya proses itu otomatis dijalankan lagi.
+
+Untuk driver `database`, pertahankan `DB_QUEUE_RETRY_AFTER` lebih besar dari
+timeout job terpanjang (default proyek: 1200 detik vs OCR 900 detik). Kedua job
+berat memakai kunci unik per dokumen; pada produksi, gunakan cache lock bersama
+seperti `database` atau Redis—jangan `array`, karena lock `array` tidak dibagi
+antar worker.
 
 Kalau workernya sempat mati, tidak ada data yang rusak — dokumen yang
 terlanjur diunggah selama itu hanya menunggu di tabel `jobs` dengan status
@@ -179,10 +214,11 @@ tetap "Memproses" sampai workernya hidup kembali dan memprosesnya.
 
 ## Batas Ukuran Unggahan
 
-Aplikasi menetapkan batas **1 GB**, dan angka itu **berlaku sama di semua
-lingkungan** — laptop pengembangan maupun VPS. Batas yang berbeda-beda per mesin
-membuat pengujian tidak dapat dipercaya: berkas yang lolos di laptop bisa
-ditolak di server tanpa satu pun perubahan kode.
+Aplikasi memakai batas unggah bawaan **1 GB**. Superadmin dapat mengubah batas
+operasionalnya dari halaman Pengaturan, mulai 1 MB sampai batas keras
+infrastruktur **2 GB**. Batas 2 GB tetap dikelola melalui rilis/deploy agar
+PHP, web server, dan aplikasi selalu selaras; setelan Superadmin tidak dapat
+melampauinya.
 
 Sebagian besar setelannya **sudah ikut di repositori** dan berlaku otomatis
 saat di-deploy. Yang benar-benar perlu disentuh manual hanya satu, dan itu pun
@@ -222,9 +258,9 @@ menolak permintaan besar **sebelum** PHP dijalankan, jadi berkas apa pun di
 Tambahkan ke blok `server` atau `location`:
 
 ```nginx
-client_max_body_size 1074M;
+client_max_body_size 2048M;
 
-# Unggahan 1 GB pada koneksi lambat butuh waktu. Tanpa tiga baris ini,
+# Unggahan 2 GB pada koneksi lambat butuh waktu. Tanpa tiga baris ini,
 # unggahan besar terputus di tengah dengan galat 504 yang terlihat acak —
 # karena bergantung kecepatan jaringan penggunanya, bukan pada berkasnya.
 client_body_timeout  600s;
@@ -272,7 +308,7 @@ sama.
 Memeriksa batas yang sedang berlaku di dalam server:
 
 ```bash
-php -d upload_max_filesize=1048576K -r 'echo ini_get("upload_max_filesize");'
+php -d upload_max_filesize=2097152K -r 'echo ini_get("upload_max_filesize");'
 ```
 
 ---
@@ -304,6 +340,9 @@ dan berguna untuk tiga keadaan:
 npm run dev          # Server pengembangan frontend
 npm run build        # Build produksi (menjalankan pemeriksaan TypeScript lebih dulu)
 npm run typecheck    # Pemeriksaan TypeScript saja
+npm test             # Test komponen dan kontrak locale frontend
+npm run lint         # Pemeriksaan kualitas TypeScript/React/a11y
+npm run format:check # Format untuk file test frontend baru
 
 php artisan test     # Menjalankan seluruh tes
 ./vendor/bin/pint    # Merapikan gaya penulisan PHP

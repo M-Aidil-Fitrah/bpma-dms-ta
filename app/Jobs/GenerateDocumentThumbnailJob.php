@@ -8,6 +8,7 @@ use App\Enums\PreviewStatus;
 use App\Models\Document;
 use App\Services\DocumentThumbnailService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -19,7 +20,7 @@ use Throwable;
  * Turunan visual tidak pernah memengaruhi berkas asli, pencarian, atau status
  * dokumen. Karena itu kegagalannya cukup dicatat dan tidak mengganggu pengguna.
  */
-final class GenerateDocumentThumbnailJob implements ShouldQueue
+final class GenerateDocumentThumbnailJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -30,9 +31,23 @@ final class GenerateDocumentThumbnailJob implements ShouldQueue
      */
     public int $tries = 1;
 
+    /** Wajib melebihi akumulasi timeout LibreOffice dan Ghostscript. */
+    public int $timeout;
+
+    /** Mencegah dua konversi turunan untuk dokumen yang sama berjalan bersamaan. */
+    public int $uniqueFor = 1800;
+
     public bool $deleteWhenMissingModels = true;
 
-    public function __construct(public readonly Document $document) {}
+    public function __construct(public readonly Document $document)
+    {
+        $this->timeout = (int) config('dms.thumbnail.job_timeout_detik');
+    }
+
+    public function uniqueId(): string
+    {
+        return "thumbnail-document-{$this->document->id}";
+    }
 
     public function handle(DocumentThumbnailService $thumbnail): void
     {

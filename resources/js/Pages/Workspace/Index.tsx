@@ -156,7 +156,20 @@ export default function Index({ title, folder, breadcrumbs, folders, folder_opti
                 )}
             </div>
             <Modal terbuka={dialogOpen} onTutup={setDialogOpen} judul={t('workspace:index.dialogFolder.judul')} footer={<><Button variant="secondary" onClick={() => setDialogOpen(false)}>{t('common:aksi.batal')}</Button><Button form="form-folder" type="submit" loading={processing}>{t('workspace:index.dialogFolder.tombolBuat')}</Button></>}>
-                <form id="form-folder" onSubmit={submit}><Field label={t('workspace:index.dialogFolder.labelNama')} error={errors.name} required>{(props) => <Input {...props} autoFocus value={data.name} invalid={Boolean(errors.name)} onChange={(event) => setData('name', event.target.value)} />}</Field></form>
+                <form id="form-folder" onSubmit={submit}>
+                    <Field label={t('workspace:index.dialogFolder.labelNama')} error={errors.name} required>
+                        {(props) => (
+                            <Input
+                                {...props}
+                                // eslint-disable-next-line jsx-a11y/no-autofocus -- fokus awal ke field nama pada dialog yang baru terbuka (pola dialog WAI-ARIA)
+                                autoFocus
+                                value={data.name}
+                                invalid={Boolean(errors.name)}
+                                onChange={(event) => setData('name', event.target.value)}
+                            />
+                        )}
+                    </Field>
+                </form>
             </Modal>
         </AppLayout>
     );

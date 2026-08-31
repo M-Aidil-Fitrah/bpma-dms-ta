@@ -1,15 +1,16 @@
 import '../css/app.css';
 import './bootstrap';
 
+import { ErrorBoundary } from '@/Components/system/ErrorBoundary';
 import { FlashToast } from '@/Components/ui/FlashToast';
 import { ToastProvider } from '@/Components/ui/Toast';
 import { PasswordConfirmationProvider } from '@/Components/auth/PasswordConfirmationProvider';
 import { memilikiPenggunaTerautentikasi } from '@/types/auth';
 import i18next, { BAHASA_TERSEDIA, terapkanBahasaAwal } from '@/lib/i18n';
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, usePage } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
 terapkanBahasaAwal();
 
@@ -37,6 +38,12 @@ function SinkronisasiBahasa({ locale }: { locale: string }) {
     }, [locale]);
 
     return null;
+}
+
+function BatasGalatAplikasi({ children }: { children: ReactNode }) {
+    const { url } = usePage();
+
+    return <ErrorBoundary resetKey={url}>{children}</ErrorBoundary>;
 }
 
 createInertiaApp({
@@ -67,15 +74,17 @@ createInertiaApp({
                     const beradaDiPortal = memilikiPenggunaTerautentikasi(propHalaman);
 
                     return (
-                        <ToastProvider posisi={beradaDiPortal ? 'portal' : 'auth'}>
-                            <SinkronisasiBahasa
-                                locale={typeof propHalaman.locale === 'string' ? propHalaman.locale : 'id'}
-                            />
-                            <PasswordConfirmationProvider>
-                                <FlashToast />
-                                <Component key={key} {...propHalaman} />
-                            </PasswordConfirmationProvider>
-                        </ToastProvider>
+                        <BatasGalatAplikasi>
+                            <ToastProvider posisi={beradaDiPortal ? 'portal' : 'auth'}>
+                                <SinkronisasiBahasa
+                                    locale={typeof propHalaman.locale === 'string' ? propHalaman.locale : 'id'}
+                                />
+                                <PasswordConfirmationProvider>
+                                    <FlashToast />
+                                    <Component key={key} {...propHalaman} />
+                                </PasswordConfirmationProvider>
+                            </ToastProvider>
+                        </BatasGalatAplikasi>
                     );
                 }}
             </App>,

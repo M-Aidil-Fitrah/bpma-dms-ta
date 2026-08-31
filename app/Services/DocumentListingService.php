@@ -75,11 +75,27 @@ final class DocumentListingService
                 match ($tipe) {
                     'pdf' => $query->where('documents.file_mime_type', 'application/pdf'),
                     'gambar' => $query->where('documents.file_mime_type', 'like', 'image/%'),
-                    'word' => $query->where('documents.file_mime_type', 'like', '%wordprocessingml%'),
+                    'word' => $query->where(function ($query): void {
+                        $query->where('documents.file_mime_type', 'like', '%wordprocessingml%')
+                            ->orWhere('documents.file_mime_type', 'like', '%msword%');
+                    }),
+                    'excel' => $query->where(function ($query): void {
+                        $query->where('documents.file_mime_type', 'like', '%spreadsheetml%')
+                            ->orWhere('documents.file_mime_type', 'like', '%ms-excel%');
+                    }),
+                    'ppt' => $query->where(function ($query): void {
+                        $query->where('documents.file_mime_type', 'like', '%presentationml%')
+                            ->orWhere('documents.file_mime_type', 'like', '%ms-powerpoint%');
+                    }),
                     'teks' => $query->where('documents.file_mime_type', 'text/plain'),
                     default => $query->whereNotIn('documents.file_mime_type', ['application/pdf', 'text/plain'])
                         ->where('documents.file_mime_type', 'not like', 'image/%')
-                        ->where('documents.file_mime_type', 'not like', '%wordprocessingml%'),
+                        ->where('documents.file_mime_type', 'not like', '%wordprocessingml%')
+                        ->where('documents.file_mime_type', 'not like', '%msword%')
+                        ->where('documents.file_mime_type', 'not like', '%spreadsheetml%')
+                        ->where('documents.file_mime_type', 'not like', '%ms-excel%')
+                        ->where('documents.file_mime_type', 'not like', '%presentationml%')
+                        ->where('documents.file_mime_type', 'not like', '%ms-powerpoint%'),
                 };
             })
             ->when(

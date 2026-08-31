@@ -1,6 +1,6 @@
 import { cn } from '@/lib/cn';
 import { ChevronDown } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 export interface PopoverSelectOption {
     value: string | number;
@@ -37,6 +37,7 @@ export function PopoverSelect({
 }: PopoverSelectProps) {
     const [menuTerbuka, setMenuTerbuka] = useState(false);
     const pembungkus = useRef<HTMLDivElement>(null);
+    const panelId = useId();
     const pilihan = options.find((opsi) => String(opsi.value) === String(value));
 
     useEffect(() => {
@@ -61,7 +62,9 @@ export function PopoverSelect({
             <button
                 id={id}
                 type="button"
+                role="combobox"
                 aria-haspopup="listbox"
+                aria-controls={panelId}
                 aria-expanded={menuTerbuka}
                 aria-describedby={describedBy}
                 aria-invalid={invalid}
@@ -84,6 +87,7 @@ export function PopoverSelect({
 
             {menuTerbuka && (
                 <div
+                    id={panelId}
                     role="listbox"
                     className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-line bg-surface p-2 shadow-pop"
                 >

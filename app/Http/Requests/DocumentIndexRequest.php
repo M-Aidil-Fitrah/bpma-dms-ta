@@ -50,7 +50,7 @@ final class DocumentIndexRequest extends FormRequest
             'status' => ['nullable', Rule::enum(DocumentStatus::class)],
             'status_ekstraksi' => ['nullable', Rule::enum(ExtractionStatus::class)],
             'pengunggah' => ['nullable', 'integer', 'exists:users,id'],
-            'tipe' => ['nullable', Rule::in(['pdf', 'gambar', 'word', 'teks', 'lainnya'])],
+            'tipe' => ['nullable', Rule::in(['pdf', 'gambar', 'word', 'excel', 'ppt', 'teks', 'lainnya'])],
             'dari' => ['nullable', 'date'],
             'sampai' => ['nullable', 'date', 'after_or_equal:dari'],
             // Dokumen yang masa berlakunya jatuh dalam sekian hari ke depan

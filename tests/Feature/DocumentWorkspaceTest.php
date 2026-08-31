@@ -93,6 +93,52 @@ final class DocumentWorkspaceTest extends TestCase
             ->assertSessionHasErrors('folder');
     }
 
+    public function test_non_pemilik_tidak_dapat_mengubah_atau_membuang_folder(): void
+    {
+        $folder = DocumentFolder::create(['owner_id' => $this->owner->id, 'name' => 'Rahasia', 'name_normalized' => 'rahasia']);
+
+        $this->actingAs($this->other)
+            ->patch(route('folders.update', $folder), ['name' => 'Diubah'])
+            ->assertForbidden();
+        $this->actingAs($this->other)
+            ->delete(route('folders.destroy', $folder))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('document_folders', ['id' => $folder->id, 'name' => 'Rahasia', 'trashed_at' => null]);
+    }
+
+    public function test_dokumen_yang_terlihat_tetapi_bukan_milik_pengguna_tidak_dapat_dimasukkan_ke_folder_pribadi(): void
+    {
+        $folder = DocumentFolder::create(['owner_id' => $this->other->id, 'name' => 'Milik Saya', 'name_normalized' => 'milik saya']);
+
+        $this->actingAs($this->other)
+            ->put(route('documents.folder', $this->document), ['folder_id' => $folder->id])
+            ->assertSessionHasErrors('document');
+
+        $this->assertDatabaseMissing('document_placements', [
+            'owner_id' => $this->other->id,
+            'document_id' => $this->document->id,
+        ]);
+    }
+
+    public function test_folder_tingkat_keenam_ditolak(): void
+    {
+        $parent = null;
+
+        foreach (range(1, 5) as $tingkat) {
+            $this->actingAs($this->owner)
+                ->post(route('folders.store'), ['name' => "Tingkat {$tingkat}", 'parent_id' => $parent?->id])
+                ->assertRedirect();
+            $parent = DocumentFolder::query()->where('name', "Tingkat {$tingkat}")->sole();
+        }
+
+        $this->actingAs($this->owner)
+            ->post(route('folders.store'), ['name' => 'Tingkat 6', 'parent_id' => $parent->id])
+            ->assertSessionHasErrors('parent_id');
+
+        $this->assertDatabaseMissing('document_folders', ['owner_id' => $this->owner->id, 'name' => 'Tingkat 6']);
+    }
+
     public function test_bintang_dan_terbaru_bersifat_per_pengguna(): void
     {
         $this->actingAs($this->other)->get(route('documents.show', $this->document))->assertOk();
@@ -116,6 +162,19 @@ final class DocumentWorkspaceTest extends TestCase
             'subject_id' => $this->document->id,
             'causer_id' => $this->other->id,
         ]);
+    }
+
+    public function test_mutasi_workspace_dibatasi_per_pengguna(): void
+    {
+        foreach (range(1, 30) as $_) {
+            $this->actingAs($this->owner)
+                ->put(route('documents.star', $this->document))
+                ->assertRedirect();
+        }
+
+        $this->actingAs($this->owner)
+            ->put(route('documents.star', $this->document))
+            ->assertTooManyRequests();
     }
 
     public function test_membuang_dokumen_menyembunyikannya_dan_dapat_dipulihkan(): void

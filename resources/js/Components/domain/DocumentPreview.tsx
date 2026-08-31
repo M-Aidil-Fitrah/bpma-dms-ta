@@ -217,6 +217,7 @@ function PratinjauVideo({ url }: { url: string }) {
 
     return (
         <div className="flex h-full min-h-0 items-center justify-center bg-ink p-4">
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption -- berkas video diunggah pengguna; tidak ada trek teks terpisah untuk disertakan */}
             <video src={url} controls className="max-h-full w-full rounded">{t('documentBrowse:preview.videoTidakDidukung')}</video>
         </div>
     );
@@ -229,6 +230,7 @@ function PratinjauAudio({ url, layarPenuh, onUbahLayarPenuh }: { url: string } &
         <div className="flex h-full min-h-0 flex-col">
             <KendaliPratinjau layarPenuh={layarPenuh} onUbahLayarPenuh={onUbahLayarPenuh} />
             <div className="flex min-h-0 flex-1 items-center justify-center p-8">
+                {/* eslint-disable-next-line jsx-a11y/media-has-caption -- berkas audio diunggah pengguna; tidak ada trek teks terpisah untuk disertakan */}
                 <audio src={url} controls className="w-full max-w-md">{t('documentBrowse:preview.audioTidakDidukung')}</audio>
             </div>
         </div>

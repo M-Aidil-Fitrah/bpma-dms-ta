@@ -120,7 +120,7 @@ const DocumentTableRow = memo(function DocumentTableRow({
                     membuka dokumennya, dan menampilkan dua lencana per baris
                     membuat kolom ini ramai tanpa menambah kejelasan. Tersedia
                     lengkap di halaman detail. */}
-                <FileTypeBadge mime={document.tipe_berkas} />
+                <FileTypeBadge mime={document.tipe_berkas} namaBerkas={document.nama_berkas} />
                 <p className="mt-1.5 font-mono text-xs text-ink-subtle">
                     {formatUkuranBerkas(document.ukuran_berkas)}
                 </p>

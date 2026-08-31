@@ -1,0 +1,147 @@
+name: bpma-dms
+
+services:
+  init-storage:
+    build:
+      context: .
+    image: bpma-dms:local
+    user: root
+    volumes:
+      - app-storage:/var/www/html/storage/app
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        mkdir -p /var/www/html/storage/app/private \
+          /var/www/html/storage/app/public \
+          /var/www/html/storage/app/dms-thumbnail
+        chown -R www-data:www-data /var/www/html/storage/app
+    restart: "no"
+
+  app:
+    build:
+      context: .
+    image: bpma-dms:local
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+    volumes:
+      - app-storage:/var/www/html/storage/app
+    depends_on:
+      init-storage:
+        condition: service_completed_successfully
+      mysql:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        php artisan config:cache
+        php artisan route:cache
+        php artisan event:cache
+        php artisan view:cache
+        exec php-fpm
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      target: web
+    image: bpma-dms-web:local
+    ports:
+      - "${APP_PORT:-80}:80"
+    volumes:
+      - app-storage:/var/www/html/storage/app:ro
+    depends_on:
+      app:
+        condition: service_started
+    restart: unless-stopped
+
+  queue-default:
+    image: bpma-dms:local
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+    volumes:
+      - app-storage:/var/www/html/storage/app
+    depends_on:
+      init-storage:
+        condition: service_completed_successfully
+      mysql:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        php artisan config:cache
+        exec php artisan queue:work database --queue=default --sleep=1 --tries=2 --timeout=900 --max-time=3600
+    restart: unless-stopped
+
+  queue-thumbnail:
+    image: bpma-dms:local
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+    volumes:
+      - app-storage:/var/www/html/storage/app
+    depends_on:
+      init-storage:
+        condition: service_completed_successfully
+      mysql:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        php artisan config:cache
+        exec php artisan queue:work database --queue=thumbnail --sleep=1 --tries=1 --timeout=180 --max-time=3600
+    restart: unless-stopped
+
+  scheduler:
+    image: bpma-dms:local
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+    volumes:
+      - app-storage:/var/www/html/storage/app
+    depends_on:
+      init-storage:
+        condition: service_completed_successfully
+      mysql:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        php artisan config:cache
+        exec php artisan schedule:work
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: "${DB_DATABASE:?Set DB_DATABASE in .env}"
+      MYSQL_USER: "${DB_USERNAME:?Set DB_USERNAME in .env}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:?Set DB_PASSWORD in .env}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  app-storage:
+  mysql-data:

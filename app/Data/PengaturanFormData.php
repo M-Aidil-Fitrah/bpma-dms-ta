@@ -16,6 +16,7 @@ final class PengaturanFormData extends Data
     public function __construct(
         public int $unggah_batas_kb,
         public int $unggah_batas_kb_bawaan,
+        public int $unggah_batas_tertinggi_kb,
         public ?int $unggah_batas_efektif_kb,
         public bool $unggah_dibatasi_php,
         public int $dokumen_per_halaman,
@@ -27,6 +28,7 @@ final class PengaturanFormData extends Data
         return new self(
             unggah_batas_kb: (int) $pengaturan->integer('unggah.batas_kb'),
             unggah_batas_kb_bawaan: (int) config('dms.dokumen.ukuran_maksimum_kb'),
+            unggah_batas_tertinggi_kb: (int) config('dms.dokumen.ukuran_tertinggi_kb'),
             unggah_batas_efektif_kb: BatasUnggah::kilobyte(),
             unggah_dibatasi_php: BatasUnggah::dibatasiPhp(),
             dokumen_per_halaman: (int) $pengaturan->integer('dokumen.per_halaman'),

@@ -1,7 +1,7 @@
 import { useDebounce } from '@/hooks/useDebounce';
 import { cn } from '@/lib/cn';
 import { ChevronDown, Loader2, Search } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export interface PenggunaFilterPilihan {
@@ -41,6 +41,7 @@ export function UserFilterSelect({
     const ditunda = useDebounce(kata, 300);
     const pembungkus = useRef<HTMLDivElement>(null);
     const permintaanRef = useRef<AbortController | null>(null);
+    const panelId = useId();
 
     useEffect(() => {
         function tutupJikaDiLuar(event: PointerEvent) {
@@ -96,7 +97,9 @@ export function UserFilterSelect({
             <button
                 id={id}
                 type="button"
+                role="combobox"
                 aria-haspopup="listbox"
+                aria-controls={panelId}
                 aria-expanded={menuTerbuka}
                 aria-describedby={describedBy}
                 aria-invalid={invalid}
@@ -118,7 +121,7 @@ export function UserFilterSelect({
             </button>
 
             {menuTerbuka && (
-                <div className="absolute z-30 mt-1 w-full rounded-lg border border-line bg-surface p-2 shadow-pop">
+                <div id={panelId} className="absolute z-30 mt-1 w-full rounded-lg border border-line bg-surface p-2 shadow-pop">
                     <button
                         type="button"
                         onClick={() => pilih(null)}

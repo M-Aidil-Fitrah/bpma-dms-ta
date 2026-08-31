@@ -1,0 +1,100 @@
+name: Continuous Integration
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  php:
+    name: php (${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4']
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: bpma-dms-ta-testing
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, pdo_mysql, gd, zip, exif, intl
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-php-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+          restore-keys: ${{ runner.os }}-php-${{ matrix.php }}-
+
+      - name: Install document-processing binaries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-ind libreoffice ghostscript poppler-utils
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare application environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force --no-interaction
+
+      - name: Run PHP checks
+        run: composer ci
+
+      - name: Audit PHP dependencies
+        run: composer audit --no-interaction
+        continue-on-error: true
+
+  js:
+    name: js
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.0
+          cache: npm
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Run JavaScript checks
+        run: |
+          npm run lint
+          npm run format:check
+          npm run typecheck
+          npm test
+          npm run build
+
+      - name: Audit JavaScript dependencies
+        run: npm audit --omit=dev
+        continue-on-error: true
+
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production web image
+        run: docker build --target web .

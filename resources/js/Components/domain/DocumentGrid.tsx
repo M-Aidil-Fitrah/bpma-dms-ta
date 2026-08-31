@@ -55,13 +55,14 @@ const DocumentGridCard = memo(function DocumentGridCard({
             <DocumentThumbnail
                 id={document.id}
                 mime={document.tipe_berkas}
+                namaBerkas={document.nama_berkas}
                 judul={document.judul}
                 tersedia={document.thumbnail_tersedia}
             />
 
             <div className="flex flex-1 flex-col p-4">
                 <div className="flex items-start justify-between gap-2">
-                    <FileTypeBadge mime={document.tipe_berkas} />
+                    <FileTypeBadge mime={document.tipe_berkas} namaBerkas={document.nama_berkas} />
                     <Avatar
                         initials={document.inisial_pengunggah}
                         name={document.pengunggah ?? undefined}

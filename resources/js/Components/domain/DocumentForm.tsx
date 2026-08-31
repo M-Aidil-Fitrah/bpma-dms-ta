@@ -457,7 +457,7 @@ function BerkasTerkunci({
     return (
         <div className="space-y-2">
             <div className="flex items-center gap-3 rounded-card border border-line bg-surface-sunken p-3">
-                <FileTypeBadge mime={berkas.tipe} size="md" />
+                <FileTypeBadge mime={berkas.tipe} namaBerkas={berkas.nama} size="md" />
 
                 <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-ink">{berkas.nama}</p>
@@ -505,6 +505,7 @@ function VersiTerbaruTersimpan({ berkas }: { berkas: RingkasanBerkas }) {
                 <DocumentThumbnail
                     id={berkas.id}
                     mime={berkas.tipe}
+                    namaBerkas={berkas.nama}
                     judul={berkas.nama}
                     tersedia={berkas.thumbnailTersedia}
                     className="h-16 w-20 shrink-0 rounded-card"
@@ -512,7 +513,7 @@ function VersiTerbaruTersimpan({ berkas }: { berkas: RingkasanBerkas }) {
                 <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-ink">{berkas.nama}</p>
                     <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
-                        <FileTypeBadge mime={berkas.tipe} />
+                        <FileTypeBadge mime={berkas.tipe} namaBerkas={berkas.nama} />
                         <span className="font-mono">{formatUkuranBerkas(berkas.ukuran)}</span>
                     </p>
                 </div>

@@ -8,6 +8,8 @@ use Spatie\Activitylog\Models\Activity;
 
 return [
     'enabled' => env('ACTIVITYLOG_ENABLED', true),
+    // Kebijakan retensi audit. Pembersihan irreversibel dijadwalkan setiap
+    // hari pada routes/console.php setelah job status dan purge sampah.
     'clean_after_days' => 365,
     'default_log_name' => 'dokumen',
     'default_auth_driver' => null,

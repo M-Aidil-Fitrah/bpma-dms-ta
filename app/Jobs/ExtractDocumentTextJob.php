@@ -11,6 +11,7 @@ use App\Services\DocumentTextExtractor;
 use App\Services\ScannedPdfOcr;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -27,7 +28,7 @@ use Throwable;
  * PDF, DOCX, TXT, dan gambar langsung diproses melalui satu jalur supaya
  * hasil unggahan nyata dan seed tidak dapat menyimpang diam-diam.
  */
-final class ExtractDocumentTextJob implements ShouldQueue
+final class ExtractDocumentTextJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -42,6 +43,12 @@ final class ExtractDocumentTextJob implements ShouldQueue
     public int $timeout;
 
     /**
+     * Kunci bertahan cukup lama untuk mencegah job yang sama diambil worker
+     * lain saat OCR masih berjalan atau worker sebelumnya berhenti mendadak.
+     */
+    public int $uniqueFor = 1800;
+
+    /**
      * Dokumennya bisa saja sudah tidak ada saat job akhirnya dijalankan.
      * Tanpa ini, job gagal dengan `ModelNotFoundException` dan menumpuk di
      * `failed_jobs` untuk sesuatu yang bukan kegagalan sesungguhnya.
@@ -51,6 +58,11 @@ final class ExtractDocumentTextJob implements ShouldQueue
     public function __construct(public readonly Document $document)
     {
         $this->timeout = (int) config('dms.ekstraksi.pdf_ocr_timeout_detik');
+    }
+
+    public function uniqueId(): string
+    {
+        return "extract-document-{$this->document->id}";
     }
 
     public function handle(DocumentTextExtractor $ekstraktor, ScannedPdfOcr $pdfOcr): void

@@ -93,6 +93,19 @@ final class AdminActivityLogTest extends TestCase
                 ->where('aktivitas.data.0.pelaku', 'Pelaku A'));
     }
 
+    public function test_pencarian_pelaku_admin_dibatasi_per_pengguna(): void
+    {
+        foreach (range(1, 60) as $_) {
+            $this->actingAs($this->superadmin)
+                ->getJson('/admin/activity-log/cari-pengguna?cari=Pelaku')
+                ->assertOk();
+        }
+
+        $this->actingAs($this->superadmin)
+            ->getJson('/admin/activity-log/cari-pengguna?cari=Pelaku')
+            ->assertTooManyRequests();
+    }
+
     private function buatPengguna(Jabatan $jabatan, Unit $unit, string $name): User
     {
         $user = User::factory()->create(['name' => $name, 'jabatan_id' => $jabatan->id, 'unit_id' => $unit->id]);

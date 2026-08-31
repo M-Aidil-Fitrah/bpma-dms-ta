@@ -60,7 +60,13 @@
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
+            "DB_CONNECTION=mysql DB_DATABASE=bpma-dms-ta-testing DB_URL= php artisan migrate:fresh --env=testing --force --no-interaction",
             "@php artisan test"
+        ],
+        "lint": "@php vendor/bin/pint --test",
+        "ci": [
+            "@lint",
+            "@test"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

@@ -37,6 +37,14 @@
             "belumTersedia": "Deletion date not yet available"
         }
     },
+    "shared": {
+        "judulHalaman": "Shared with Me",
+        "kosong": {
+            "judul": "No folders shared yet",
+            "deskripsi": "Folders shared by others with you will appear here."
+        },
+        "pemilik": "Owned by {{nama}}"
+    },
     "documentCard": {
         "bintang": { "beri": "Star {{judul}}", "hapus": "Unstar {{judul}}" },
         "pindahkanKeSampah": {
@@ -71,6 +79,16 @@
                 "labelSetuju": "Yes, move it",
                 "isiSebelum": "Folder",
                 "isiSesudah": "and all its subfolders can be restored within 30 days."
+            }
+        },
+        "bagikan": {
+            "label": "Share folder {{nama}}",
+            "dialog": {
+                "judul": "Share folder",
+                "keterangan": "The selected people or units can view and download this folder, including its subfolders and documents.",
+                "labelUnit": "Work unit",
+                "labelOrang": "Specific person",
+                "tombolSimpan": "Save access"
             }
         }
     }

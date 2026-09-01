@@ -37,6 +37,14 @@
             "belumTersedia": "Tanggal penghapusan belum tersedia"
         }
     },
+    "shared": {
+        "judulHalaman": "Dibagikan ke Saya",
+        "kosong": {
+            "judul": "Belum ada folder yang dibagikan",
+            "deskripsi": "Folder yang dibagikan orang lain kepada Anda akan muncul di sini."
+        },
+        "pemilik": "Milik {{nama}}"
+    },
     "documentCard": {
         "bintang": { "beri": "Beri bintang {{judul}}", "hapus": "Hapus bintang {{judul}}" },
         "pindahkanKeSampah": {
@@ -71,6 +79,16 @@
                 "labelSetuju": "Ya, pindahkan",
                 "isiSebelum": "Folder",
                 "isiSesudah": "dan seluruh subfoldernya dapat dipulihkan selama 30 hari."
+            }
+        },
+        "bagikan": {
+            "label": "Bagikan folder {{nama}}",
+            "dialog": {
+                "judul": "Bagikan folder",
+                "keterangan": "Orang atau unit yang dipilih dapat melihat dan mengunduh folder ini beserta subfolder dan dokumen di dalamnya.",
+                "labelUnit": "Unit kerja",
+                "labelOrang": "Orang tertentu",
+                "tombolSimpan": "Simpan akses"
             }
         }
     }

@@ -18,12 +18,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 /**
  * Entitas utama sistem.
  *
  * Hak melihat dokumen tidak ditentukan satu kolom "tipe visibilitas",
- * melainkan kombinasi empat mekanisme akses yang berlaku bersamaan. Seluruh
+ * melainkan kombinasi lima mekanisme akses yang berlaku bersamaan. Seluruh
  * evaluasinya terpusat di scope `visibleTo()` — ditambahkan pada FEAT-05 —
  * supaya tidak ada satu pun tempat di aplikasi yang menyusun aturan aksesnya
  * sendiri (`PRD.md` §2.6).
@@ -221,6 +222,18 @@ class Document extends Model
             ->withPivot('granted_by', 'created_at');
     }
 
+    /**
+     * Satu dokumen paling banyak punya satu placement — hanya pengunggah yang
+     * boleh menempatkan dokumennya sendiri (`DocumentWorkspaceService::placeDocument()`),
+     * dan `document_placements` unik per `(owner_id, document_id)`.
+     *
+     * @return HasOne<DocumentPlacement, $this>
+     */
+    public function placement(): HasOne
+    {
+        return $this->hasOne(DocumentPlacement::class);
+    }
+
     // -- Ringkasan akses ------------------------------------------------------
 
     /**
@@ -340,9 +353,41 @@ class Document extends Model
             return 'Dibagikan langsung ke Anda';
         }
 
+        $folderDibagikan = $this->folderTerdekatYangDibagikan($user);
+        if ($folderDibagikan !== null) {
+            return "Folder: {$folderDibagikan->name}";
+        }
+
         // Semestinya tidak pernah tercapai: baris ini hanya pernah dimuat
         // lewat `visibleTo()`, yang menjamin salah satu di atas pasti benar.
         return 'Tidak diketahui';
+    }
+
+    /**
+     * Folder tempat dokumen ini ditaruh, atau leluhur terdekatnya, yang
+     * benar-benar dibagikan ke `$user` — dipakai `alasanTerlihat()` untuk
+     * menjawab "kenapa saya bisa buka dokumen ini" lewat Mekanisme 5.
+     * `accessSummary()` SENGAJA tidak diberi cabang serupa: itu meringkas
+     * pengaturan yang diatur pengunggah pada dokumennya sendiri, sedangkan
+     * akses lewat folder-share ditentukan di tempat lain (pengaturan
+     * folder) dan bisa berubah tanpa dokumennya disentuh sama sekali.
+     */
+    private function folderTerdekatYangDibagikan(User $user): ?DocumentFolder
+    {
+        $folder = $this->placement?->folder;
+
+        while ($folder !== null) {
+            $milikUser = $folder->sharedUsers()->where('users.id', $user->id)->exists();
+            $milikUnit = $user->unit_id !== null && $folder->targetUnits()->where('units.id', $user->unit_id)->exists();
+
+            if ($milikUser || $milikUnit) {
+                return $folder;
+            }
+
+            $folder = $folder->parent;
+        }
+
+        return null;
     }
 
     // -- Scope ----------------------------------------------------------------
@@ -361,10 +406,15 @@ class Document extends Model
      * luar hak pengguna masuk ke memori aplikasi, ini juga yang membuat
      * pagination menghitung jumlah halaman dari data yang benar.
      *
-     * Empat mekanisme akses dievaluasi sebagai rantai OR — dokumen terlihat
+     * Lima mekanisme akses dievaluasi sebagai rantai OR — dokumen terlihat
      * bila SALAH SATU terpenuhi, berapa pun yang aktif bersamaan (`PRD.md`
      * §2.4). Ditambah satu jaminan bawaan: pengunggah selalu dapat melihat
      * dokumennya sendiri, di luar kombinasi yang ia atur.
+     *
+     * Mekanisme 1-4 diatur pengunggah pada dokumennya sendiri; Mekanisme 5
+     * (folder yang dibagikan) diatur di tempat lain — pada folder "Dokumen
+     * Saya" milik pengunggah — sehingga akses lewat jalur itu bisa berubah
+     * tanpa dokumennya disentuh sama sekali.
      *
      * @param  Builder<Document>  $query
      * @return Builder<Document>
@@ -441,6 +491,50 @@ class Document extends Model
                         'sharedUsers',
                         fn (Builder $q) => $q->where('users.id', $user->id),
                     );
+
+                    // Mekanisme 5: folder yang dibagikan (langsung atau
+                    // lewat leluhurnya). Kedalaman folder dibatasi
+                    // DocumentFolder::KEDALAMAN_MAKSIMAL, jadi self-join
+                    // bertingkat tetap ini selalu cukup — dibangun dengan
+                    // loop, bukan ditulis tangan, supaya jumlah levelnya
+                    // otomatis ikut kalau batas itu berubah.
+                    $mekanisme->orWhereExists(function (QueryBuilder $sub) use ($user): void {
+                        $alias = [];
+                        for ($i = 0; $i < DocumentFolder::KEDALAMAN_MAKSIMAL; $i++) {
+                            $alias[] = "f{$i}";
+                        }
+
+                        $sub->selectRaw('1')
+                            ->from('document_placements as dp')
+                            ->join('document_folders as '.$alias[0], $alias[0].'.id', '=', 'dp.folder_id')
+                            ->whereColumn('dp.document_id', 'documents.id');
+
+                        // Menaiki rantai leluhur: `f{i}` adalah INDUK dari
+                        // `f{i-1}`, jadi syaratnya `f{i}.id = f{i-1}.parent_id`
+                        // — bukan kebalikannya. Arah yang tertukar akan
+                        // menuruni rantai ke anak-anaknya dan membocorkan
+                        // dokumen di folder induk begitu salah satu
+                        // subfoldernya dibagikan.
+                        for ($i = 1; $i < count($alias); $i++) {
+                            $sub->leftJoin('document_folders as '.$alias[$i], $alias[$i].'.id', '=', $alias[$i - 1].'.parent_id');
+                        }
+
+                        $sub->where(function (QueryBuilder $rantai) use ($user, $alias): void {
+                            foreach ($alias as $a) {
+                                $rantai->orWhereExists(fn (QueryBuilder $q) => $q->selectRaw('1')
+                                    ->from('document_folder_shares as dfs')
+                                    ->whereColumn('dfs.folder_id', "{$a}.id")
+                                    ->where('dfs.user_id', $user->id));
+
+                                if ($user->unit_id !== null) {
+                                    $rantai->orWhereExists(fn (QueryBuilder $q) => $q->selectRaw('1')
+                                        ->from('document_folder_units as dfu')
+                                        ->whereColumn('dfu.folder_id', "{$a}.id")
+                                        ->where('dfu.unit_id', $user->unit_id));
+                                }
+                            }
+                        });
+                    });
                 });
             });
         });

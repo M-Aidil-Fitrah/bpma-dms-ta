@@ -68,12 +68,14 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/documents/mine', [DocumentWorkspaceController::class, 'mine'])->name('documents.mine');
     Route::get('/documents/starred', [DocumentWorkspaceController::class, 'starred'])->name('documents.starred');
     Route::get('/documents/recent', [DocumentWorkspaceController::class, 'recent'])->name('documents.recent');
+    Route::get('/documents/shared', [DocumentWorkspaceController::class, 'shared'])->name('documents.shared');
     Route::get('/trash', [DocumentWorkspaceController::class, 'trash'])->name('documents.trash');
 
     Route::post('/folders', [DocumentWorkspaceController::class, 'storeFolder'])->middleware('throttle:mutation')->name('folders.store');
     Route::patch('/folders/{folder}', [DocumentWorkspaceController::class, 'updateFolder'])->middleware('throttle:mutation')->name('folders.update');
     Route::delete('/folders/{folder}', [DocumentWorkspaceController::class, 'trashFolder'])->middleware('throttle:mutation')->name('folders.destroy');
     Route::patch('/folders/{folder}/restore', [DocumentWorkspaceController::class, 'restoreFolder'])->middleware('throttle:mutation')->name('folders.restore');
+    Route::put('/folders/{folder}/share', [DocumentWorkspaceController::class, 'share'])->middleware('throttle:mutation')->name('folders.share');
     Route::get('/folders/{folder}', [DocumentWorkspaceController::class, 'folder'])->name('folders.show');
 
     // Rute pembuatan didaftarkan SEBELUM `/documents/{document}`. Tanpa urutan

@@ -20,6 +20,8 @@ enum ActivityLogName: string
     case DocumentShare = 'document_share';
     case DocumentUnit = 'document_unit';
     case DocumentWorkspace = 'document_workspace';
+    case FolderShare = 'folder_share';
+    case FolderUnit = 'folder_unit';
 
     public function label(): string
     {
@@ -32,6 +34,8 @@ enum ActivityLogName: string
             self::DocumentShare => 'Akses orang tertentu',
             self::DocumentUnit => 'Akses unit',
             self::DocumentWorkspace => 'Ruang kerja dokumen',
+            self::FolderShare => 'Akses folder untuk orang tertentu',
+            self::FolderUnit => 'Akses folder untuk unit',
         };
     }
 }

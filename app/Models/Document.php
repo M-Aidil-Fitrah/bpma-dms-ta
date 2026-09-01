@@ -504,19 +504,10 @@ class Document extends Model
                             $alias[] = "f{$i}";
                         }
 
-                        // Folder di Sampah berhenti membagi aksesnya. Cukup
-                        // diperiksa pada `f0` (folder tempat dokumen ditaruh):
-                        // `DocumentWorkspaceService::trashFolder()` menstempel
-                        // `trashed_at` ke folder itu BESERTA seluruh
-                        // turunannya, dan `parent_id` tidak pernah berubah
-                        // setelah folder dibuat — jadi leluhur mana pun yang
-                        // dibuang pasti ikut menstempel `f0`. Memeriksa
-                        // `f1`..`f4` satu per satu tidak menambah apa pun.
                         $sub->selectRaw('1')
                             ->from('document_placements as dp')
                             ->join('document_folders as '.$alias[0], $alias[0].'.id', '=', 'dp.folder_id')
-                            ->whereColumn('dp.document_id', 'documents.id')
-                            ->whereNull($alias[0].'.trashed_at');
+                            ->whereColumn('dp.document_id', 'documents.id');
 
                         // Menaiki rantai leluhur: `f{i}` adalah INDUK dari
                         // `f{i-1}`, jadi syaratnya `f{i}.id = f{i-1}.parent_id`
@@ -528,19 +519,44 @@ class Document extends Model
                             $sub->leftJoin('document_folders as '.$alias[$i], $alias[$i].'.id', '=', $alias[$i - 1].'.parent_id');
                         }
 
+                        // Rantai leluhur bisa berisi campuran folder hidup dan
+                        // folder di Sampah — trash/restore per-folder (bukan
+                        // cuma per-pohon) membuat itu mungkin: anak yang
+                        // di-trash lebih dulu menyimpan trash_token sendiri,
+                        // jadi ikut terlewat saat leluhurnya di-trash
+                        // belakangan (`trashFolder()` memakai `notTrashed()`
+                        // pada UPDATE-nya), lalu bisa dipulihkan sendiri lewat
+                        // token-nya sementara leluhurnya tetap di Sampah.
+                        // Karena itu TIDAK CUKUP memeriksa `f0` saja — setiap
+                        // level dari `f0` sampai level yang benar-benar
+                        // memberi akses harus hidup semua, bukan cuma level
+                        // yang memberi akses itu sendiri.
                         $sub->where(function (QueryBuilder $rantai) use ($user, $alias): void {
-                            foreach ($alias as $a) {
-                                $rantai->orWhereExists(fn (QueryBuilder $q) => $q->selectRaw('1')
-                                    ->from('document_folder_shares as dfs')
-                                    ->whereColumn('dfs.folder_id', "{$a}.id")
-                                    ->where('dfs.user_id', $user->id));
+                            $kolomTrashedSejauhIni = [];
 
-                                if ($user->unit_id !== null) {
-                                    $rantai->orWhereExists(fn (QueryBuilder $q) => $q->selectRaw('1')
-                                        ->from('document_folder_units as dfu')
-                                        ->whereColumn('dfu.folder_id', "{$a}.id")
-                                        ->where('dfu.unit_id', $user->unit_id));
-                                }
+                            foreach ($alias as $a) {
+                                $kolomTrashedSejauhIni[] = "{$a}.trashed_at";
+                                $prefikSampaiSini = $kolomTrashedSejauhIni;
+
+                                $rantai->orWhere(function (QueryBuilder $cabang) use ($user, $a, $prefikSampaiSini): void {
+                                    foreach ($prefikSampaiSini as $kolom) {
+                                        $cabang->whereNull($kolom);
+                                    }
+
+                                    $cabang->where(function (QueryBuilder $pemberi) use ($user, $a): void {
+                                        $pemberi->orWhereExists(fn (QueryBuilder $q) => $q->selectRaw('1')
+                                            ->from('document_folder_shares as dfs')
+                                            ->whereColumn('dfs.folder_id', "{$a}.id")
+                                            ->where('dfs.user_id', $user->id));
+
+                                        if ($user->unit_id !== null) {
+                                            $pemberi->orWhereExists(fn (QueryBuilder $q) => $q->selectRaw('1')
+                                                ->from('document_folder_units as dfu')
+                                                ->whereColumn('dfu.folder_id', "{$a}.id")
+                                                ->where('dfu.unit_id', $user->unit_id));
+                                        }
+                                    });
+                                });
                             }
                         });
                     });

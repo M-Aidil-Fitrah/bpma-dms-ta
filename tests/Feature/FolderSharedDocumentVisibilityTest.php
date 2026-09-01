@@ -167,6 +167,35 @@ final class FolderSharedDocumentVisibilityTest extends TestCase
         $this->assertFalse(Document::query()->visibleTo($penerima)->whereKey($dokumen->id)->exists());
     }
 
+    /**
+     * Rantai campuran hidup/Sampah. `trashFolder()` memakai `notTrashed()`
+     * pada UPDATE-nya, jadi anak yang sudah lebih dulu di Sampah TIDAK ikut
+     * distempel token induknya — ia menyimpan tokennya sendiri dan bisa
+     * dipulihkan sendirian, meninggalkan induk pemberi akses tetap di Sampah.
+     * Memeriksa `trashed_at` pada folder dokumen saja akan meloloskan dokumen
+     * ini; seluruh rantai sampai level pemberi akses harus ikut diperiksa.
+     */
+    public function test_memulihkan_anak_saja_tidak_menghidupkan_akses_dari_induk_yang_masih_di_sampah(): void
+    {
+        $pemilik = User::factory()->create();
+        $penerima = User::factory()->create();
+        $induk = DocumentFolder::create(['owner_id' => $pemilik->id, 'name' => 'Induk', 'name_normalized' => 'induk']);
+        $anak = DocumentFolder::create(['owner_id' => $pemilik->id, 'parent_id' => $induk->id, 'name' => 'Anak', 'name_normalized' => 'anak']);
+        $induk->sharedUsers()->attach($penerima->id, ['granted_by' => $pemilik->id]);
+        $dokumen = $this->dokumenDiFolder($pemilik, $anak);
+
+        $workspace = app(DocumentWorkspaceService::class);
+        $workspace->trashFolder($anak, $pemilik);
+        $workspace->trashFolder($induk, $pemilik);
+        $workspace->restoreFolder($anak->fresh(), $pemilik);
+
+        // Anak hidup kembali, tetapi induk — satu-satunya pemberi akses —
+        // masih di Sampah, jadi dokumen tidak boleh terlihat.
+        $this->assertNull($anak->fresh()->trashed_at);
+        $this->assertNotNull($induk->fresh()->trashed_at);
+        $this->assertFalse(Document::query()->visibleTo($penerima)->whereKey($dokumen->id)->exists());
+    }
+
     /** Memulihkan folder dari Sampah mengembalikan akses yang tadi berhenti. */
     public function test_memulihkan_folder_dari_sampah_mengembalikan_akses(): void
     {

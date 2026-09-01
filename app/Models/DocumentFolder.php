@@ -97,7 +97,14 @@ final class DocumentFolder extends Model
         return false;
     }
 
-    private function dibagikanLangsungKe(User $user): bool
+    /**
+     * Ada baris akses LANGSUNG pada folder ini untuk pengguna ini atau
+     * unitnya — tanpa menaiki rantai `parent`. Publik karena breadcrumb
+     * penerima share memakai aturan yang sama persis untuk menentukan di mana
+     * jejaknya berhenti; menyalinnya ke controller berarti batas breadcrumb
+     * bisa menyimpang dari batas otorisasi tanpa ada yang menyadarinya.
+     */
+    public function dibagikanLangsungKe(User $user): bool
     {
         return $this->sharedUsers()->where('users.id', $user->id)->exists()
             || ($user->unit_id !== null && $this->targetUnits()->where('units.id', $user->unit_id)->exists());

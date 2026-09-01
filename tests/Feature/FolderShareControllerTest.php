@@ -109,6 +109,83 @@ final class FolderShareControllerTest extends TestCase
                 ->where('breadcrumbs.0.label', 'Dibagikan ke saya'));
     }
 
+    public function test_penerima_share_tidak_melihat_dokumen_pribadi_pemilik(): void
+    {
+        $kategori = Category::factory()->create();
+        $publik = Document::factory()->create(['category_id' => $kategori->id, 'uploaded_by' => $this->owner->id]);
+        $pribadi = Document::factory()->create([
+            'category_id' => $kategori->id,
+            'uploaded_by' => $this->owner->id,
+            'is_private' => true,
+        ]);
+
+        foreach ([$publik, $pribadi] as $dokumen) {
+            DocumentPlacement::create([
+                'owner_id' => $this->owner->id,
+                'document_id' => $dokumen->id,
+                'folder_id' => $this->folder->id,
+            ]);
+        }
+
+        $this->folder->sharedUsers()->attach($this->penerima->id, ['granted_by' => $this->owner->id]);
+
+        // Membagikan folder tidak membatalkan keputusan "Hanya saya" yang
+        // dipasang pemiliknya pada dokumen di dalamnya — judul dan metadatanya
+        // pun tidak boleh ikut terdaftar.
+        $this->actingAs($this->penerima)
+            ->get(route('folders.show', $this->folder))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('dokumen.data', 1)
+                ->where('dokumen.data.0.id', $publik->id));
+
+        // Pemiliknya sendiri tetap melihat keduanya.
+        $this->actingAs($this->owner)
+            ->get(route('folders.show', $this->folder))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->has('dokumen.data', 2));
+    }
+
+    public function test_breadcrumb_penerima_share_berhenti_di_folder_yang_dibagikan(): void
+    {
+        // Folder yang dibagikan sengaja punya induk yang TIDAK dibagikan:
+        // tanpa itu, jejak berhenti dengan sendirinya di akar dan aturan
+        // "berhenti di batas share" tidak benar-benar teruji.
+        $induk = DocumentFolder::create([
+            'owner_id' => $this->owner->id,
+            'name' => 'Berkas Pribadi Pemilik',
+            'name_normalized' => 'berkas pribadi pemilik',
+        ]);
+        $this->folder->update(['parent_id' => $induk->id]);
+
+        $sub = DocumentFolder::create([
+            'owner_id' => $this->owner->id,
+            'parent_id' => $this->folder->id,
+            'name' => 'Rapat',
+            'name_normalized' => 'rapat',
+        ]);
+        $subSub = DocumentFolder::create([
+            'owner_id' => $this->owner->id,
+            'parent_id' => $sub->id,
+            'name' => 'Notulen',
+            'name_normalized' => 'notulen',
+        ]);
+        $this->folder->sharedUsers()->attach($this->penerima->id, ['granted_by' => $this->owner->id]);
+
+        // Folder yang dibagikan adalah akar jejak: apa pun di atasnya milik
+        // pemilik dan tidak pernah diberikan kepada penerima, jadi tidak boleh
+        // muncul sebagai tautan.
+        $this->actingAs($this->penerima)
+            ->get(route('folders.show', $subSub))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('breadcrumbs', [
+                ['label' => 'Dibagikan ke saya', 'href' => route('documents.shared')],
+                ['label' => 'Arsip', 'href' => route('folders.show', $this->folder)],
+                ['label' => 'Rapat', 'href' => route('folders.show', $sub)],
+                ['label' => 'Notulen', 'href' => route('folders.show', $subSub)],
+            ]));
+    }
+
     public function test_penerima_share_tidak_menerima_daftar_akses_subfolder(): void
     {
         $subfolder = DocumentFolder::create([

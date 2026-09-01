@@ -65,9 +65,18 @@ final class DocumentWorkspaceController extends Controller
             // Dokumen di dalam folder milik PEMILIK folder, bukan milik yang
             // sedang melihat: penerima share membuka folder orang lain dan
             // harus melihat isinya, bukan daftar kosong.
+            //
+            // `visibleTo()` tetap wajib dilewati — halaman ini bukan
+            // pengecualian dari satu-satunya gerbang akses dokumen. Untuk
+            // pemilik ia tidak mengubah apa pun (jaminan "pengunggah selalu
+            // melihat dokumennya sendiri" sudah dipenuhi klausa
+            // `uploaded_by` di bawah), sedangkan untuk penerima share ia
+            // menyaring dokumen yang ditandai "Hanya saya" oleh pemiliknya
+            // dan folder yang rantai pemberi aksesnya berada di Sampah.
             queryDasarDokumen: Document::query()
                 ->active()
                 ->notTrashed()
+                ->visibleTo($user)
                 ->where('uploaded_by', $folder->owner_id)
                 ->whereHas('placements', fn ($query) => $query->where('owner_id', $folder->owner_id)->where('folder_id', $folder->id)),
             userId: $user->id,
@@ -434,8 +443,10 @@ final class DocumentWorkspaceController extends Controller
         while ($node !== null) {
             $chain[] = $node;
 
-            if ($node->sharedUsers()->where('users.id', $viewer->id)->exists()
-                || ($viewer->unit_id !== null && $node->targetUnits()->where('units.id', $viewer->unit_id)->exists())) {
+            // Aturan "punya grant langsung" dipinjam dari model, bukan ditulis
+            // ulang di sini: batas breadcrumb harus selalu sama dengan batas
+            // yang dipakai `terlihatOleh()`.
+            if ($node->dibagikanLangsungKe($viewer)) {
                 break;
             }
 

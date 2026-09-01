@@ -277,10 +277,17 @@ final class DocumentWorkspaceController extends Controller
         int $userId,
     ): Response {
         $user = $request->user();
-        // Dimuat sekaligus untuk seluruh folder di halaman ini: dialog share
-        // menampilkan ringkasan akses tiap kartu folder, dan memuatnya per
-        // kartu berarti dua kueri tambahan per baris.
-        $folders->load(['targetUnits:id,nama', 'sharedUsers:id,name,jabatan_id,unit_id', 'sharedUsers.jabatan:id,nama', 'sharedUsers.unit:id,nama']);
+        // Satu folder mewakili seluruh koleksinya: Fase 1 tidak mengizinkan
+        // membuat subfolder di dalam folder orang lain, jadi satu pohon
+        // folder selalu berpemilik tunggal.
+        $konteksPemilik = $folder === null || $folder->owner_id === $user->id;
+
+        if ($konteksPemilik) {
+            // Dimuat sekaligus untuk seluruh folder di halaman ini: dialog
+            // share menampilkan ringkasan akses tiap kartu folder, dan
+            // memuatnya per kartu berarti dua kueri tambahan per baris.
+            $folders->load(['targetUnits:id,nama', 'sharedUsers:id,name,jabatan_id,unit_id', 'sharedUsers.jabatan:id,nama', 'sharedUsers.unit:id,nama']);
+        }
 
         return Inertia::render('Workspace/Index', [
             'title' => $title,
@@ -289,13 +296,19 @@ final class DocumentWorkspaceController extends Controller
             'folders' => $folders->map(fn (DocumentFolder $item): array => [
                 'id' => $item->id,
                 'name' => $item->name,
-                'unit_ids' => $item->targetUnits->pluck('id')->all(),
-                'shared_users' => $item->sharedUsers->map(fn (User $u): array => [
+                // Ringkasan akses hanya untuk pemilik — dialog Bagikan memang
+                // owner-only, tapi datanya sendiri juga tidak boleh ikut
+                // terkirim ke penerima share: itu daftar SIAPA SAJA yang
+                // diberi akses, bukan informasi yang berhak dilihat penerima.
+                // Tetap array kosong (bukan null/absen) supaya bentuk propnya
+                // sama untuk kedua peran.
+                'unit_ids' => $konteksPemilik ? $item->targetUnits->pluck('id')->all() : [],
+                'shared_users' => $konteksPemilik ? $item->sharedUsers->map(fn (User $u): array => [
                     'id' => $u->id,
                     'nama' => $u->name,
                     'jabatan' => $u->jabatan?->nama,
                     'unit' => $u->unit?->nama,
-                ])->all(),
+                ])->all() : [],
             ])->all(),
             // Tetap folder milik VIEWER, bukan milik pemilik folder yang
             // sedang dibuka: daftar ini adalah tujuan "pindahkan dokumen ke

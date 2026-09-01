@@ -109,6 +109,42 @@ final class FolderShareControllerTest extends TestCase
                 ->where('breadcrumbs.0.label', 'Dibagikan ke saya'));
     }
 
+    public function test_penerima_share_tidak_menerima_daftar_akses_subfolder(): void
+    {
+        $subfolder = DocumentFolder::create([
+            'owner_id' => $this->owner->id,
+            'parent_id' => $this->folder->id,
+            'name' => 'Notulen',
+            'name_normalized' => 'notulen',
+        ]);
+        $unitLain = Unit::factory()->create();
+        $orangLain = User::factory()->create(['unit_id' => $unitLain->id]);
+        $orangLain->assignRole(User::ROLE_PENGGUNA);
+        $subfolder->targetUnits()->attach($unitLain->id, ['added_by' => $this->owner->id]);
+        $subfolder->sharedUsers()->attach($orangLain->id, ['granted_by' => $this->owner->id]);
+        $this->folder->sharedUsers()->attach($this->penerima->id, ['granted_by' => $this->owner->id]);
+
+        // Penerima share memang boleh melihat subfoldernya, tetapi tidak boleh
+        // tahu siapa saja yang juga diberi akses ke subfolder itu.
+        $this->actingAs($this->penerima)
+            ->get(route('folders.show', $this->folder))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Workspace/Index')
+                ->where('folders.0.id', $subfolder->id)
+                ->where('folders.0.unit_ids', [])
+                ->where('folders.0.shared_users', []));
+
+        // Sebaliknya, pemilik tetap menerimanya — itu isi awal dialog Bagikan.
+        $this->actingAs($this->owner)
+            ->get(route('folders.show', $this->folder))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Workspace/Index')
+                ->where('folders.0.unit_ids', [$unitLain->id])
+                ->where('folders.0.shared_users.0.id', $orangLain->id));
+    }
+
     public function test_user_tak_terkait_tidak_bisa_membuka_folder(): void
     {
         $lain = User::factory()->create(['unit_id' => Unit::factory()->create()->id]);

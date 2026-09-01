@@ -10,6 +10,7 @@ import {
     History,
     LayoutDashboard,
     Settings,
+    Share2,
     Star,
     Trash2,
     Users,
@@ -48,6 +49,7 @@ const NAV: NavGroup[] = [
         items: [
             { labelKey: 'item.beranda', href: '/dashboard', icon: LayoutDashboard, match: '/dashboard' },
             { labelKey: 'item.dokumenSaya', href: '/documents/mine', icon: FolderOpen, match: '/documents/mine' },
+            { labelKey: 'item.dibagikanKeSaya', href: '/documents/shared', icon: Share2, match: '/documents/shared' },
             { labelKey: 'item.jelajahiDokumen', href: '/documents', icon: FileText, match: '/documents', exact: true },
         ],
     },

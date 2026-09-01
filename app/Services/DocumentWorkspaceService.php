@@ -20,8 +20,6 @@ final class DocumentWorkspaceService
 {
     private const RETENSI_HARI = 30;
 
-    private const KEDALAMAN_MAKSIMAL = 5;
-
     public function __construct(private readonly ActivityLogService $aktivitas) {}
 
     public function createFolder(User $owner, ?DocumentFolder $parent, string $name): DocumentFolder
@@ -288,7 +286,7 @@ final class DocumentWorkspaceService
             $node = $node->parent()->firstOrFail();
         }
 
-        if ($kedalaman >= self::KEDALAMAN_MAKSIMAL) {
+        if ($kedalaman >= DocumentFolder::KEDALAMAN_MAKSIMAL) {
             throw ValidationException::withMessages(['parent_id' => 'Folder hanya dapat memiliki lima tingkat.']);
         }
     }

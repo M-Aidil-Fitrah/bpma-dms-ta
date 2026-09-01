@@ -78,10 +78,7 @@ final class FolderShareControllerTest extends TestCase
             ->get(route('documents.shared'))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                // `shouldExist: false` — berkas halaman `Workspace/Shared.tsx`
-                // baru dibuat di tahap frontend; yang diuji di sini adalah
-                // sisi server: nama komponen dan datanya.
-                ->component('Workspace/Shared', false)
+                ->component('Workspace/Shared')
                 ->where('folders.0.id', $this->folder->id));
     }
 

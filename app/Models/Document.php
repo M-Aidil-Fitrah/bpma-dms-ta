@@ -504,10 +504,19 @@ class Document extends Model
                             $alias[] = "f{$i}";
                         }
 
+                        // Folder di Sampah berhenti membagi aksesnya. Cukup
+                        // diperiksa pada `f0` (folder tempat dokumen ditaruh):
+                        // `DocumentWorkspaceService::trashFolder()` menstempel
+                        // `trashed_at` ke folder itu BESERTA seluruh
+                        // turunannya, dan `parent_id` tidak pernah berubah
+                        // setelah folder dibuat — jadi leluhur mana pun yang
+                        // dibuang pasti ikut menstempel `f0`. Memeriksa
+                        // `f1`..`f4` satu per satu tidak menambah apa pun.
                         $sub->selectRaw('1')
                             ->from('document_placements as dp')
                             ->join('document_folders as '.$alias[0], $alias[0].'.id', '=', 'dp.folder_id')
-                            ->whereColumn('dp.document_id', 'documents.id');
+                            ->whereColumn('dp.document_id', 'documents.id')
+                            ->whereNull($alias[0].'.trashed_at');
 
                         // Menaiki rantai leluhur: `f{i}` adalah INDUK dari
                         // `f{i-1}`, jadi syaratnya `f{i}.id = f{i-1}.parent_id`

@@ -10,6 +10,7 @@ use App\Models\DocumentFolder;
 use App\Models\DocumentPlacement;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\DocumentWorkspaceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -122,6 +123,64 @@ final class FolderSharedDocumentVisibilityTest extends TestCase
 
         $rantai[0]->sharedUsers()->attach($penerima->id, ['granted_by' => $pemilik->id]);
         $dokumen = $this->dokumenDiFolder($pemilik, $rantai[DocumentFolder::KEDALAMAN_MAKSIMAL - 1]);
+
+        $this->assertTrue(Document::query()->visibleTo($penerima)->whereKey($dokumen->id)->exists());
+    }
+
+    /**
+     * Folder yang dibuang ke Sampah berhenti membagi aksesnya: pemilik yang
+     * membuang folder wajar mengira akses lewat folder itu ikut berakhir.
+     */
+    public function test_folder_yang_dibuang_ke_sampah_berhenti_membagikan_dokumennya(): void
+    {
+        $pemilik = User::factory()->create();
+        $penerima = User::factory()->create();
+        $folder = DocumentFolder::create(['owner_id' => $pemilik->id, 'name' => 'Arsip', 'name_normalized' => 'arsip']);
+        $folder->sharedUsers()->attach($penerima->id, ['granted_by' => $pemilik->id]);
+        $dokumen = $this->dokumenDiFolder($pemilik, $folder);
+
+        $this->assertTrue(Document::query()->visibleTo($penerima)->whereKey($dokumen->id)->exists());
+
+        app(DocumentWorkspaceService::class)->trashFolder($folder, $pemilik);
+
+        $this->assertFalse(Document::query()->visibleTo($penerima)->whereKey($dokumen->id)->exists());
+    }
+
+    /**
+     * Varian lewat cascade: yang dibuang adalah LELUHUR folder tempat dokumen
+     * ditaruh. `trashFolder()` menstempel `trashed_at` ke seluruh turunan,
+     * jadi pemeriksaan pada folder dokumen itu sendiri sudah menangkapnya.
+     */
+    public function test_membuang_folder_induk_menghentikan_akses_dokumen_di_subfoldernya(): void
+    {
+        $pemilik = User::factory()->create();
+        $penerima = User::factory()->create();
+        $induk = DocumentFolder::create(['owner_id' => $pemilik->id, 'name' => 'Induk', 'name_normalized' => 'induk']);
+        $anak = DocumentFolder::create(['owner_id' => $pemilik->id, 'parent_id' => $induk->id, 'name' => 'Anak', 'name_normalized' => 'anak']);
+        $induk->sharedUsers()->attach($penerima->id, ['granted_by' => $pemilik->id]);
+        $dokumen = $this->dokumenDiFolder($pemilik, $anak);
+
+        $this->assertTrue(Document::query()->visibleTo($penerima)->whereKey($dokumen->id)->exists());
+
+        app(DocumentWorkspaceService::class)->trashFolder($induk, $pemilik);
+
+        $this->assertFalse(Document::query()->visibleTo($penerima)->whereKey($dokumen->id)->exists());
+    }
+
+    /** Memulihkan folder dari Sampah mengembalikan akses yang tadi berhenti. */
+    public function test_memulihkan_folder_dari_sampah_mengembalikan_akses(): void
+    {
+        $pemilik = User::factory()->create();
+        $penerima = User::factory()->create();
+        $folder = DocumentFolder::create(['owner_id' => $pemilik->id, 'name' => 'Arsip', 'name_normalized' => 'arsip']);
+        $folder->sharedUsers()->attach($penerima->id, ['granted_by' => $pemilik->id]);
+        $dokumen = $this->dokumenDiFolder($pemilik, $folder);
+
+        $workspace = app(DocumentWorkspaceService::class);
+        $workspace->trashFolder($folder, $pemilik);
+        $this->assertFalse(Document::query()->visibleTo($penerima)->whereKey($dokumen->id)->exists());
+
+        $workspace->restoreFolder($folder->fresh(), $pemilik);
 
         $this->assertTrue(Document::query()->visibleTo($penerima)->whereKey($dokumen->id)->exists());
     }

@@ -4,24 +4,40 @@ import { IconButton } from '@/Components/ui/IconButton';
 import { Input } from '@/Components/ui/Input';
 import { Modal } from '@/Components/ui/Modal';
 import { Button } from '@/Components/ui/Button';
+import { FolderSharePicker } from '@/Components/domain/FolderSharePicker';
+import type { PenggunaTerpilih } from '@/Components/domain/UserPicker';
+import type { UnitPilihan } from '@/Components/domain/UnitTreePicker';
 import { Link, router, useForm } from '@inertiajs/react';
-import { Folder, Pencil, Trash2 } from 'lucide-react';
+import { Folder, Pencil, Share2, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
-    folder: { id: number; name: string };
+    folder: { id: number; name: string; unit_ids: number[]; shared_users: PenggunaTerpilih[] };
+    isOwner: boolean;
+    unitOptions: readonly UnitPilihan[];
 }
 
-export function WorkspaceFolderCard({ folder }: Props) {
+export function WorkspaceFolderCard({ folder, isOwner, unitOptions }: Props) {
     const { t } = useTranslation(['workspace', 'common']);
     const [renameOpen, setRenameOpen] = useState(false);
     const [trashOpen, setTrashOpen] = useState(false);
+    const [shareOpen, setShareOpen] = useState(false);
+    const [shareProcessing, setShareProcessing] = useState(false);
     const { data, setData, patch, processing, errors } = useForm({ name: folder.name });
 
     function rename(event: FormEvent) {
         event.preventDefault();
         patch(`/folders/${folder.id}`, { onSuccess: () => setRenameOpen(false) });
+    }
+
+    function share(nilai: { unit_ids: number[]; shared_user_ids: number[] }) {
+        setShareProcessing(true);
+        router.put(`/folders/${folder.id}/share`, nilai, {
+            preserveScroll: true,
+            onSuccess: () => setShareOpen(false),
+            onFinish: () => setShareProcessing(false),
+        });
     }
 
     return (
@@ -30,49 +46,71 @@ export function WorkspaceFolderCard({ folder }: Props) {
                 <Folder className="size-5 shrink-0 text-brand-700" aria-hidden />
                 <span className="truncate">{folder.name}</span>
             </Link>
-            <div className="flex shrink-0 items-center gap-1">
-                <IconButton icon={Pencil} label={t('workspace:folderCard.ubahNama.label', { nama: folder.name })} size="sm" onClick={() => setRenameOpen(true)} />
-                <IconButton
-                    icon={Trash2}
-                    label={t('workspace:folderCard.pindahkanKeSampah.label', { nama: folder.name })}
-                    variant="danger"
-                    size="sm"
-                    onClick={() => setTrashOpen(true)}
-                />
-            </div>
+            {isOwner && (
+                <div className="flex shrink-0 items-center gap-1">
+                    <IconButton
+                        icon={Share2}
+                        label={t('workspace:folderCard.bagikan.label', { nama: folder.name })}
+                        size="sm"
+                        onClick={() => setShareOpen(true)}
+                    />
+                    <IconButton icon={Pencil} label={t('workspace:folderCard.ubahNama.label', { nama: folder.name })} size="sm" onClick={() => setRenameOpen(true)} />
+                    <IconButton
+                        icon={Trash2}
+                        label={t('workspace:folderCard.pindahkanKeSampah.label', { nama: folder.name })}
+                        variant="danger"
+                        size="sm"
+                        onClick={() => setTrashOpen(true)}
+                    />
+                </div>
+            )}
 
-            <Modal
-                terbuka={renameOpen}
-                onTutup={() => setRenameOpen(false)}
-                judul={t('workspace:folderCard.ubahNama.dialog.judul')}
-                footer={<><Button variant="secondary" onClick={() => setRenameOpen(false)}>{t('common:aksi.batal')}</Button><Button type="submit" form={`ubah-folder-${folder.id}`} loading={processing}>{t('common:aksi.simpan')}</Button></>}
-            >
-                <form id={`ubah-folder-${folder.id}`} onSubmit={rename}>
-                    <Field label={t('workspace:folderCard.ubahNama.dialog.labelNama')} error={errors.name} required>
-                        {(props) => (
-                            <Input
-                                {...props}
-                                // eslint-disable-next-line jsx-a11y/no-autofocus -- fokus awal ke field nama pada dialog yang baru terbuka (pola dialog WAI-ARIA)
-                                autoFocus
-                                value={data.name}
-                                invalid={Boolean(errors.name)}
-                                onChange={(event) => setData('name', event.target.value)}
-                            />
-                        )}
-                    </Field>
-                </form>
-            </Modal>
+            {isOwner && (
+                <>
+                    <Modal
+                        terbuka={renameOpen}
+                        onTutup={() => setRenameOpen(false)}
+                        judul={t('workspace:folderCard.ubahNama.dialog.judul')}
+                        footer={<><Button variant="secondary" onClick={() => setRenameOpen(false)}>{t('common:aksi.batal')}</Button><Button type="submit" form={`ubah-folder-${folder.id}`} loading={processing}>{t('common:aksi.simpan')}</Button></>}
+                    >
+                        <form id={`ubah-folder-${folder.id}`} onSubmit={rename}>
+                            <Field label={t('workspace:folderCard.ubahNama.dialog.labelNama')} error={errors.name} required>
+                                {(props) => (
+                                    <Input
+                                        {...props}
+                                        // eslint-disable-next-line jsx-a11y/no-autofocus -- fokus awal ke field nama pada dialog yang baru terbuka (pola dialog WAI-ARIA)
+                                        autoFocus
+                                        value={data.name}
+                                        invalid={Boolean(errors.name)}
+                                        onChange={(event) => setData('name', event.target.value)}
+                                    />
+                                )}
+                            </Field>
+                        </form>
+                    </Modal>
 
-            <ConfirmDialog
-                terbuka={trashOpen}
-                onTutup={() => setTrashOpen(false)}
-                onSetuju={() => router.delete(`/folders/${folder.id}`)}
-                judul={t('workspace:folderCard.pindahkanKeSampah.dialog.judul')}
-                labelSetuju={t('workspace:folderCard.pindahkanKeSampah.dialog.labelSetuju')}
-                ikon={Trash2}
-            >
-                {t('workspace:folderCard.pindahkanKeSampah.dialog.isiSebelum')} <span className="font-medium">{folder.name}</span> {t('workspace:folderCard.pindahkanKeSampah.dialog.isiSesudah')}
-            </ConfirmDialog>
+                    <ConfirmDialog
+                        terbuka={trashOpen}
+                        onTutup={() => setTrashOpen(false)}
+                        onSetuju={() => router.delete(`/folders/${folder.id}`)}
+                        judul={t('workspace:folderCard.pindahkanKeSampah.dialog.judul')}
+                        labelSetuju={t('workspace:folderCard.pindahkanKeSampah.dialog.labelSetuju')}
+                        ikon={Trash2}
+                    >
+                        {t('workspace:folderCard.pindahkanKeSampah.dialog.isiSebelum')} <span className="font-medium">{folder.name}</span> {t('workspace:folderCard.pindahkanKeSampah.dialog.isiSesudah')}
+                    </ConfirmDialog>
+
+                    <FolderSharePicker
+                        terbuka={shareOpen}
+                        onTutup={() => setShareOpen(false)}
+                        onSubmit={share}
+                        unitOptions={unitOptions}
+                        unitIds={folder.unit_ids}
+                        sharedUsers={folder.shared_users}
+                        processing={shareProcessing}
+                    />
+                </>
+            )}
         </article>
     );
 }

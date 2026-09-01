@@ -4,11 +4,15 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/Components/domain/UnitTreePicker', () => ({
-    UnitTreePicker: () => <div data-testid="pemilih-unit" />,
+    UnitTreePicker: ({ terpilih }: { terpilih: readonly number[] }) => (
+        <div data-testid="pemilih-unit">{terpilih.join(',')}</div>
+    ),
 }));
 
 vi.mock('@/Components/domain/UserPicker', () => ({
-    UserPicker: () => <div data-testid="pemilih-pengguna" />,
+    UserPicker: ({ terpilih }: { terpilih: readonly { id: number }[] }) => (
+        <div data-testid="pemilih-pengguna">{terpilih.map((p) => p.id).join(',')}</div>
+    ),
 }));
 
 describe('FolderSharePicker', () => {
@@ -47,5 +51,63 @@ describe('FolderSharePicker', () => {
         );
 
         expect(screen.queryByRole('button', { name: /simpan akses/i })).not.toBeInTheDocument();
+    });
+
+    it('menyegarkan pilihan dari props setiap kali dialog dibuka kembali', () => {
+        const { rerender } = render(
+            <FolderSharePicker
+                terbuka={false}
+                onTutup={vi.fn()}
+                onSubmit={vi.fn()}
+                unitOptions={[]}
+                unitIds={[1]}
+                sharedUsers={[{ id: 10, nama: 'Budi', jabatan: null, unit: null }]}
+                processing={false}
+            />,
+        );
+
+        rerender(
+            <FolderSharePicker
+                terbuka
+                onTutup={vi.fn()}
+                onSubmit={vi.fn()}
+                unitOptions={[]}
+                unitIds={[1]}
+                sharedUsers={[{ id: 10, nama: 'Budi', jabatan: null, unit: null }]}
+                processing={false}
+            />,
+        );
+
+        expect(screen.getByTestId('pemilih-unit')).toHaveTextContent('1');
+        expect(screen.getByTestId('pemilih-pengguna')).toHaveTextContent('10');
+
+        // Tutup, lalu buka kembali dengan props yang berbeda — pilihan lama
+        // (mis. dari sesi edit yang dibatalkan) tidak boleh tersisa.
+        rerender(
+            <FolderSharePicker
+                terbuka={false}
+                onTutup={vi.fn()}
+                onSubmit={vi.fn()}
+                unitOptions={[]}
+                unitIds={[2]}
+                sharedUsers={[{ id: 20, nama: 'Sari', jabatan: null, unit: null }]}
+                processing={false}
+            />,
+        );
+
+        rerender(
+            <FolderSharePicker
+                terbuka
+                onTutup={vi.fn()}
+                onSubmit={vi.fn()}
+                unitOptions={[]}
+                unitIds={[2]}
+                sharedUsers={[{ id: 20, nama: 'Sari', jabatan: null, unit: null }]}
+                processing={false}
+            />,
+        );
+
+        expect(screen.getByTestId('pemilih-unit')).toHaveTextContent('2');
+        expect(screen.getByTestId('pemilih-pengguna')).toHaveTextContent('20');
     });
 });

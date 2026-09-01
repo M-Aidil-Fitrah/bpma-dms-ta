@@ -2,7 +2,7 @@ import { UnitTreePicker, type UnitPilihan } from '@/Components/domain/UnitTreePi
 import { UserPicker, type PenggunaTerpilih } from '@/Components/domain/UserPicker';
 import { Button } from '@/Components/ui/Button';
 import { Modal } from '@/Components/ui/Modal';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export interface FolderSharePickerProps {
@@ -33,6 +33,19 @@ export function FolderSharePicker({
     const { t } = useTranslation(['workspace', 'common']);
     const [units, setUnits] = useState<number[]>([...unitIds]);
     const [pengguna, setPengguna] = useState<PenggunaTerpilih[]>([...sharedUsers]);
+
+    useEffect(() => {
+        if (terbuka) {
+            setUnits([...unitIds]);
+            setPengguna([...sharedUsers]);
+        }
+        // Sengaja cuma bergantung pada `terbuka`: menambahkan unitIds/sharedUsers
+        // ke dependency akan membuat efek ini jalan ulang setiap kali parent
+        // re-render selagi dialog terbuka (kedua array itu bukan referensi yang
+        // stabil), menghapus pilihan yang sedang diedit pengguna sebelum sempat
+        // disimpan.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [terbuka]);
 
     if (!terbuka) {
         return null;

@@ -109,11 +109,17 @@ final class ActivityLogQuery
                             ->select('documents.id'));
                 })
                 // Folder bersifat pribadi dan tidak memiliki policy akses dokumen.
-                // Pemilik tetap perlu melihat jejak pindah/Sampah foldernya sendiri,
-                // tetapi aktivitas ruang kerja pengguna lain tidak boleh bocor.
+                // Pemilik tetap perlu melihat jejak pindah/Sampah/berbagi foldernya
+                // sendiri, tetapi aktivitas ruang kerja pengguna lain tidak boleh
+                // bocor. Syarat `causer_id` inilah yang menjaganya: tanpa itu,
+                // penerima share ikut membaca siapa saja yang juga diberi akses.
                 ->orWhere(function (Builder $workspaceQuery) use ($user): void {
                     $workspaceQuery
-                        ->where('activity_log.log_name', ActivityLogName::DocumentWorkspace->value)
+                        ->whereIn('activity_log.log_name', [
+                            ActivityLogName::DocumentWorkspace->value,
+                            ActivityLogName::FolderShare->value,
+                            ActivityLogName::FolderUnit->value,
+                        ])
                         ->where('activity_log.causer_id', $user->id);
                 });
         });

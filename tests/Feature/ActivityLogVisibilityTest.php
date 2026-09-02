@@ -110,6 +110,37 @@ final class ActivityLogVisibilityTest extends TestCase
                 ->where('aktivitas.data.0.subjek', 'Arsip Kerja'));
     }
 
+    /**
+     * Jejak berbagi folder ditulis dengan log name tersendiri. Tanpa keduanya
+     * ikut diizinkan, penyaring "Akses folder ..." pada halaman Riwayat
+     * Aktivitas selalu kosong — bahkan bagi pemilik yang melakukannya.
+     */
+    public function test_pemilik_melihat_jejak_berbagi_foldernya_tanpa_membukanya_ke_penerima(): void
+    {
+        $folder = DocumentFolder::query()->create([
+            'owner_id' => $this->anggota->id,
+            'name' => 'Arsip Dibagikan',
+            'name_normalized' => 'arsip dibagikan',
+        ]);
+
+        $this->actingAs($this->anggota)
+            ->put(route('folders.share', $folder), ['shared_user_ids' => [$this->pemilikLain->id]])
+            ->assertRedirect();
+
+        $this->actingAs($this->anggota)
+            ->get('/activity-log?jenis='.ActivityLogName::FolderShare->value)
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('aktivitas.total', 1)
+                ->where('aktivitas.data.0.event', AuditEvent::AccessGranted->value)
+                ->where('aktivitas.data.0.subjek', 'Arsip Dibagikan'));
+
+        // Jejaknya tetap milik pelakunya sendiri: penerima share tidak boleh
+        // tahu siapa lagi yang diberi akses ke folder yang sama.
+        $this->actingAs($this->pemilikLain)
+            ->get('/activity-log?jenis='.ActivityLogName::FolderShare->value)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('aktivitas.total', 0));
+    }
+
     public function test_jumlah_query_riwayat_tidak_bertambah_seiring_aktivitas(): void
     {
         $this->actingAs($this->superadmin);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\DocumentFolder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -26,5 +27,20 @@ final class FolderShareSchemaTest extends TestCase
         $this->assertTrue(Schema::hasColumns('document_folder_units', [
             'id', 'folder_id', 'unit_id', 'role', 'added_by', 'created_at',
         ]));
+    }
+
+    public function test_folder_punya_kolom_sharing_restricted_default_false(): void
+    {
+        $folder = DocumentFolder::factory()->create();
+
+        $this->assertFalse($folder->fresh()->sharing_restricted);
+        $this->assertSame(false, $folder->fresh()->sharing_restricted);
+    }
+
+    public function test_sharing_restricted_dapat_disetel_true(): void
+    {
+        $folder = DocumentFolder::factory()->create(['sharing_restricted' => true]);
+
+        $this->assertTrue($folder->fresh()->sharing_restricted);
     }
 }

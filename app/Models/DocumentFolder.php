@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['owner_id', 'parent_id', 'name', 'name_normalized', 'trashed_at', 'trashed_by', 'purge_after', 'trash_token'])]
+#[Fillable(['owner_id', 'parent_id', 'name', 'name_normalized', 'sharing_restricted', 'trashed_at', 'trashed_by', 'purge_after', 'trash_token'])]
 final class DocumentFolder extends Model
 {
     use HasFactory;
@@ -30,6 +30,7 @@ final class DocumentFolder extends Model
         return [
             'trashed_at' => 'datetime',
             'purge_after' => 'datetime',
+            'sharing_restricted' => 'boolean',
         ];
     }
 

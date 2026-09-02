@@ -12,6 +12,7 @@ use App\Models\DocumentFolder;
 use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\DocumentWorkspaceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Models\Activity;
@@ -215,5 +216,50 @@ final class DocumentWorkspaceTest extends TestCase
 
         $this->assertDatabaseMissing('documents', ['id' => $this->document->id]);
         Storage::disk('local')->assertMissing('documents/purge.pdf');
+    }
+
+    public function test_editor_membuat_subfolder_di_pohon_orang_lain(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $induk = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $induk->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $subfolder = app(DocumentWorkspaceService::class)->createFolder($editor, $induk, 'Sub oleh editor');
+
+        $this->assertSame($pemilik->id, $subfolder->owner_id, 'subfolder mewarisi pohon pemilik, bukan editor');
+        $this->assertSame($induk->id, $subfolder->parent_id);
+    }
+
+    public function test_editor_root_folder_tetap_pohon_sendiri(): void
+    {
+        $editor = User::factory()->create();
+
+        $folder = app(DocumentWorkspaceService::class)->createFolder($editor, null, 'Root milik editor');
+
+        $this->assertSame($editor->id, $folder->owner_id);
+    }
+
+    public function test_viewer_tidak_bisa_membuat_subfolder(): void
+    {
+        $pemilik = User::factory()->create();
+        $viewer = User::factory()->create();
+        $induk = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $induk->sharedUsers()->attach($viewer->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        app(DocumentWorkspaceService::class)->createFolder($viewer, $induk, 'Percobaan');
+    }
+
+    public function test_nama_subfolder_editor_bentrok_dicek_pada_pohon_pemilik(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $induk = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $induk->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+        DocumentFolder::factory()->for($pemilik, 'owner')->create(['parent_id' => $induk->id, 'name' => 'Rapat', 'name_normalized' => 'rapat']);
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        app(DocumentWorkspaceService::class)->createFolder($editor, $induk, 'Rapat');
     }
 }

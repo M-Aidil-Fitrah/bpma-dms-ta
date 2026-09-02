@@ -22,18 +22,22 @@ final class DocumentWorkspaceService
 
     public function __construct(private readonly ActivityLogService $aktivitas) {}
 
-    public function createFolder(User $owner, ?DocumentFolder $parent, string $name): DocumentFolder
+    public function createFolder(User $pelaku, ?DocumentFolder $parent, string $name): DocumentFolder
     {
         if ($parent !== null) {
-            $this->pastikanFolderAktifMilik($parent, $owner);
+            $this->pastikanFolderAktifBolehDiedit($parent, $pelaku);
             $this->pastikanKedalaman($parent);
         }
 
+        // Root milik pelaku sendiri; subfolder mewarisi pohon induknya
+        // (Editor tidak pernah membuat folder ROOT di pohon orang lain).
+        $ownerId = $parent?->owner_id ?? $pelaku->id;
+
         $name = $this->namaBersih($name);
-        $this->pastikanNamaTersedia($owner, $parent?->id, $name);
+        $this->pastikanNamaTersedia($ownerId, $parent?->id, $name);
 
         $folder = DocumentFolder::create([
-            'owner_id' => $owner->id,
+            'owner_id' => $ownerId,
             'parent_id' => $parent?->id,
             'name' => $name,
             'name_normalized' => $this->namaNormal($name),
@@ -44,7 +48,7 @@ final class DocumentWorkspaceService
             AuditEvent::FolderCreated,
             "Folder \"{$folder->name}\" dibuat.",
             $folder,
-            $owner,
+            $pelaku,
             ['folder_induk' => $parent?->name ?? 'Dokumen Saya'],
         );
 
@@ -55,7 +59,7 @@ final class DocumentWorkspaceService
     {
         $this->pastikanFolderAktifMilik($folder, $owner);
         $name = $this->namaBersih($name);
-        $this->pastikanNamaTersedia($owner, $folder->parent_id, $name, $folder->id);
+        $this->pastikanNamaTersedia($folder->owner_id, $folder->parent_id, $name, $folder->id);
         $namaSebelumnya = $folder->name;
         $folder->update(['name' => $name, 'name_normalized' => $this->namaNormal($name)]);
 
@@ -246,6 +250,20 @@ final class DocumentWorkspaceService
         }
     }
 
+    /**
+     * Untuk method yang kini boleh dipanggil Editor (bukan cuma pemilik):
+     * folder harus aktif DAN pelaku punya hak edit (owner atau role editor
+     * langsung/warisan). Menggantikan `pastikanFolderAktifMilik()` di method
+     * yang dibuka untuk Editor — `pastikanFolderAktifMilik()` sendiri tetap
+     * dipakai method yang owner-only (`trashFolder`).
+     */
+    private function pastikanFolderAktifBolehDiedit(DocumentFolder $folder, User $pelaku): void
+    {
+        if ($folder->trashed_at !== null || ! $folder->terlihatSebagaiEditorOleh($pelaku)) {
+            throw ValidationException::withMessages(['folder' => 'Folder tidak tersedia.']);
+        }
+    }
+
     private function catatPerpindahanDokumen(Document $document, User $owner, string $asal, string $tujuan): void
     {
         $this->aktivitas->record(
@@ -291,10 +309,10 @@ final class DocumentWorkspaceService
         }
     }
 
-    private function pastikanNamaTersedia(User $owner, ?int $parentId, string $name, ?int $exceptId = null): void
+    private function pastikanNamaTersedia(int $ownerId, ?int $parentId, string $name, ?int $exceptId = null): void
     {
         $ada = DocumentFolder::query()
-            ->ownedBy($owner)
+            ->where('owner_id', $ownerId)
             ->notTrashed()
             ->where('parent_id', $parentId)
             ->where('name_normalized', $this->namaNormal($name))

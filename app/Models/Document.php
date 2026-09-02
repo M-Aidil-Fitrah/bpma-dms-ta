@@ -416,10 +416,16 @@ class Document extends Model
      * Saya" milik pengunggah — sehingga akses lewat jalur itu bisa berubah
      * tanpa dokumennya disentuh sama sekali.
      *
+     * Perbedaan asal keputusan itulah alasan `$sertakanFolder` ada: hak
+     * MELIHAT selalu memakai kelima mekanisme (bawaannya `true`, jadi seluruh
+     * pemanggil lama tidak berubah), sedangkan `edit_scope` "Sama seperti
+     * akses" hanya boleh mengikuti Mekanisme 1-4 — membagikan folder tidak
+     * pernah dimaksudkan sebagai pemberian hak ubah.
+     *
      * @param  Builder<Document>  $query
      * @return Builder<Document>
      */
-    public function scopeVisibleTo(Builder $query, User $user): Builder
+    public function scopeVisibleTo(Builder $query, User $user, bool $sertakanFolder = true): Builder
     {
         $query->notTrashed();
 
@@ -446,18 +452,18 @@ class Document extends Model
         // penyaring yang ditambahkan controller sesudahnya (kategori, status,
         // kata kunci) akan tercampur ke dalam rantai OR dan meloloskan dokumen
         // yang seharusnya tertutup.
-        return $query->where(function (Builder $group) use ($user, $tingkatAkses): void {
+        return $query->where(function (Builder $group) use ($user, $tingkatAkses, $sertakanFolder): void {
             // Jaminan bawaan — bukan salah satu dari empat mekanisme.
             $group->where('documents.uploaded_by', $user->id);
 
             // Dokumen pribadi hanya berhenti pada pengunggah (di atas) atau
             // Superadmin (dikembalikan lebih awal), sekalipun request palsu
             // masih menyisakan data mekanisme akses lama.
-            $group->orWhere(function (Builder $dibagikan) use ($user, $tingkatAkses): void {
+            $group->orWhere(function (Builder $dibagikan) use ($user, $tingkatAkses, $sertakanFolder): void {
                 $dibagikan->where('documents.is_private', false);
 
                 // Mekanisme 1: bagikan ke semua pengguna internal.
-                $dibagikan->where(function (Builder $mekanisme) use ($user, $tingkatAkses): void {
+                $dibagikan->where(function (Builder $mekanisme) use ($user, $tingkatAkses, $sertakanFolder): void {
                     $mekanisme->where('documents.is_shared_to_all', true);
 
                     // Mekanisme 2: jenjang jabatan. Angka tingkat yang lebih kecil
@@ -492,74 +498,80 @@ class Document extends Model
                         fn (Builder $q) => $q->where('users.id', $user->id),
                     );
 
-                    // Mekanisme 5: folder yang dibagikan (langsung atau
-                    // lewat leluhurnya). Kedalaman folder dibatasi
-                    // DocumentFolder::KEDALAMAN_MAKSIMAL, jadi self-join
-                    // bertingkat tetap ini selalu cukup — dibangun dengan
-                    // loop, bukan ditulis tangan, supaya jumlah levelnya
-                    // otomatis ikut kalau batas itu berubah.
-                    $mekanisme->orWhereExists(function (QueryBuilder $sub) use ($user): void {
-                        $alias = [];
-                        for ($i = 0; $i < DocumentFolder::KEDALAMAN_MAKSIMAL; $i++) {
-                            $alias[] = "f{$i}";
-                        }
-
-                        $sub->selectRaw('1')
-                            ->from('document_placements as dp')
-                            ->join('document_folders as '.$alias[0], $alias[0].'.id', '=', 'dp.folder_id')
-                            ->whereColumn('dp.document_id', 'documents.id');
-
-                        // Menaiki rantai leluhur: `f{i}` adalah INDUK dari
-                        // `f{i-1}`, jadi syaratnya `f{i}.id = f{i-1}.parent_id`
-                        // — bukan kebalikannya. Arah yang tertukar akan
-                        // menuruni rantai ke anak-anaknya dan membocorkan
-                        // dokumen di folder induk begitu salah satu
-                        // subfoldernya dibagikan.
-                        for ($i = 1; $i < count($alias); $i++) {
-                            $sub->leftJoin('document_folders as '.$alias[$i], $alias[$i].'.id', '=', $alias[$i - 1].'.parent_id');
-                        }
-
-                        // Rantai leluhur bisa berisi campuran folder hidup dan
-                        // folder di Sampah — trash/restore per-folder (bukan
-                        // cuma per-pohon) membuat itu mungkin: anak yang
-                        // di-trash lebih dulu menyimpan trash_token sendiri,
-                        // jadi ikut terlewat saat leluhurnya di-trash
-                        // belakangan (`trashFolder()` memakai `notTrashed()`
-                        // pada UPDATE-nya), lalu bisa dipulihkan sendiri lewat
-                        // token-nya sementara leluhurnya tetap di Sampah.
-                        // Karena itu TIDAK CUKUP memeriksa `f0` saja — setiap
-                        // level dari `f0` sampai level yang benar-benar
-                        // memberi akses harus hidup semua, bukan cuma level
-                        // yang memberi akses itu sendiri.
-                        $sub->where(function (QueryBuilder $rantai) use ($user, $alias): void {
-                            $kolomTrashedSejauhIni = [];
-
-                            foreach ($alias as $a) {
-                                $kolomTrashedSejauhIni[] = "{$a}.trashed_at";
-                                $prefikSampaiSini = $kolomTrashedSejauhIni;
-
-                                $rantai->orWhere(function (QueryBuilder $cabang) use ($user, $a, $prefikSampaiSini): void {
-                                    foreach ($prefikSampaiSini as $kolom) {
-                                        $cabang->whereNull($kolom);
-                                    }
-
-                                    $cabang->where(function (QueryBuilder $pemberi) use ($user, $a): void {
-                                        $pemberi->orWhereExists(fn (QueryBuilder $q) => $q->selectRaw('1')
-                                            ->from('document_folder_shares as dfs')
-                                            ->whereColumn('dfs.folder_id', "{$a}.id")
-                                            ->where('dfs.user_id', $user->id));
-
-                                        if ($user->unit_id !== null) {
-                                            $pemberi->orWhereExists(fn (QueryBuilder $q) => $q->selectRaw('1')
-                                                ->from('document_folder_units as dfu')
-                                                ->whereColumn('dfu.folder_id', "{$a}.id")
-                                                ->where('dfu.unit_id', $user->unit_id));
-                                        }
-                                    });
-                                });
+                    // Mekanisme 5 sengaja dapat dimatikan pemanggil.
+                    // `DocumentPolicy::update()` memakainya untuk
+                    // "Sama seperti akses": folder yang dibagikan
+                    // memberi hak melihat, bukan hak mengubah.
+                    if ($sertakanFolder) {
+                        // Mekanisme 5: folder yang dibagikan (langsung atau
+                        // lewat leluhurnya). Kedalaman folder dibatasi
+                        // DocumentFolder::KEDALAMAN_MAKSIMAL, jadi self-join
+                        // bertingkat tetap ini selalu cukup — dibangun dengan
+                        // loop, bukan ditulis tangan, supaya jumlah levelnya
+                        // otomatis ikut kalau batas itu berubah.
+                        $mekanisme->orWhereExists(function (QueryBuilder $sub) use ($user): void {
+                            $alias = [];
+                            for ($i = 0; $i < DocumentFolder::KEDALAMAN_MAKSIMAL; $i++) {
+                                $alias[] = "f{$i}";
                             }
+
+                            $sub->selectRaw('1')
+                                ->from('document_placements as dp')
+                                ->join('document_folders as '.$alias[0], $alias[0].'.id', '=', 'dp.folder_id')
+                                ->whereColumn('dp.document_id', 'documents.id');
+
+                            // Menaiki rantai leluhur: `f{i}` adalah INDUK dari
+                            // `f{i-1}`, jadi syaratnya `f{i}.id = f{i-1}.parent_id`
+                            // — bukan kebalikannya. Arah yang tertukar akan
+                            // menuruni rantai ke anak-anaknya dan membocorkan
+                            // dokumen di folder induk begitu salah satu
+                            // subfoldernya dibagikan.
+                            for ($i = 1; $i < count($alias); $i++) {
+                                $sub->leftJoin('document_folders as '.$alias[$i], $alias[$i].'.id', '=', $alias[$i - 1].'.parent_id');
+                            }
+
+                            // Rantai leluhur bisa berisi campuran folder hidup dan
+                            // folder di Sampah — trash/restore per-folder (bukan
+                            // cuma per-pohon) membuat itu mungkin: anak yang
+                            // di-trash lebih dulu menyimpan trash_token sendiri,
+                            // jadi ikut terlewat saat leluhurnya di-trash
+                            // belakangan (`trashFolder()` memakai `notTrashed()`
+                            // pada UPDATE-nya), lalu bisa dipulihkan sendiri lewat
+                            // token-nya sementara leluhurnya tetap di Sampah.
+                            // Karena itu TIDAK CUKUP memeriksa `f0` saja — setiap
+                            // level dari `f0` sampai level yang benar-benar
+                            // memberi akses harus hidup semua, bukan cuma level
+                            // yang memberi akses itu sendiri.
+                            $sub->where(function (QueryBuilder $rantai) use ($user, $alias): void {
+                                $kolomTrashedSejauhIni = [];
+
+                                foreach ($alias as $a) {
+                                    $kolomTrashedSejauhIni[] = "{$a}.trashed_at";
+                                    $prefikSampaiSini = $kolomTrashedSejauhIni;
+
+                                    $rantai->orWhere(function (QueryBuilder $cabang) use ($user, $a, $prefikSampaiSini): void {
+                                        foreach ($prefikSampaiSini as $kolom) {
+                                            $cabang->whereNull($kolom);
+                                        }
+
+                                        $cabang->where(function (QueryBuilder $pemberi) use ($user, $a): void {
+                                            $pemberi->orWhereExists(fn (QueryBuilder $q) => $q->selectRaw('1')
+                                                ->from('document_folder_shares as dfs')
+                                                ->whereColumn('dfs.folder_id', "{$a}.id")
+                                                ->where('dfs.user_id', $user->id));
+
+                                            if ($user->unit_id !== null) {
+                                                $pemberi->orWhereExists(fn (QueryBuilder $q) => $q->selectRaw('1')
+                                                    ->from('document_folder_units as dfu')
+                                                    ->whereColumn('dfu.folder_id', "{$a}.id")
+                                                    ->where('dfu.unit_id', $user->unit_id));
+                                            }
+                                        });
+                                    });
+                                }
+                            });
                         });
-                    });
+                    }
                 });
             });
         });

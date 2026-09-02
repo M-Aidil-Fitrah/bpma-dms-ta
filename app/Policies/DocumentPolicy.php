@@ -107,7 +107,16 @@ final class DocumentPolicy
 
         return match ($document->edit_scope) {
             DocumentEditScope::OwnerOnly => $document->uploaded_by === $user->id,
-            DocumentEditScope::MatchVisibility => $this->view($user, $document),
+            // Query langsung, bukan `$this->view()`: dokumen nonaktif sudah
+            // ditolak di atas, sehingga cabang "warisi hak dari versi
+            // penerus" milik `view()` tidak relevan di sini — dan yang
+            // dibutuhkan justru bentuk tanpa Mekanisme 5. Folder yang
+            // dibagikan memberi hak melihat dan mengunduh saja; hak ubah
+            // tetap harus berasal dari keputusan pada dokumennya sendiri.
+            DocumentEditScope::MatchVisibility => Document::query()
+                ->visibleTo($user, sertakanFolder: false)
+                ->whereKey($document->getKey())
+                ->exists(),
         };
     }
 

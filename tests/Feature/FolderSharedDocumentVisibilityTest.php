@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\DocumentEditScope;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\DocumentFolder;
@@ -212,6 +213,43 @@ final class FolderSharedDocumentVisibilityTest extends TestCase
         $workspace->restoreFolder($folder->fresh(), $pemilik);
 
         $this->assertTrue(Document::query()->visibleTo($penerima)->whereKey($dokumen->id)->exists());
+    }
+
+    /**
+     * Janji dialog Bagikan adalah "dapat melihat dan mengunduh". Membagikan
+     * folder karena itu tidak boleh diam-diam ikut memberi hak ubah pada
+     * dokumen ber-`edit_scope` "Sama seperti akses" yang kebetulan ada di
+     * dalamnya — keputusan berbagi folder dibuat pada folder, bukan pada
+     * dokumen itu, dan cakupannya pun berbeda.
+     */
+    public function test_folder_yang_dibagikan_tidak_memberi_hak_ubah_pada_dokumen_sama_seperti_akses(): void
+    {
+        $pemilik = User::factory()->create();
+        $penerima = User::factory()->create();
+        $folder = DocumentFolder::create(['owner_id' => $pemilik->id, 'name' => 'Arsip', 'name_normalized' => 'arsip']);
+        $folder->sharedUsers()->attach($penerima->id, ['granted_by' => $pemilik->id]);
+        $dokumen = $this->dokumenDiFolder($pemilik, $folder, ['edit_scope' => DocumentEditScope::MatchVisibility]);
+
+        $this->assertTrue($penerima->can('view', $dokumen));
+        $this->assertFalse($penerima->can('update', $dokumen));
+    }
+
+    /**
+     * Sisi sebaliknya: Mekanisme 1-4 tidak ikut terpotong. Dokumen yang sama,
+     * tetapi kali ini dibagikan LANGSUNG ke orangnya pada dokumen itu sendiri
+     * — pemberian eksplisit itulah yang memberi hak ubah, bukan foldernya.
+     */
+    public function test_berbagi_langsung_ke_orang_tetap_memberi_hak_ubah_walau_dokumennya_di_folder_yang_dibagikan(): void
+    {
+        $pemilik = User::factory()->create();
+        $penerima = User::factory()->create();
+        $folder = DocumentFolder::create(['owner_id' => $pemilik->id, 'name' => 'Arsip', 'name_normalized' => 'arsip']);
+        $folder->sharedUsers()->attach($penerima->id, ['granted_by' => $pemilik->id]);
+        $dokumen = $this->dokumenDiFolder($pemilik, $folder, ['edit_scope' => DocumentEditScope::MatchVisibility]);
+        $dokumen->sharedUsers()->attach($penerima->id, ['granted_by' => $pemilik->id]);
+
+        $this->assertTrue($penerima->can('view', $dokumen));
+        $this->assertTrue($penerima->can('update', $dokumen));
     }
 
     public function test_dokumen_terlihat_lewat_folder_yang_dibagikan_ke_unit(): void

@@ -14,7 +14,9 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
  *
  * `MatchVisibility` memakai ulang scope `Document::visibleTo()`, sehingga aturan
  * "siapa yang boleh menyunting" tidak pernah menyimpang dari "siapa yang boleh
- * melihat".
+ * melihat" — dengan satu pengecualian yang disengaja: akses yang hanya berasal
+ * dari folder yang dibagikan (Mekanisme 5) tidak ikut dihitung, karena
+ * keputusannya dibuat pada folder dan hanya menjanjikan lihat/unduh.
  */
 #[TypeScript]
 enum DocumentEditScope: string

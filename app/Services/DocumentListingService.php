@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Data\DocumentListData;
 use App\Http\Requests\DocumentIndexRequest;
 use App\Models\Document;
+use App\Models\DocumentFolder;
 use App\Models\User;
 use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -56,6 +57,7 @@ final class DocumentListingService
                 // ringkasan mekanisme akses di tiap baris.
                 'targetUnits:id,nama',
                 'sharedUsers:id',
+                ...$this->relasiRantaiFolder(),
             ])
             ->when(
                 $request->integer('kategori'),
@@ -137,6 +139,38 @@ final class DocumentListingService
             ->paginate($this->pengaturan->integer('dokumen.per_halaman') ?? (int) config('dms.dokumen.per_halaman'))
             ->withQueryString()
             ->through($pemetaan);
+    }
+
+    /**
+     * Rantai `placement.folder` sampai leluhur terjauh, berikut daftar akses
+     * tiap levelnya.
+     *
+     * `Document::alasanTerlihat()` menaiki rantai ini untuk baris yang
+     * terlihat lewat folder yang dibagikan — dan itu justru kasus UMUM pada
+     * halaman "Dibagikan ke Saya", karena Mekanisme 5 baru dicapai setelah
+     * Mekanisme 1-4 semuanya gagal. Tanpa dimuat di muka, setiap baris
+     * menembak kueri sendiri per level yang ditelusurinya.
+     *
+     * Dibangun dengan loop, bukan ditulis tangan, supaya panjangnya otomatis
+     * ikut kalau `DocumentFolder::KEDALAMAN_MAKSIMAL` berubah.
+     *
+     * @return list<string>
+     */
+    private function relasiRantaiFolder(): array
+    {
+        $relasi = [];
+        $jalur = 'placement.folder';
+
+        for ($level = 0; $level < DocumentFolder::KEDALAMAN_MAKSIMAL; $level++) {
+            // `parent_id` wajib ikut ter-SELECT: tanpanya relasi `parent` di
+            // level berikutnya tidak punya kunci untuk dicocokkan.
+            $relasi[] = $jalur.':id,parent_id,name';
+            $relasi[] = $jalur.'.sharedUsers:id';
+            $relasi[] = $jalur.'.targetUnits:id';
+            $jalur .= '.parent';
+        }
+
+        return $relasi;
     }
 
     /**

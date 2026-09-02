@@ -371,14 +371,20 @@ class Document extends Model
      * pengaturan yang diatur pengunggah pada dokumennya sendiri, sedangkan
      * akses lewat folder-share ditentukan di tempat lain (pengaturan
      * folder) dan bisa berubah tanpa dokumennya disentuh sama sekali.
+     *
+     * Relasinya dibaca sebagai properti, bukan lewat `exists()` per folder:
+     * pemanggil daftar sudah memuat seluruh rantai ini di muka
+     * (`DocumentListingService::relasiRantaiFolder()`), sehingga bentuk ini
+     * tidak menembak kueri apa pun per baris — sementara `exists()` selalu
+     * menembak dua kueri per level, dimuat di muka atau tidak.
      */
     private function folderTerdekatYangDibagikan(User $user): ?DocumentFolder
     {
         $folder = $this->placement?->folder;
 
         while ($folder !== null) {
-            $milikUser = $folder->sharedUsers()->where('users.id', $user->id)->exists();
-            $milikUnit = $user->unit_id !== null && $folder->targetUnits()->where('units.id', $user->unit_id)->exists();
+            $milikUser = $folder->sharedUsers->contains('id', $user->id);
+            $milikUnit = $user->unit_id !== null && $folder->targetUnits->contains('id', $user->unit_id);
 
             if ($milikUser || $milikUnit) {
                 return $folder;

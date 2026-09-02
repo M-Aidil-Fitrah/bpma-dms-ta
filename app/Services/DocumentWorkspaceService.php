@@ -55,9 +55,9 @@ final class DocumentWorkspaceService
         return $folder;
     }
 
-    public function renameFolder(DocumentFolder $folder, User $owner, string $name): void
+    public function renameFolder(DocumentFolder $folder, User $pelaku, string $name): void
     {
-        $this->pastikanFolderAktifMilik($folder, $owner);
+        $this->pastikanFolderAktifBolehDiedit($folder, $pelaku);
         $name = $this->namaBersih($name);
         $this->pastikanNamaTersedia($folder->owner_id, $folder->parent_id, $name, $folder->id);
         $namaSebelumnya = $folder->name;
@@ -68,7 +68,7 @@ final class DocumentWorkspaceService
             AuditEvent::FolderRenamed,
             "Nama folder diubah dari \"{$namaSebelumnya}\" menjadi \"{$folder->name}\".",
             $folder,
-            $owner,
+            $pelaku,
             [],
             ['nama' => $namaSebelumnya],
             ['nama' => $folder->name],

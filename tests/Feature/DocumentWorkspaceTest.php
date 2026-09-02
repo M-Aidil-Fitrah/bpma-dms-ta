@@ -262,4 +262,28 @@ final class DocumentWorkspaceTest extends TestCase
         $this->expectException(\Illuminate\Validation\ValidationException::class);
         app(DocumentWorkspaceService::class)->createFolder($editor, $induk, 'Rapat');
     }
+
+    public function test_editor_boleh_mengubah_nama_folder(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create(['name' => 'Lama', 'name_normalized' => 'lama']);
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        app(DocumentWorkspaceService::class)->renameFolder($folder, $editor, 'Baru');
+
+        $this->assertSame('Baru', $folder->fresh()->name);
+        $this->assertDatabaseHas('activity_log', ['subject_id' => $folder->id, 'causer_id' => $editor->id]);
+    }
+
+    public function test_viewer_tidak_boleh_mengubah_nama_folder(): void
+    {
+        $pemilik = User::factory()->create();
+        $viewer = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($viewer->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        app(DocumentWorkspaceService::class)->renameFolder($folder, $viewer, 'Percobaan');
+    }
 }

@@ -87,7 +87,11 @@
                 "keterangan": "Orang atau unit yang dipilih dapat melihat dan mengunduh folder ini beserta subfolder dan dokumen di dalamnya.",
                 "labelUnit": "Unit kerja",
                 "labelOrang": "Orang tertentu",
-                "tombolSimpan": "Simpan akses"
+                "tombolSimpan": "Simpan akses",
+                "labelRole": "Peran",
+                "roleViewer": "Bisa melihat",
+                "roleEditor": "Bisa mengubah",
+                "kunciPembagian": "Hanya pemilik yang boleh membagikan folder ini"
             }
         }
     }

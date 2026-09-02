@@ -87,7 +87,11 @@
                 "keterangan": "The selected people or units can view and download this folder, including its subfolders and documents.",
                 "labelUnit": "Work unit",
                 "labelOrang": "Specific person",
-                "tombolSimpan": "Save access"
+                "tombolSimpan": "Save access",
+                "labelRole": "Role",
+                "roleViewer": "Viewer",
+                "roleEditor": "Editor",
+                "kunciPembagian": "Only the owner can share this folder"
             }
         }
     }

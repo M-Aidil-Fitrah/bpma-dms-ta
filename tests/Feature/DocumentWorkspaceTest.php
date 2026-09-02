@@ -335,6 +335,32 @@ final class DocumentWorkspaceTest extends TestCase
         $this->assertDatabaseMissing('document_placements', ['document_id' => $dokumen->id, 'owner_id' => $pemilik->id]);
     }
 
+    public function test_editor_tidak_dapat_memindahkan_dokumen_dari_folder_pohon_yang_tidak_dibagikan(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folderTerbagi = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folderTertutup = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folderTerbagi->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+        $dokumen = Document::factory()->create(['uploaded_by' => $editor->id]);
+        DocumentPlacement::create([
+            'owner_id' => $pemilik->id,
+            'document_id' => $dokumen->id,
+            'folder_id' => $folderTertutup->id,
+        ]);
+
+        try {
+            app(DocumentWorkspaceService::class)->moveToRoot($dokumen, $folderTerbagi, $editor);
+            $this->fail('Editor tidak boleh memindahkan dokumen dari folder yang tidak dibagikan.');
+        } catch (ValidationException) {
+            $this->assertDatabaseHas('document_placements', [
+                'owner_id' => $pemilik->id,
+                'document_id' => $dokumen->id,
+                'folder_id' => $folderTertutup->id,
+            ]);
+        }
+    }
+
     public function test_subfolder_dan_rename_oleh_editor_bercauser_editor(): void
     {
         $pemilik = User::factory()->create();

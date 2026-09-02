@@ -115,6 +115,10 @@ final class DocumentWorkspaceService
             ]);
         }
 
+        if ($dariFolder !== null) {
+            $this->pastikanFolderAktifBolehDiedit($dariFolder, $pelaku);
+        }
+
         // `null` = pohon pelaku sendiri (owner self-service); non-null = pohon
         // spesifik yang folder asalnya berada di dalamnya (editor).
         $ownerId = $dariFolder?->owner_id ?? $pelaku->id;
@@ -127,6 +131,12 @@ final class DocumentWorkspaceService
 
         if ($placement === null) {
             return;
+        }
+
+        if ($dariFolder !== null && $placement->folder_id !== $dariFolder->id) {
+            throw ValidationException::withMessages([
+                'folder' => 'Folder tidak tersedia.',
+            ]);
         }
 
         $asal = $placement->folder?->name ?? 'Folder Dokumen Saya';

@@ -192,30 +192,64 @@ final class DocumentWorkspaceController extends Controller
     /**
      * Menyimpan daftar unit dan orang yang boleh melihat sebuah folder.
      *
-     * Dijaga ability `share` — hanya pemilik folder, penerima share tidak
-     * boleh membagikan ulang (Fase 1).
+     * Dijaga ability `share` — pemilik folder ATAU editor pada folder yang
+     * belum dikunci (Fase 2). Editor yang lolos menyinkronkan ACL persis
+     * seperti pemilik. `sharing_restricted` hanya boleh diubah pemilik
+     * (`restrictSharing`); dari non-pemilik ia diabaikan diam-diam, bukan 403.
+     *
+     * Menerima dua bentuk payload: Fase 1 (`unit_ids`/`shared_user_ids` —
+     * semua jadi `viewer`) dan Fase 2 (`units`/`users` berisi `{id, role}`).
      */
     public function share(Request $request, DocumentFolder $folder, FolderAccessWriter $akses, ActivityLogService $aktivitas): RedirectResponse
     {
         $this->authorize('share', $folder);
 
         $data = $request->validate([
+            'units' => ['array'],
+            'units.*.id' => ['integer', Rule::exists('units', 'id')->where('is_active', true)],
+            'units.*.role' => ['in:viewer,editor'],
+            'users' => ['array'],
+            'users.*.id' => ['integer', Rule::exists('users', 'id')->where('is_active', true)],
+            'users.*.role' => ['in:viewer,editor'],
             'unit_ids' => ['array'],
             'unit_ids.*' => ['integer', Rule::exists('units', 'id')->where('is_active', true)],
             'shared_user_ids' => ['array'],
             'shared_user_ids.*' => ['integer', Rule::exists('users', 'id')->where('is_active', true)],
+            'sharing_restricted' => ['boolean'],
         ]);
 
-        $perubahan = $akses->sinkron(
-            $folder,
-            array_map(intval(...), $data['unit_ids'] ?? []),
-            array_map(intval(...), $data['shared_user_ids'] ?? []),
-            $request->user(),
-        );
+        $unitMap = $this->petakanPeran($data['units'] ?? null, $data['unit_ids'] ?? null);
+        $userMap = $this->petakanPeran($data['users'] ?? null, $data['shared_user_ids'] ?? null);
+
+        $perubahan = $akses->sinkron($folder, $unitMap, $userMap, $request->user());
+
+        if (array_key_exists('sharing_restricted', $data) && $request->user()->can('restrictSharing', $folder)) {
+            $folder->update(['sharing_restricted' => (bool) $data['sharing_restricted']]);
+        }
 
         $this->catatPerubahanAksesFolder($aktivitas, $folder, $request->user(), $perubahan);
 
         return back()->with('success', 'Akses folder berhasil diperbarui.');
+    }
+
+    /**
+     * Menormalkan bentuk payload apa pun menjadi map `id => role`. Bentuk baru
+     * (`[{id, role}]`) memakai role yang dikirim; bentuk lama (`int[]`) selalu
+     * `viewer`.
+     *
+     * @param  list<array{id: int|string, role?: string}>|null  $berperan
+     * @param  list<int|string>|null  $legacy
+     * @return array<int, string>
+     */
+    private function petakanPeran(?array $berperan, ?array $legacy): array
+    {
+        if (is_array($berperan)) {
+            return collect($berperan)
+                ->mapWithKeys(fn (array $item): array => [(int) $item['id'] => $item['role'] ?? 'viewer'])
+                ->all();
+        }
+
+        return array_fill_keys(array_map(intval(...), $legacy ?? []), 'viewer');
     }
 
     /**

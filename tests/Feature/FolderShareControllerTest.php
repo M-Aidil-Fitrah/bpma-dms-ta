@@ -379,4 +379,84 @@ final class FolderShareControllerTest extends TestCase
                 ->where('access_level', 'owner')
                 ->where('sharing_restricted', false));
     }
+
+    public function test_editor_boleh_menambah_penerima_baru(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $baru = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $this->actingAs($editor)
+            ->put("/folders/{$folder->id}/share", [
+                'users' => [
+                    ['id' => $editor->id, 'role' => 'editor'],
+                    ['id' => $baru->id, 'role' => 'viewer'],
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('document_folder_shares', [
+            'folder_id' => $folder->id,
+            'user_id' => $baru->id,
+            'role' => 'viewer',
+        ]);
+    }
+
+    public function test_editor_ditolak_share_saat_dikunci(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create(['sharing_restricted' => true]);
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $this->actingAs($editor)
+            ->put("/folders/{$folder->id}/share", ['users' => []])
+            ->assertForbidden();
+    }
+
+    public function test_editor_tidak_bisa_mengubah_kunci_pembagian(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create(['sharing_restricted' => false]);
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $this->actingAs($editor)
+            ->put("/folders/{$folder->id}/share", [
+                'users' => [['id' => $editor->id, 'role' => 'editor']],
+                'sharing_restricted' => true,
+            ])
+            ->assertRedirect();
+
+        $this->assertFalse($folder->fresh()->sharing_restricted);
+    }
+
+    public function test_owner_boleh_mengunci_pembagian(): void
+    {
+        $this->actingAs($this->owner)
+            ->put("/folders/{$this->folder->id}/share", [
+                'sharing_restricted' => true,
+                'users' => [],
+            ])
+            ->assertRedirect();
+
+        $this->assertTrue($this->folder->fresh()->sharing_restricted);
+    }
+
+    public function test_payload_legacy_masih_diterima(): void
+    {
+        $baru = User::factory()->create();
+
+        $this->actingAs($this->owner)
+            ->put("/folders/{$this->folder->id}/share", ['shared_user_ids' => [$baru->id]])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('document_folder_shares', [
+            'folder_id' => $this->folder->id,
+            'user_id' => $baru->id,
+            'role' => 'viewer',
+        ]);
+    }
 }

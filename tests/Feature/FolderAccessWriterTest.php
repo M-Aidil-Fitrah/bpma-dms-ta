@@ -68,4 +68,37 @@ final class FolderAccessWriterTest extends TestCase
             'granted_by' => $pemberiPertama->id,
         ]);
     }
+
+    public function test_menyimpan_role_editor_untuk_pengguna(): void
+    {
+        $pemilik = User::factory()->create();
+        $target = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+
+        app(FolderAccessWriter::class)->sinkron($folder, [], [$target->id => 'editor'], $pemilik);
+
+        $this->assertDatabaseHas('document_folder_shares', [
+            'folder_id' => $folder->id,
+            'user_id' => $target->id,
+            'role' => 'editor',
+        ]);
+    }
+
+    public function test_perubahan_role_viewer_ke_editor_tidak_menulis_ulang_granted_by(): void
+    {
+        $pemilik = User::factory()->create();
+        $editorLain = User::factory()->create();
+        $target = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($target->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
+
+        app(FolderAccessWriter::class)->sinkron($folder, [], [$target->id => 'editor'], $editorLain);
+
+        $this->assertDatabaseHas('document_folder_shares', [
+            'folder_id' => $folder->id,
+            'user_id' => $target->id,
+            'role' => 'editor',
+            'granted_by' => $pemilik->id,
+        ]);
+    }
 }

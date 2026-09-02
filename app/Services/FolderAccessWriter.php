@@ -19,21 +19,54 @@ final class FolderAccessWriter
     public function __construct(private readonly PivotAccessSync $sync) {}
 
     /**
-     * @param  list<int>  $unitIds
-     * @param  list<int>  $penerimaIds
+     * `$unit`/`$pengguna` boleh berupa daftar id polos (`list<int>` — tiap id
+     * diperlakukan sebagai `role='viewer'`, kompat Fase 1) atau map
+     * `array<int, string>` id → `'viewer'|'editor'` (Fase 2). Keduanya
+     * dinormalisasi ke map id → role sebelum diteruskan ke `PivotAccessSync`.
+     *
+     * @param  list<int>|array<int, string>  $unit
+     * @param  list<int>|array<int, string>  $pengguna
      */
     public function sinkron(
         DocumentFolder $folder,
-        array $unitIds,
-        array $penerimaIds,
+        array $unit,
+        array $pengguna,
         User $oleh,
     ): DocumentAccessChanges {
+        $unitRoles = $this->normalisasiPeran($unit);
+        $penggunaRoles = $this->normalisasiPeran($pengguna);
+
         return $this->sync->sinkron(
             $folder->targetUnits(),
             $folder->sharedUsers(),
-            $unitIds,
-            $penerimaIds,
+            array_keys($unitRoles),
+            array_keys($penggunaRoles),
             $oleh,
+            $unitRoles,
+            $penggunaRoles,
         );
+    }
+
+    /**
+     * @param  list<int>|array<int, string>  $input
+     * @return array<int, string>
+     */
+    private function normalisasiPeran(array $input): array
+    {
+        if ($input === []) {
+            return [];
+        }
+
+        if (array_is_list($input)) {
+            return array_fill_keys(array_map(intval(...), $input), 'viewer');
+        }
+
+        $hasil = [];
+
+        foreach ($input as $id => $role) {
+            $hasil[(int) $id] = $role;
+        }
+
+        return $hasil;
     }
 }

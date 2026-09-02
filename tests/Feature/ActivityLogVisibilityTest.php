@@ -12,6 +12,7 @@ use App\Models\DocumentFolder;
 use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\ActivityLogQuery;
 use App\Services\ActivityLogService;
 use App\Services\DocumentWorkspaceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -205,6 +206,56 @@ final class ActivityLogVisibilityTest extends TestCase
         $this->get("/documents/{$terbaru->id}")
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->has('riwayat', 27));
+    }
+
+    public function test_pemilik_folder_melihat_aktivitas_editor_di_foldernya(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create(['name' => 'Arsip Editor', 'name_normalized' => 'arsip editor']);
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        app(DocumentWorkspaceService::class)->renameFolder($folder, $editor, 'X');
+
+        $terlihat = collect(app(ActivityLogQuery::class)->latestFor($pemilik, 20));
+
+        $this->assertTrue(
+            $terlihat->contains(fn ($baris) => str_contains($baris->deskripsi, 'Nama folder diubah') || $baris->subjek === 'X'),
+            'pemilik folder harus melihat rename yang dilakukan editor pada foldernya',
+        );
+    }
+
+    public function test_penerima_share_bukan_pemilik_tidak_melihat_aktivitas_pemilik(): void
+    {
+        $pemilik = User::factory()->create();
+        $viewer = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create(['name' => 'Arsip Milik', 'name_normalized' => 'arsip milik']);
+        $folder->sharedUsers()->attach($viewer->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
+
+        app(DocumentWorkspaceService::class)->renameFolder($folder, $pemilik, 'Diubah Pemilik');
+
+        $terlihat = collect(app(ActivityLogQuery::class)->latestFor($viewer, 20));
+
+        $this->assertFalse(
+            $terlihat->contains(fn ($baris) => str_contains($baris->deskripsi, 'Nama folder diubah')),
+            'penerima share yang bukan pemilik tidak boleh melihat aksi folder pemilik',
+        );
+    }
+
+    public function test_pengguna_tak_terkait_tidak_melihat_aktivitas_folder_orang_lain(): void
+    {
+        $pemilik = User::factory()->create();
+        $orang = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create(['name' => 'Arsip Tertutup', 'name_normalized' => 'arsip tertutup']);
+
+        app(DocumentWorkspaceService::class)->renameFolder($folder, $pemilik, 'Rahasia');
+
+        $terlihat = collect(app(ActivityLogQuery::class)->latestFor($orang, 20));
+
+        $this->assertFalse(
+            $terlihat->contains(fn ($baris) => str_contains($baris->deskripsi, 'Nama folder diubah')),
+            'pengguna tak terkait tidak boleh melihat aktivitas folder orang lain',
+        );
     }
 
     private function hitungQueryRiwayat(): int

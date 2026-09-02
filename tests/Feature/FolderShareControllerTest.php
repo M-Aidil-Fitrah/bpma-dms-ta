@@ -459,4 +459,23 @@ final class FolderShareControllerTest extends TestCase
             'role' => 'viewer',
         ]);
     }
+
+    public function test_reshare_oleh_editor_tercatat_atas_nama_editor(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $baru = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $this->actingAs($editor)->put("/folders/{$folder->id}/share", [
+            'users' => [['id' => $editor->id, 'role' => 'editor'], ['id' => $baru->id, 'role' => 'viewer']],
+        ]);
+
+        $this->assertDatabaseHas('activity_log', [
+            'subject_type' => DocumentFolder::class,
+            'subject_id' => $folder->id,
+            'causer_id' => $editor->id,
+        ]);
+    }
 }

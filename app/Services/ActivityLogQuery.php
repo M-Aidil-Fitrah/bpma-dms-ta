@@ -9,6 +9,7 @@ use App\Enums\ActivityLogName;
 use App\Http\Requests\ActivityLogIndexRequest;
 use App\Http\Requests\Admin\ActivityLogIndexRequest as AdminActivityLogIndexRequest;
 use App\Models\Document;
+use App\Models\DocumentFolder;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -120,7 +121,21 @@ final class ActivityLogQuery
                             ActivityLogName::FolderShare->value,
                             ActivityLogName::FolderUnit->value,
                         ])
-                        ->where('activity_log.causer_id', $user->id);
+                        ->where(function (Builder $siapa) use ($user): void {
+                            $siapa->where('activity_log.causer_id', $user->id)
+                                // Fase 2: pemilik folder melihat SEMUA aktivitas pada folder
+                                // miliknya, termasuk yang dilakukan Editor. Dibatasi ke subjek
+                                // folder yang benar-benar dimiliki $user, jadi ruang kerja
+                                // pengguna lain tidak bocor dan penerima share (yang bukan
+                                // pemilik) tetap hanya melihat aksinya sendiri.
+                                ->orWhere(function (Builder $folderMilik) use ($user): void {
+                                    $folderMilik
+                                        ->where('activity_log.subject_type', (new DocumentFolder)->getMorphClass())
+                                        ->whereIn('activity_log.subject_id', DocumentFolder::query()
+                                            ->where('owner_id', $user->id)
+                                            ->select('document_folders.id'));
+                                });
+                        });
                 });
         });
     }

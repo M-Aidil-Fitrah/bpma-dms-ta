@@ -333,4 +333,26 @@ final class DocumentWorkspaceTest extends TestCase
 
         $this->assertDatabaseMissing('document_placements', ['document_id' => $dokumen->id, 'owner_id' => $pemilik->id]);
     }
+
+    public function test_subfolder_dan_rename_oleh_editor_bercauser_editor(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $induk = DocumentFolder::factory()->for($pemilik, 'owner')->create(['name' => 'Induk', 'name_normalized' => 'induk']);
+        $induk->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $sub = app(DocumentWorkspaceService::class)->createFolder($editor, $induk, 'Sub');
+        app(DocumentWorkspaceService::class)->renameFolder($induk, $editor, 'IndukBaru');
+
+        $this->assertDatabaseHas('activity_log', [
+            'subject_type' => DocumentFolder::class,
+            'subject_id' => $sub->id,
+            'causer_id' => $editor->id,
+        ]);
+        $this->assertDatabaseHas('activity_log', [
+            'subject_type' => DocumentFolder::class,
+            'subject_id' => $induk->id,
+            'causer_id' => $editor->id,
+        ]);
+    }
 }

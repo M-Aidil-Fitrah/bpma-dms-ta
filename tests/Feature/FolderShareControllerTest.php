@@ -207,8 +207,8 @@ final class FolderShareControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Workspace/Index')
                 ->where('folders.0.id', $subfolder->id)
-                ->where('folders.0.unit_ids', [])
-                ->where('folders.0.shared_users', []));
+                ->where('folders.0.unit_entries', [])
+                ->where('folders.0.user_entries', []));
 
         // Sebaliknya, pemilik tetap menerimanya — itu isi awal dialog Bagikan.
         $this->actingAs($this->owner)
@@ -216,8 +216,8 @@ final class FolderShareControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Workspace/Index')
-                ->where('folders.0.unit_ids', [$unitLain->id])
-                ->where('folders.0.shared_users.0.id', $orangLain->id));
+                ->where('folders.0.unit_entries', [['id' => $unitLain->id, 'role' => 'viewer']])
+                ->where('folders.0.user_entries.0.id', $orangLain->id));
     }
 
     /**
@@ -477,5 +477,81 @@ final class FolderShareControllerTest extends TestCase
             'subject_id' => $folder->id,
             'causer_id' => $editor->id,
         ]);
+    }
+
+    public function test_editor_menerima_entri_penerima_dengan_role(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $rekan = User::factory()->create();
+        $unit = Unit::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+        $folder->sharedUsers()->attach($rekan->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
+        $folder->targetUnits()->attach($unit->id, ['role' => 'editor', 'added_by' => $pemilik->id]);
+
+        $sub = DocumentFolder::factory()->for($pemilik, 'owner')->create(['parent_id' => $folder->id]);
+        $sub->sharedUsers()->attach($rekan->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
+
+        // Editor yang mampu re-share membuka folder induk: kartu subfolder
+        // membawa daftar penerima BESERTA role-nya, sebab `share()` bersifat
+        // full-replace — tanpa daftar ini editor akan menghapus penerima lama.
+        $this->actingAs($editor)
+            ->get("/folders/{$folder->id}")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Workspace/Index')
+                ->where('folders.0.id', $sub->id)
+                ->where('folders.0.user_entries', fn ($entries) => collect($entries)->contains(
+                    fn ($entry) => $entry['id'] === $rekan->id && $entry['role'] === 'viewer',
+                ))
+                ->has('folders.0.unit_entries')
+                ->where('folders.0.sharing_restricted', false)
+                ->where('unit_options', fn ($opts) => count($opts) > 0));
+    }
+
+    public function test_viewer_tidak_menerima_entri_atau_unit_options(): void
+    {
+        $pemilik = User::factory()->create();
+        $penonton = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($penonton->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
+        $sub = DocumentFolder::factory()->for($pemilik, 'owner')->create(['parent_id' => $folder->id]);
+        $sub->sharedUsers()->attach($penonton->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
+
+        $this->actingAs($penonton)
+            ->get("/folders/{$folder->id}")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('access_level', 'viewer')
+                ->where('unit_options', [])
+                ->where('folders', fn ($folders) => count($folders) > 0 && collect($folders)->every(
+                    fn ($item) => $item['unit_entries'] === [] && $item['user_entries'] === [],
+                )));
+    }
+
+    public function test_owner_entri_per_kartu_tidak_berubah_bentuknya(): void
+    {
+        $rekan = User::factory()->create();
+        $unit = Unit::factory()->create();
+        $sub = DocumentFolder::create([
+            'owner_id' => $this->owner->id,
+            'parent_id' => $this->folder->id,
+            'name' => 'Sub',
+            'name_normalized' => 'sub',
+        ]);
+        $sub->sharedUsers()->attach($rekan->id, ['role' => 'editor', 'granted_by' => $this->owner->id]);
+        $sub->targetUnits()->attach($unit->id, ['role' => 'viewer', 'added_by' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('folders.show', $this->folder))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Workspace/Index')
+                ->where('folders.0.id', $sub->id)
+                ->where('folders.0.unit_entries', [['id' => $unit->id, 'role' => 'viewer']])
+                ->where('folders.0.user_entries.0.id', $rekan->id)
+                ->where('folders.0.user_entries.0.role', 'editor')
+                ->where('folders.0.sharing_restricted', false));
     }
 }

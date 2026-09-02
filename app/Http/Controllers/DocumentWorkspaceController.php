@@ -340,14 +340,10 @@ final class DocumentWorkspaceController extends Controller
         int $userId,
     ): Response {
         $user = $request->user();
-        // Satu folder mewakili seluruh koleksinya: Fase 1 tidak mengizinkan
-        // membuat subfolder di dalam folder orang lain, jadi satu pohon
-        // folder selalu berpemilik tunggal.
-        $konteksPemilik = $folder === null || $folder->owner_id === $user->id;
-
-        // Konsep terpisah dari `$konteksPemilik`: level akses menentukan
-        // tujuan "pindahkan dokumen" dan tampilnya tombol Bagikan bagi
-        // editor, bukan data ringkasan share (yang tetap owner-only).
+        // Level akses menentukan tujuan "pindahkan dokumen", tampilnya tombol
+        // Bagikan, dan — sejak Fase 2 — apakah daftar penerima tiap kartu
+        // folder ikut dikirim: pemilik ATAU editor yang mampu re-share
+        // menerimanya, penonton (viewer) tetap tidak.
         $accessLevel = ($folder === null || $folder->owner_id === $user->id)
             ? 'owner'
             : ($folder->terlihatSebagaiEditorOleh($user) ? 'editor' : 'viewer');
@@ -358,20 +354,23 @@ final class DocumentWorkspaceController extends Controller
             default => collect(),
         };
 
-        if ($konteksPemilik) {
+        if ($accessLevel !== 'viewer') {
             // Dimuat sekaligus untuk seluruh folder di halaman ini: dialog
             // share menampilkan ringkasan akses tiap kartu folder, dan
             // memuatnya per kartu berarti dua kueri tambahan per baris.
+            // Pemilik maupun editor yang mampu re-share memakainya; penonton
+            // tidak.
             $folders->load(['targetUnits:id,nama', 'sharedUsers:id,name,jabatan_id,unit_id', 'sharedUsers.jabatan:id,nama', 'sharedUsers.unit:id,nama']);
         }
 
         // Dipakai `FolderSharePicker` lewat `WorkspaceFolderCard` —
         // mengikuti pola `AccessMechanismPicker`, yang juga menerima daftar
         // unit sebagai prop halaman, bukan dari shared Inertia props. Dialog
-        // Bagikan owner-only, jadi seluruh pohon unit tidak perlu dibaca
-        // untuk penerima share. Tetap array kosong (bukan null/absen) supaya
-        // bentuk propnya sama untuk kedua peran.
-        $opsiUnit = $konteksPemilik
+        // Bagikan terbuka untuk pemilik dan editor yang mampu re-share, jadi
+        // seluruh pohon unit dibaca untuk keduanya; untuk penonton tidak
+        // perlu. Tetap array kosong (bukan null/absen) supaya bentuk propnya
+        // sama untuk semua peran.
+        $opsiUnit = $accessLevel !== 'viewer'
             ? Unit::query()->active()->orderBy('nama')->get(['id', 'nama', 'parent_id'])
                 ->map(fn (Unit $unit): array => ['id' => $unit->id, 'nama' => $unit->nama, 'parent_id' => $unit->parent_id])
                 ->all()
@@ -384,19 +383,27 @@ final class DocumentWorkspaceController extends Controller
             'folders' => $folders->map(fn (DocumentFolder $item): array => [
                 'id' => $item->id,
                 'name' => $item->name,
-                // Ringkasan akses hanya untuk pemilik — dialog Bagikan memang
-                // owner-only, tapi datanya sendiri juga tidak boleh ikut
-                // terkirim ke penerima share: itu daftar SIAPA SAJA yang
-                // diberi akses, bukan informasi yang berhak dilihat penerima.
-                // Tetap array kosong (bukan null/absen) supaya bentuk propnya
-                // sama untuk kedua peran.
-                'unit_ids' => $konteksPemilik ? $item->targetUnits->pluck('id')->all() : [],
-                'shared_users' => $konteksPemilik ? $item->sharedUsers->map(fn (User $u): array => [
-                    'id' => $u->id,
-                    'nama' => $u->name,
-                    'jabatan' => $u->jabatan?->nama,
-                    'unit' => $u->unit?->nama,
-                ])->all() : [],
+                // Daftar penerima tiap kartu — beserta role, sebab `share()`
+                // bersifat full-replace: editor yang mampu re-share harus
+                // menyimpan kembali daftar utuh atau penerima lama terhapus.
+                // Dikirim ke pemilik DAN editor yang mampu re-share; penonton
+                // tetap menerima array kosong (bukan null/absen) supaya bentuk
+                // propnya sama untuk semua peran.
+                'unit_entries' => $accessLevel !== 'viewer'
+                    ? $item->targetUnits->map(fn (Unit $u): array => ['id' => $u->id, 'role' => $u->pivot->role])->all()
+                    : [],
+                'user_entries' => $accessLevel !== 'viewer'
+                    ? $item->sharedUsers->map(fn (User $u): array => [
+                        'id' => $u->id,
+                        'nama' => $u->name,
+                        'jabatan' => $u->jabatan?->nama,
+                        'unit' => $u->unit?->nama,
+                        'role' => $u->pivot->role,
+                    ])->all()
+                    : [],
+                // Per kartu supaya 13b bisa menyembunyikan tombol Bagikan
+                // subfolder yang dikunci; bukan data sensitif.
+                'sharing_restricted' => (bool) $item->sharing_restricted,
             ])->all(),
             // Tujuan "pindahkan dokumen ke folder": pemilik memindahkan ke
             // foldernya sendiri, editor ke pohon folder milik pemilik yang

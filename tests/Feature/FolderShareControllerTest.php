@@ -343,4 +343,40 @@ final class FolderShareControllerTest extends TestCase
             'document_id' => $doc->id,
         ]);
     }
+
+    public function test_prop_access_level_editor(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $this->actingAs($editor)->get("/folders/{$folder->id}")
+            ->assertInertia(fn ($page) => $page
+                ->where('access_level', 'editor')
+                ->where('sharing_restricted', false));
+    }
+
+    public function test_folder_options_editor_berisi_folder_pohon_pemilik(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        DocumentFolder::factory()->for($pemilik, 'owner')->create(['name' => 'Folder pemilik lain']);
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+        DocumentFolder::factory()->for($editor, 'owner')->create(['name' => 'Folder editor sendiri']);
+
+        $this->actingAs($editor)->get("/folders/{$folder->id}")
+            ->assertInertia(fn ($page) => $page
+                ->where('folder_options', fn ($opts) => collect($opts)->pluck('name')->contains('Folder pemilik lain')
+                    && ! collect($opts)->pluck('name')->contains('Folder editor sendiri')));
+    }
+
+    public function test_prop_access_level_owner(): void
+    {
+        $this->actingAs($this->owner)->get(route('folders.show', $this->folder))
+            ->assertInertia(fn ($page) => $page
+                ->where('access_level', 'owner')
+                ->where('sharing_restricted', false));
+    }
 }

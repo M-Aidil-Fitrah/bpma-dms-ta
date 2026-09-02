@@ -311,6 +311,19 @@ final class DocumentWorkspaceController extends Controller
         // folder selalu berpemilik tunggal.
         $konteksPemilik = $folder === null || $folder->owner_id === $user->id;
 
+        // Konsep terpisah dari `$konteksPemilik`: level akses menentukan
+        // tujuan "pindahkan dokumen" dan tampilnya tombol Bagikan bagi
+        // editor, bukan data ringkasan share (yang tetap owner-only).
+        $accessLevel = ($folder === null || $folder->owner_id === $user->id)
+            ? 'owner'
+            : ($folder->terlihatSebagaiEditorOleh($user) ? 'editor' : 'viewer');
+
+        $folderOptions = match ($accessLevel) {
+            'owner' => DocumentFolder::query()->where('owner_id', $userId)->notTrashed()->orderBy('name')->get(['id', 'name']),
+            'editor' => DocumentFolder::query()->where('owner_id', $folder->owner_id)->notTrashed()->orderBy('name')->get(['id', 'name']),
+            default => collect(),
+        };
+
         if ($konteksPemilik) {
             // Dimuat sekaligus untuk seluruh folder di halaman ini: dialog
             // share menampilkan ringkasan akses tiap kartu folder, dan
@@ -351,17 +364,14 @@ final class DocumentWorkspaceController extends Controller
                     'unit' => $u->unit?->nama,
                 ])->all() : [],
             ])->all(),
-            // Tetap folder milik VIEWER, bukan milik pemilik folder yang
-            // sedang dibuka: daftar ini adalah tujuan "pindahkan dokumen ke
-            // folder", dan penerima share hanya boleh memindahkan ke
-            // foldernya sendiri.
-            'folder_options' => DocumentFolder::query()
-                ->where('owner_id', $userId)
-                ->notTrashed()
-                ->orderBy('name')
-                ->get(['id', 'name'])
+            // Tujuan "pindahkan dokumen ke folder": pemilik memindahkan ke
+            // foldernya sendiri, editor ke pohon folder milik pemilik yang
+            // sedang dibuka, viewer tidak ke mana-mana (daftar kosong).
+            'folder_options' => $folderOptions
                 ->map(fn (DocumentFolder $item): array => ['id' => $item->id, 'name' => $item->name])
                 ->all(),
+            'access_level' => $accessLevel,
+            'sharing_restricted' => $folder?->sharing_restricted ?? false,
             'unit_options' => $opsiUnit,
             'dokumen' => $listing->paginasi($queryDasarDokumen, $request, $user, $this->pemetaanDenganBintang($user)),
             'filter' => $request->filterAktif(),

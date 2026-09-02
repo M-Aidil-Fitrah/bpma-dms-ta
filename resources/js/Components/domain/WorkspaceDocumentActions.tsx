@@ -206,7 +206,7 @@ function DialogPindahkan({
         };
 
         if (targetFolderId === 'root') {
-            router.delete(`/documents/${document.id}/folder`, options);
+            router.delete(`/documents/${document.id}/folder`, { ...options, data: { folder_id: currentFolderId } });
 
             return;
         }

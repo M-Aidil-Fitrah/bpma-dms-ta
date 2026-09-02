@@ -27,6 +27,12 @@ function petaRole(
     return Object.fromEntries(entries.map((entry) => [entry.id, entry.role]));
 }
 
+function tanpaRole(
+    entries: readonly (PenggunaTerpilih & { role: 'viewer' | 'editor' })[],
+): PenggunaTerpilih[] {
+    return entries.map(({ id, nama, jabatan, unit }) => ({ id, nama, jabatan, unit }));
+}
+
 /**
  * Dialog bagikan folder — dua bagian (unit + orang tertentu), tanpa
  * `is_private`/`is_shared_to_all`/jenjang jabatan seperti pada
@@ -50,9 +56,7 @@ export function FolderSharePicker({
 }: FolderSharePickerProps) {
     const { t } = useTranslation(['workspace', 'common']);
     const [units, setUnits] = useState<number[]>(() => unitEntries.map((entry) => entry.id));
-    const [pengguna, setPengguna] = useState<PenggunaTerpilih[]>(() =>
-        userEntries.map(({ role, ...sisa }) => sisa),
-    );
+    const [pengguna, setPengguna] = useState<PenggunaTerpilih[]>(() => tanpaRole(userEntries));
     const [unitRoles, setUnitRoles] = useState<Record<number, 'viewer' | 'editor'>>(() =>
         petaRole(unitEntries),
     );
@@ -64,7 +68,7 @@ export function FolderSharePicker({
     useEffect(() => {
         if (terbuka) {
             setUnits(unitEntries.map((entry) => entry.id));
-            setPengguna(userEntries.map(({ role, ...sisa }) => sisa));
+            setPengguna(tanpaRole(userEntries));
             setUnitRoles(petaRole(unitEntries));
             setUserRoles(petaRole(userEntries));
             setDikunci(sharingRestricted);

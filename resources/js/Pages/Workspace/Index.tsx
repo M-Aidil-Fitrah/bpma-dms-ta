@@ -17,13 +17,18 @@ import { Input } from '@/Components/ui/Input';
 import { Modal } from '@/Components/ui/Modal';
 import { useDocumentFilters, type FilterDokumen } from '@/hooks/useDocumentFilters';
 import { AppLayout } from '@/Layouts/AppLayout';
-import { wajibPenggunaTerautentikasi } from '@/types/auth';
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import { ChevronRight, FileUp, Folder, FolderPlus, Plus, SearchX } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
-interface FolderItem { id: number; name: string; unit_ids: number[]; shared_users: PenggunaTerpilih[]; }
+interface FolderItem {
+    id: number;
+    name: string;
+    unit_entries: { id: number; role: 'viewer' | 'editor' }[];
+    user_entries: (PenggunaTerpilih & { role: 'viewer' | 'editor' })[];
+    sharing_restricted: boolean;
+}
 // Sengaja tidak memperluas `FolderItem`: server hanya mengirim ringkasan
 // akses untuk folder di dalam daftar `folders`, tidak untuk folder yang
 // sedang dibuka.
@@ -38,15 +43,17 @@ interface Props {
     unit_options: UnitPilihan[];
     dokumen: Pagination.Paginated<App.Data.DocumentListData>;
     filter: FilterDokumen;
+    access_level: 'owner' | 'editor' | 'viewer';
+    sharing_restricted: boolean;
 }
 
-export default function Index({ title, folder, breadcrumbs, folders, folder_options: folderOptions, unit_options: unitOptions, dokumen, filter }: Props) {
+export default function Index({ title, folder, breadcrumbs, folders, folder_options: folderOptions, unit_options: unitOptions, dokumen, filter, access_level: accessLevel }: Props) {
     const { t } = useTranslation(['workspace', 'common', 'nav', 'documentBrowse']);
     // Akar "Dokumen Saya" (`folder === null`) selalu milik sendiri; di dalam
-    // sebuah folder, penerima share hanya boleh membaca — semua aksi tulis di
-    // halaman ini disembunyikan darinya (backend tetap yang menegakkannya).
-    const penggunaSaatIni = wajibPenggunaTerautentikasi(usePage().props);
-    const isOwner = folder === null || folder.owner_id === penggunaSaatIni.id;
+    // sebuah folder, `viewer` hanya boleh membaca — semua aksi tulis di halaman
+    // ini disembunyikan darinya, sedangkan `editor` boleh menulis (backend
+    // tetap yang menegakkannya).
+    const canWrite = accessLevel !== 'viewer';
     const alamat = folder === null ? '/documents/mine' : `/folders/${folder.id}`;
     const { ubah, urutkan, ubahTampilan, bersihkan } = useDocumentFilters(filter, alamat);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -68,7 +75,7 @@ export default function Index({ title, folder, breadcrumbs, folders, folder_opti
             // Kasus akar diganti kunci terjemahan; nama folder tetap apa
             // adanya karena itu benar-benar data, bukan salinan antarmuka.
             title={folder === null ? t('nav:item.dokumenSaya') : title}
-            actions={isOwner ? (
+            actions={canWrite ? (
                 <Dropdown
                     trigger={<Button icon={Plus} size="sm"><span className="hidden sm:inline">{t('workspace:index.tombolBaru.label')}</span><span className="sr-only sm:hidden">{t('workspace:index.tombolBaru.srLabel')}</span></Button>}
                     panelClassName="w-56"
@@ -101,14 +108,14 @@ export default function Index({ title, folder, breadcrumbs, folders, folder_opti
                 </nav>}
 
                 {semuaKosong ? (
-                    <EmptyState icon={Folder} title={t('workspace:index.kosong.judul')} description={t('workspace:index.kosong.deskripsi')} action={isOwner ? <Link href="/documents/create"><Button>{t('workspace:index.kosong.tombolUnggah')}</Button></Link> : undefined} />
+                    <EmptyState icon={Folder} title={t('workspace:index.kosong.judul')} description={t('workspace:index.kosong.deskripsi')} action={canWrite ? <Link href="/documents/create"><Button>{t('workspace:index.kosong.tombolUnggah')}</Button></Link> : undefined} />
                 ) : (
                     <div className="space-y-5">
                         {folders.length > 0 && (
                             <section>
                                 <h2 className="mb-3 text-sm font-semibold text-ink">{t('workspace:index.bagian.folder')}</h2>
                                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                                    {folders.map((item) => <WorkspaceFolderCard key={item.id} folder={item} isOwner={isOwner} unitOptions={unitOptions} />)}
+                                    {folders.map((item) => <WorkspaceFolderCard key={item.id} folder={item} accessLevel={accessLevel} unitOptions={unitOptions} />)}
                                 </div>
                             </section>
                         )}
@@ -132,14 +139,14 @@ export default function Index({ title, folder, breadcrumbs, folders, folder_opti
                                             <button type="button" onClick={bersihkan} className="text-sm font-medium text-brand-700 hover:text-brand-800">
                                                 {t('documentBrowse:index.kosong.tanpaHasil.aksi')}
                                             </button>
-                                        ) : isOwner ? (
+                                        ) : canWrite ? (
                                             <Link href="/documents/create"><Button>{t('workspace:index.kosong.tombolUnggah')}</Button></Link>
                                         ) : undefined}
                                     />
                                 ) : filter.tampilan === 'grid' ? (
                                     <DocumentGrid
                                         dokumen={dokumen.data}
-                                        aksi={(item) => <WorkspaceDocumentActions document={item} folderOptions={isOwner ? folderOptions : undefined} currentFolderId={folder?.id ?? null} />}
+                                        aksi={(item) => <WorkspaceDocumentActions document={item} folderOptions={canWrite ? folderOptions : undefined} currentFolderId={folder?.id ?? null} />}
                                     />
                                 ) : (
                                     <>
@@ -148,11 +155,11 @@ export default function Index({ title, folder, breadcrumbs, folders, folder_opti
                                             kunciUrut={filter.urut}
                                             arahUrut={filter.arah}
                                             onSort={urutkan}
-                                            aksi={(item) => <WorkspaceDocumentActions document={item} folderOptions={isOwner ? folderOptions : undefined} currentFolderId={folder?.id ?? null} />}
+                                            aksi={(item) => <WorkspaceDocumentActions document={item} folderOptions={canWrite ? folderOptions : undefined} currentFolderId={folder?.id ?? null} />}
                                         />
                                         <DocumentCardList
                                             dokumen={dokumen.data}
-                                            aksi={(item) => <WorkspaceDocumentActions document={item} folderOptions={isOwner ? folderOptions : undefined} currentFolderId={folder?.id ?? null} />}
+                                            aksi={(item) => <WorkspaceDocumentActions document={item} folderOptions={canWrite ? folderOptions : undefined} currentFolderId={folder?.id ?? null} />}
                                         />
                                     </>
                                 )}

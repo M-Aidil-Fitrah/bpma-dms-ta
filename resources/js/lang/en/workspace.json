@@ -38,7 +38,6 @@
         }
     },
     "shared": {
-        "judulHalaman": "Shared with Me",
         "kosong": {
             "judul": "No folders shared yet",
             "deskripsi": "Folders shared by others with you will appear here."

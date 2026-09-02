@@ -24,7 +24,10 @@ import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface FolderItem { id: number; name: string; unit_ids: number[]; shared_users: PenggunaTerpilih[]; }
-interface CurrentFolder extends FolderItem { parent_id: number | null; owner_id: number; }
+// Sengaja tidak memperluas `FolderItem`: server hanya mengirim ringkasan
+// akses untuk folder di dalam daftar `folders`, tidak untuk folder yang
+// sedang dibuka.
+interface CurrentFolder { id: number; name: string; parent_id: number | null; owner_id: number; }
 interface BreadcrumbItem { label: string; href: string; }
 interface Props {
     title: string;

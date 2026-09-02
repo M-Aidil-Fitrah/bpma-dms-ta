@@ -13,6 +13,7 @@ use App\Models\DocumentPlacement;
 use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\DocumentWorkspaceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -217,6 +218,24 @@ final class FolderShareControllerTest extends TestCase
                 ->component('Workspace/Index')
                 ->where('folders.0.unit_ids', [$unitLain->id])
                 ->where('folders.0.shared_users.0.id', $orangLain->id));
+    }
+
+    /**
+     * `view` melebar menjadi "pemilik ATAU penerima share" saat folder mulai
+     * dibagikan, sehingga memulihkan folder harus dijaga `update` yang tetap
+     * owner-only. Kalau penjagaannya kembali ke `view`, penerima lolos policy
+     * dan hanya tertahan lapisan service — 422, bukan 403.
+     */
+    public function test_penerima_share_tidak_bisa_memulihkan_folder_dari_sampah(): void
+    {
+        $this->folder->sharedUsers()->attach($this->penerima->id, ['granted_by' => $this->owner->id]);
+        app(DocumentWorkspaceService::class)->trashFolder($this->folder, $this->owner);
+
+        $this->actingAs($this->penerima)
+            ->patchJson(route('folders.restore', $this->folder))
+            ->assertForbidden();
+
+        $this->assertNotNull($this->folder->fresh()->trashed_at);
     }
 
     public function test_user_tak_terkait_tidak_bisa_membuka_folder(): void

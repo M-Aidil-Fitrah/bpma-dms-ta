@@ -172,7 +172,10 @@ final class DocumentWorkspaceController extends Controller
 
     public function restoreFolder(Request $request, DocumentFolder $folder, DocumentWorkspaceService $workspace): RedirectResponse
     {
-        $this->authorize('view', $folder);
+        // `update`, bukan `view`: sejak folder bisa dibagikan, `view` juga
+        // benar untuk penerima share — dan memulihkan folder tetap wewenang
+        // pemiliknya saja.
+        $this->authorize('update', $folder);
         $workspace->restoreFolder($folder, $request->user());
 
         return back()->with('success', 'Folder berhasil dipulihkan.');

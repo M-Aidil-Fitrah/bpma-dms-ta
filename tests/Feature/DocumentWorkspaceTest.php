@@ -9,6 +9,7 @@ use App\Enums\AuditEvent;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\DocumentFolder;
+use App\Models\DocumentPlacement;
 use App\Models\Jabatan;
 use App\Models\Unit;
 use App\Models\User;
@@ -285,5 +286,48 @@ final class DocumentWorkspaceTest extends TestCase
 
         $this->expectException(\Illuminate\Validation\ValidationException::class);
         app(DocumentWorkspaceService::class)->renameFolder($folder, $viewer, 'Percobaan');
+    }
+
+    public function test_editor_menaruh_dokumennya_sendiri_ke_folder_pemilik(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+        $dokumen = Document::factory()->create(['uploaded_by' => $editor->id]);
+
+        app(DocumentWorkspaceService::class)->placeDocument($dokumen, $folder, $editor);
+
+        $this->assertDatabaseHas('document_placements', [
+            'document_id' => $dokumen->id,
+            'folder_id' => $folder->id,
+            'owner_id' => $pemilik->id,
+        ]);
+    }
+
+    public function test_editor_tidak_bisa_menaruh_dokumen_orang_lain(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+        $dokumen = Document::factory()->create(['uploaded_by' => $pemilik->id]);
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        app(DocumentWorkspaceService::class)->placeDocument($dokumen, $folder, $editor);
+    }
+
+    public function test_editor_memindahkan_dokumennya_ke_akar_pohon_pemilik(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+        $dokumen = Document::factory()->create(['uploaded_by' => $editor->id]);
+        DocumentPlacement::create(['owner_id' => $pemilik->id, 'document_id' => $dokumen->id, 'folder_id' => $folder->id]);
+
+        app(DocumentWorkspaceService::class)->moveToRoot($dokumen, $folder, $editor);
+
+        $this->assertDatabaseMissing('document_placements', ['document_id' => $dokumen->id, 'owner_id' => $pemilik->id]);
     }
 }

@@ -75,19 +75,22 @@ final class DocumentWorkspaceService
         );
     }
 
-    public function placeDocument(Document $document, DocumentFolder $folder, User $owner): void
+    public function placeDocument(Document $document, DocumentFolder $folder, User $pelaku): void
     {
-        $this->pastikanFolderAktifMilik($folder, $owner);
+        $this->pastikanFolderAktifBolehDiedit($folder, $pelaku);
 
-        if ($document->uploaded_by !== $owner->id) {
+        if ($document->uploaded_by !== $pelaku->id) {
             throw ValidationException::withMessages([
-                'document' => 'Hanya dokumen yang Anda unggah yang dapat dimasukkan ke folder Dokumen Saya.',
+                'document' => 'Hanya dokumen yang Anda unggah yang dapat dimasukkan ke folder ini.',
             ]);
         }
 
+        // Placement milik POHON folder (§3.1, Google Drive): editor menaruh
+        // dokumennya di folder orang lain, barisnya tetap `owner_id` pemilik
+        // pohon — bukan editor.
         $placement = DocumentPlacement::query()
             ->with('folder:id,name')
-            ->where('owner_id', $owner->id)
+            ->where('owner_id', $folder->owner_id)
             ->where('document_id', $document->id)
             ->first();
         $asal = $placement?->folder?->name ?? 'Dokumen Saya (tanpa folder)';
@@ -97,24 +100,28 @@ final class DocumentWorkspaceService
         }
 
         DocumentPlacement::query()->updateOrCreate(
-            ['owner_id' => $owner->id, 'document_id' => $document->id],
+            ['owner_id' => $folder->owner_id, 'document_id' => $document->id],
             ['folder_id' => $folder->id],
         );
 
-        $this->catatPerpindahanDokumen($document, $owner, $asal, $folder->name);
+        $this->catatPerpindahanDokumen($document, $pelaku, $asal, $folder->name);
     }
 
-    public function moveToRoot(Document $document, User $owner): void
+    public function moveToRoot(Document $document, ?DocumentFolder $dariFolder, User $pelaku): void
     {
-        if ($document->uploaded_by !== $owner->id) {
+        if ($document->uploaded_by !== $pelaku->id) {
             throw ValidationException::withMessages([
-                'document' => 'Hanya dokumen yang Anda unggah yang dapat dipindahkan dari folder Dokumen Saya.',
+                'document' => 'Hanya dokumen yang Anda unggah yang dapat dipindahkan dari folder ini.',
             ]);
         }
 
+        // `null` = pohon pelaku sendiri (owner self-service); non-null = pohon
+        // spesifik yang folder asalnya berada di dalamnya (editor).
+        $ownerId = $dariFolder?->owner_id ?? $pelaku->id;
+
         $placement = DocumentPlacement::query()
             ->with('folder:id,name')
-            ->where('owner_id', $owner->id)
+            ->where('owner_id', $ownerId)
             ->where('document_id', $document->id)
             ->first();
 
@@ -124,7 +131,7 @@ final class DocumentWorkspaceService
 
         $asal = $placement->folder?->name ?? 'Folder Dokumen Saya';
         $placement->delete();
-        $this->catatPerpindahanDokumen($document, $owner, $asal, 'Dokumen Saya (tanpa folder)');
+        $this->catatPerpindahanDokumen($document, $pelaku, $asal, 'Dokumen Saya (tanpa folder)');
     }
 
     public function star(Document $document, User $user): void
@@ -264,14 +271,14 @@ final class DocumentWorkspaceService
         }
     }
 
-    private function catatPerpindahanDokumen(Document $document, User $owner, string $asal, string $tujuan): void
+    private function catatPerpindahanDokumen(Document $document, User $pelaku, string $asal, string $tujuan): void
     {
         $this->aktivitas->record(
             ActivityLogName::DocumentWorkspace,
             AuditEvent::DocumentMoved,
             "Dokumen dipindahkan dari \"{$asal}\" ke \"{$tujuan}\".",
             $document,
-            $owner,
+            $pelaku,
             ['lokasi_asal' => $asal, 'lokasi_tujuan' => $tujuan],
         );
     }

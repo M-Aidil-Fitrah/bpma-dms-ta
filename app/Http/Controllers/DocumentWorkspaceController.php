@@ -254,7 +254,7 @@ final class DocumentWorkspaceController extends Controller
     public function moveToRoot(Request $request, Document $document, DocumentWorkspaceService $workspace): RedirectResponse
     {
         $this->authorize('view', $document);
-        $workspace->moveToRoot($document, $request->user());
+        $workspace->moveToRoot($document, null, $request->user());
 
         return back()->with('success', 'Dokumen dipindahkan ke akar Dokumen Saya.');
     }

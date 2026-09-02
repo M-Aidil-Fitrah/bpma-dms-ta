@@ -301,6 +301,18 @@ final class DocumentWorkspaceController extends Controller
             $folders->load(['targetUnits:id,nama', 'sharedUsers:id,name,jabatan_id,unit_id', 'sharedUsers.jabatan:id,nama', 'sharedUsers.unit:id,nama']);
         }
 
+        // Dipakai `FolderSharePicker` lewat `WorkspaceFolderCard` —
+        // mengikuti pola `AccessMechanismPicker`, yang juga menerima daftar
+        // unit sebagai prop halaman, bukan dari shared Inertia props. Dialog
+        // Bagikan owner-only, jadi seluruh pohon unit tidak perlu dibaca
+        // untuk penerima share. Tetap array kosong (bukan null/absen) supaya
+        // bentuk propnya sama untuk kedua peran.
+        $opsiUnit = $konteksPemilik
+            ? Unit::query()->active()->orderBy('nama')->get(['id', 'nama', 'parent_id'])
+                ->map(fn (Unit $unit): array => ['id' => $unit->id, 'nama' => $unit->nama, 'parent_id' => $unit->parent_id])
+                ->all()
+            : [];
+
         return Inertia::render('Workspace/Index', [
             'title' => $title,
             'folder' => $folder === null ? null : ['id' => $folder->id, 'name' => $folder->name, 'parent_id' => $folder->parent_id, 'owner_id' => $folder->owner_id],
@@ -333,13 +345,7 @@ final class DocumentWorkspaceController extends Controller
                 ->get(['id', 'name'])
                 ->map(fn (DocumentFolder $item): array => ['id' => $item->id, 'name' => $item->name])
                 ->all(),
-            // Dipakai `FolderSharePicker` lewat `WorkspaceFolderCard` —
-            // mengikuti pola `AccessMechanismPicker`, yang juga menerima
-            // daftar unit sebagai prop halaman, bukan dari shared Inertia
-            // props.
-            'unit_options' => Unit::query()->active()->orderBy('nama')->get(['id', 'nama', 'parent_id'])
-                ->map(fn (Unit $unit): array => ['id' => $unit->id, 'nama' => $unit->nama, 'parent_id' => $unit->parent_id])
-                ->all(),
+            'unit_options' => $opsiUnit,
             'dokumen' => $listing->paginasi($queryDasarDokumen, $request, $user, $this->pemetaanDenganBintang($user)),
             'filter' => $request->filterAktif(),
         ]);

@@ -247,4 +247,100 @@ final class FolderShareControllerTest extends TestCase
             ->get(route('folders.show', $this->folder))
             ->assertForbidden();
     }
+
+    public function test_editor_membuat_subfolder_lewat_endpoint(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $induk = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $induk->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $this->actingAs($editor)
+            ->post('/folders', ['name' => 'Sub editor', 'parent_id' => $induk->id])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('document_folders', [
+            'parent_id' => $induk->id,
+            'name' => 'Sub editor',
+            'owner_id' => $pemilik->id,
+        ]);
+    }
+
+    public function test_viewer_ditolak_403_membuat_subfolder(): void
+    {
+        $pemilik = User::factory()->create();
+        $viewer = User::factory()->create();
+        $induk = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $induk->sharedUsers()->attach($viewer->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
+
+        $this->actingAs($viewer)
+            ->post('/folders', ['name' => 'X', 'parent_id' => $induk->id])
+            ->assertForbidden();
+    }
+
+    public function test_editor_boleh_rename_folder_lewat_endpoint(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create(['name' => 'Lama']);
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $this->actingAs($editor)
+            ->patch("/folders/{$folder->id}", ['name' => 'Baru'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('document_folders', ['id' => $folder->id, 'name' => 'Baru']);
+    }
+
+    public function test_viewer_ditolak_403_rename_folder(): void
+    {
+        $pemilik = User::factory()->create();
+        $viewer = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create(['name' => 'Lama']);
+        $folder->sharedUsers()->attach($viewer->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
+
+        $this->actingAs($viewer)
+            ->patch("/folders/{$folder->id}", ['name' => 'Baru'])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('document_folders', ['id' => $folder->id, 'name' => 'Lama']);
+    }
+
+    public function test_editor_ditolak_403_men_trash_folder(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $this->actingAs($editor)->delete("/folders/{$folder->id}")->assertForbidden();
+    }
+
+    public function test_editor_place_dan_move_to_root_dokumennya(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+        $doc = Document::factory()->create(['uploaded_by' => $editor->id]);
+
+        $this->actingAs($editor)
+            ->put("/documents/{$doc->id}/folder", ['folder_id' => $folder->id])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('document_placements', [
+            'owner_id' => $pemilik->id,
+            'document_id' => $doc->id,
+            'folder_id' => $folder->id,
+        ]);
+
+        $this->actingAs($editor)
+            ->delete("/documents/{$doc->id}/folder", ['folder_id' => $folder->id])
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('document_placements', [
+            'owner_id' => $pemilik->id,
+            'document_id' => $doc->id,
+        ]);
+    }
 }

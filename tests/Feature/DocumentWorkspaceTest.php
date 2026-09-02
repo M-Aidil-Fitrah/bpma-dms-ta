@@ -90,9 +90,12 @@ final class DocumentWorkspaceTest extends TestCase
         $folder = DocumentFolder::create(['owner_id' => $this->owner->id, 'name' => 'Rahasia', 'name_normalized' => 'rahasia']);
 
         $this->actingAs($this->other)->get(route('folders.show', $folder))->assertForbidden();
+        // Sejak Fase 2 gerbangnya `authorize('edit', $folder)` di controller —
+        // pengguna tanpa hak edit folder tujuan ditolak 403, bukan lagi 422
+        // dari lapisan service.
         $this->actingAs($this->other)
             ->put(route('documents.folder', $this->document), ['folder_id' => $folder->id])
-            ->assertSessionHasErrors('folder');
+            ->assertForbidden();
     }
 
     public function test_non_pemilik_tidak_dapat_mengubah_atau_membuang_folder(): void

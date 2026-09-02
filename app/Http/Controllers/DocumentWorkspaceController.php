@@ -148,6 +148,11 @@ final class DocumentWorkspaceController extends Controller
     {
         $data = $request->validate(['name' => ['required', 'string', 'max:120'], 'parent_id' => ['nullable', 'integer', 'exists:document_folders,id']]);
         $parent = isset($data['parent_id']) ? DocumentFolder::query()->findOrFail($data['parent_id']) : null;
+
+        if ($parent !== null) {
+            $this->authorize('edit', $parent);
+        }
+
         $workspace->createFolder($request->user(), $parent, $data['name']);
 
         return back()->with('success', 'Folder berhasil dibuat.');
@@ -155,7 +160,10 @@ final class DocumentWorkspaceController extends Controller
 
     public function updateFolder(Request $request, DocumentFolder $folder, DocumentWorkspaceService $workspace): RedirectResponse
     {
-        $this->authorize('update', $folder);
+        // `edit`, bukan `update`: rename folder dibuka untuk editor (owner ATAU
+        // penerima share ber-role editor). `update` sengaja tetap owner-only —
+        // ability itu juga menjaga `restoreFolder`.
+        $this->authorize('edit', $folder);
         $data = $request->validate(['name' => ['required', 'string', 'max:120']]);
         $workspace->renameFolder($folder, $request->user(), $data['name']);
 
@@ -246,7 +254,9 @@ final class DocumentWorkspaceController extends Controller
     {
         $this->authorize('view', $document);
         $data = $request->validate(['folder_id' => ['required', 'integer', 'exists:document_folders,id']]);
-        $workspace->placeDocument($document, DocumentFolder::query()->findOrFail($data['folder_id']), $request->user());
+        $folder = DocumentFolder::query()->findOrFail($data['folder_id']);
+        $this->authorize('edit', $folder);
+        $workspace->placeDocument($document, $folder, $request->user());
 
         return back()->with('success', 'Dokumen dipindahkan ke folder.');
     }
@@ -254,7 +264,14 @@ final class DocumentWorkspaceController extends Controller
     public function moveToRoot(Request $request, Document $document, DocumentWorkspaceService $workspace): RedirectResponse
     {
         $this->authorize('view', $document);
-        $workspace->moveToRoot($document, null, $request->user());
+        $data = $request->validate(['folder_id' => ['nullable', 'integer', 'exists:document_folders,id']]);
+        $folder = isset($data['folder_id']) ? DocumentFolder::query()->findOrFail($data['folder_id']) : null;
+
+        if ($folder !== null) {
+            $this->authorize('edit', $folder);
+        }
+
+        $workspace->moveToRoot($document, $folder, $request->user());
 
         return back()->with('success', 'Dokumen dipindahkan ke akar Dokumen Saya.');
     }

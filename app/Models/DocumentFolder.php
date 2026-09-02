@@ -111,6 +111,42 @@ final class DocumentFolder extends Model
             || ($user->unit_id !== null && $this->targetUnits()->where('units.id', $user->unit_id)->exists());
     }
 
+    /**
+     * Ada baris grant LANGSUNG pada folder ini dengan `role='editor'` untuk
+     * pengguna ini atau unitnya — tanpa menaiki rantai `parent`. Mirror
+     * `dibagikanLangsungKe()` tapi khusus peran Editor (Fase 2).
+     */
+    public function dibagikanSebagaiEditorKe(User $user): bool
+    {
+        return $this->sharedUsers()->where('users.id', $user->id)->wherePivot('role', 'editor')->exists()
+            || ($user->unit_id !== null && $this->targetUnits()->where('units.id', $user->unit_id)->wherePivot('role', 'editor')->exists());
+    }
+
+    /**
+     * Pengguna punya hak EDIT atas folder ini: pemiliknya, atau folder ini /
+     * salah satu leluhurnya dibagikan kepadanya dengan `role='editor'`.
+     * Mirror `terlihatOleh()` — folder induk yang dibagikan sebagai editor
+     * memberi hak edit ke seluruh isinya (perilaku Google Drive, §3.7).
+     */
+    public function terlihatSebagaiEditorOleh(User $user): bool
+    {
+        if ($this->owner_id === $user->id) {
+            return true;
+        }
+
+        $folder = $this;
+
+        do {
+            if ($folder->dibagikanSebagaiEditorKe($user)) {
+                return true;
+            }
+
+            $folder = $folder->parent;
+        } while ($folder !== null);
+
+        return false;
+    }
+
     /** @param Builder<DocumentFolder> $query @return Builder<DocumentFolder> */
     public function scopeOwnedBy(Builder $query, User $user): Builder
     {

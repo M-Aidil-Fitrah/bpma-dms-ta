@@ -87,4 +87,57 @@ final class DocumentFolderVisibilityTest extends TestCase
 
         $this->assertTrue($folder->terlihatOleh($penerima));
     }
+
+    public function test_dibagikan_sebagai_editor_langsung(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $this->assertTrue($folder->terlihatSebagaiEditorOleh($editor));
+        $this->assertTrue($folder->dibagikanSebagaiEditorKe($editor));
+    }
+
+    public function test_role_viewer_bukan_editor(): void
+    {
+        $pemilik = User::factory()->create();
+        $viewer = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->sharedUsers()->attach($viewer->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
+
+        $this->assertFalse($folder->terlihatSebagaiEditorOleh($viewer));
+        $this->assertTrue($folder->terlihatOleh($viewer)); // regresi Fase 1: viewer tetap bisa melihat
+    }
+
+    public function test_editor_pada_folder_induk_menurun_ke_subfolder(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $induk = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $anak = DocumentFolder::factory()->for($pemilik, 'owner')->create(['parent_id' => $induk->id]);
+        $induk->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $this->assertTrue($anak->terlihatSebagaiEditorOleh($editor));
+        $this->assertFalse($anak->dibagikanSebagaiEditorKe($editor)); // grant langsung ada di induk, bukan di anak
+    }
+
+    public function test_editor_via_unit(): void
+    {
+        $unit = Unit::factory()->create();
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create(['unit_id' => $unit->id]);
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+        $folder->targetUnits()->attach($unit->id, ['role' => 'editor', 'added_by' => $pemilik->id]);
+
+        $this->assertTrue($folder->terlihatSebagaiEditorOleh($editor));
+    }
+
+    public function test_pemilik_selalu_editor_atas_foldernya(): void
+    {
+        $pemilik = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
+
+        $this->assertTrue($folder->terlihatSebagaiEditorOleh($pemilik));
+    }
 }

@@ -49,7 +49,7 @@ final class DocumentFolderPolicyTest extends TestCase
         $editor = User::factory()->create();
         $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
         $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
-        $policy = new DocumentFolderPolicy();
+        $policy = new DocumentFolderPolicy;
 
         $this->assertTrue($policy->edit($editor, $folder));
         $this->assertFalse($policy->update($editor, $folder));   // rename/restore folder tetap owner-only (R2)
@@ -63,7 +63,7 @@ final class DocumentFolderPolicyTest extends TestCase
         $viewer = User::factory()->create();
         $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
         $folder->sharedUsers()->attach($viewer->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
-        $policy = new DocumentFolderPolicy();
+        $policy = new DocumentFolderPolicy;
 
         $this->assertFalse($policy->edit($viewer, $folder));
         $this->assertFalse($policy->update($viewer, $folder));
@@ -75,7 +75,7 @@ final class DocumentFolderPolicyTest extends TestCase
         $editor = User::factory()->create();
         $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
         $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
-        $policy = new DocumentFolderPolicy();
+        $policy = new DocumentFolderPolicy;
 
         $this->assertTrue($policy->share($editor, $folder));
 
@@ -88,7 +88,7 @@ final class DocumentFolderPolicyTest extends TestCase
     {
         $pemilik = User::factory()->create();
         $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
-        $policy = new DocumentFolderPolicy();
+        $policy = new DocumentFolderPolicy;
 
         $this->assertTrue($policy->edit($pemilik, $folder));
         $this->assertTrue($policy->update($pemilik, $folder));

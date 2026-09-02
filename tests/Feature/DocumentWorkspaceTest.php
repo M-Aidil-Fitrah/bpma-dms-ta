@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\DocumentWorkspaceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -251,7 +252,7 @@ final class DocumentWorkspaceTest extends TestCase
         $induk = DocumentFolder::factory()->for($pemilik, 'owner')->create();
         $induk->sharedUsers()->attach($viewer->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
         app(DocumentWorkspaceService::class)->createFolder($viewer, $induk, 'Percobaan');
     }
 
@@ -263,7 +264,7 @@ final class DocumentWorkspaceTest extends TestCase
         $induk->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
         DocumentFolder::factory()->for($pemilik, 'owner')->create(['parent_id' => $induk->id, 'name' => 'Rapat', 'name_normalized' => 'rapat']);
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
         app(DocumentWorkspaceService::class)->createFolder($editor, $induk, 'Rapat');
     }
 
@@ -287,7 +288,7 @@ final class DocumentWorkspaceTest extends TestCase
         $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create();
         $folder->sharedUsers()->attach($viewer->id, ['role' => 'viewer', 'granted_by' => $pemilik->id]);
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
         app(DocumentWorkspaceService::class)->renameFolder($folder, $viewer, 'Percobaan');
     }
 
@@ -316,7 +317,7 @@ final class DocumentWorkspaceTest extends TestCase
         $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
         $dokumen = Document::factory()->create(['uploaded_by' => $pemilik->id]);
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
         app(DocumentWorkspaceService::class)->placeDocument($dokumen, $folder, $editor);
     }
 

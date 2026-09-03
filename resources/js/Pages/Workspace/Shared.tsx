@@ -1,20 +1,27 @@
 import { EmptyState } from '@/Components/ui/EmptyState';
+import { WorkspaceFolderCard } from '@/Components/domain/WorkspaceFolderCard';
+import type { UnitPilihan } from '@/Components/domain/UnitTreePicker';
+import type { PenggunaTerpilih } from '@/Components/domain/UserPicker';
 import { AppLayout } from '@/Layouts/AppLayout';
-import { Link } from '@inertiajs/react';
-import { Folder, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface SharedFolder {
     id: number;
     name: string;
     owner_name: string;
+    access_level: 'editor' | 'viewer';
+    sharing_restricted: boolean;
+    unit_entries: { id: number; role: 'viewer' | 'editor' }[];
+    user_entries: (PenggunaTerpilih & { role: 'viewer' | 'editor' })[];
 }
 
 interface Props {
     folders: SharedFolder[];
+    unit_options: UnitPilihan[];
 }
 
-export default function Shared({ folders }: Props) {
+export default function Shared({ folders, unit_options: unitOptions }: Props) {
     const { t } = useTranslation(['workspace', 'nav']);
 
     return (
@@ -28,19 +35,12 @@ export default function Shared({ folders }: Props) {
             ) : (
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {folders.map((folder) => (
-                        <Link
-                            key={folder.id}
-                            href={`/folders/${folder.id}`}
-                            className="flex min-h-touch min-w-0 flex-col gap-1 rounded-lg border border-line bg-surface p-4 transition-colors hover:border-brand-300 hover:bg-brand-50/30"
-                        >
-                            <span className="flex items-center gap-2 truncate font-medium text-ink">
-                                <Folder className="size-5 shrink-0 text-brand-700" aria-hidden />
-                                {folder.name}
-                            </span>
-                            <span className="truncate pl-7 text-sm text-ink-muted">
+                        <div key={folder.id} className="space-y-1">
+                            <WorkspaceFolderCard folder={folder} accessLevel={folder.access_level} unitOptions={unitOptions} />
+                            <p className="truncate px-1 text-sm text-ink-muted">
                                 {t('workspace:shared.pemilik', { nama: folder.owner_name })}
-                            </span>
-                        </Link>
+                            </p>
+                        </div>
                     ))}
                 </div>
             )}

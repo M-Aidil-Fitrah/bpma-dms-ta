@@ -264,7 +264,7 @@ final class DocumentWorkspaceController extends Controller
 
         $folders = DocumentFolder::query()
             ->notTrashed()
-            ->with('owner:id,name')
+            ->with(['owner:id,name', 'targetUnits:id,nama', 'sharedUsers:id,name,jabatan_id,unit_id', 'sharedUsers.jabatan:id,nama', 'sharedUsers.unit:id,nama'])
             ->where(function (Builder $q) use ($user): void {
                 $q->whereHas('sharedUsers', fn ($sq) => $sq->where('users.id', $user->id));
 
@@ -275,12 +275,40 @@ final class DocumentWorkspaceController extends Controller
             ->orderBy('name')
             ->get();
 
-        return Inertia::render('Workspace/Shared', [
-            'folders' => $folders->map(fn (DocumentFolder $folder): array => [
+        $foldersDenganAkses = $folders->map(function (DocumentFolder $folder) use ($user): array {
+            $accessLevel = $folder->terlihatSebagaiEditorOleh($user) ? 'editor' : 'viewer';
+
+            return [
                 'id' => $folder->id,
                 'name' => $folder->name,
                 'owner_name' => $folder->owner->name,
-            ])->all(),
+                'access_level' => $accessLevel,
+                'sharing_restricted' => (bool) $folder->sharing_restricted,
+                // Dialog share melakukan full-replace ACL. Editor perlu
+                // daftar lengkap agar berbagi ulang folder yang langsung
+                // diterimanya tidak menghapus penerima yang sudah ada.
+                'unit_entries' => $accessLevel === 'editor'
+                    ? $folder->targetUnits->map(fn (Unit $unit): array => ['id' => $unit->id, 'role' => $unit->pivot->role])->all()
+                    : [],
+                'user_entries' => $accessLevel === 'editor'
+                    ? $folder->sharedUsers->map(fn (User $sharedUser): array => [
+                        'id' => $sharedUser->id,
+                        'nama' => $sharedUser->name,
+                        'jabatan' => $sharedUser->jabatan?->nama,
+                        'unit' => $sharedUser->unit?->nama,
+                        'role' => $sharedUser->pivot->role,
+                    ])->all()
+                    : [],
+            ];
+        });
+
+        return Inertia::render('Workspace/Shared', [
+            'folders' => $foldersDenganAkses->all(),
+            'unit_options' => $foldersDenganAkses->contains(fn (array $folder): bool => $folder['access_level'] === 'editor')
+                ? Unit::query()->active()->orderBy('nama')->get(['id', 'nama', 'parent_id'])
+                    ->map(fn (Unit $unit): array => ['id' => $unit->id, 'nama' => $unit->nama, 'parent_id' => $unit->parent_id])
+                    ->all()
+                : [],
         ]);
     }
 
@@ -349,7 +377,24 @@ final class DocumentWorkspaceController extends Controller
             : ($folder->terlihatSebagaiEditorOleh($user) ? 'editor' : 'viewer');
 
         $folderOptions = match ($accessLevel) {
-            'owner' => DocumentFolder::query()->where('owner_id', $userId)->notTrashed()->orderBy('name')->get(['id', 'name']),
+            'owner' => $folder === null
+                ? DocumentFolder::query()
+                    ->notTrashed()
+                    ->where(function (Builder $query) use ($user): void {
+                        $query->where('owner_id', $user->id)
+                            ->orWhereHas('sharedUsers', fn (Builder $sharedUsers) => $sharedUsers
+                                ->where('users.id', $user->id)
+                                ->where('document_folder_shares.role', 'editor'));
+
+                        if ($user->unit_id !== null) {
+                            $query->orWhereHas('targetUnits', fn (Builder $units) => $units
+                                ->where('units.id', $user->unit_id)
+                                ->where('document_folder_units.role', 'editor'));
+                        }
+                    })
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                : DocumentFolder::query()->where('owner_id', $userId)->notTrashed()->orderBy('name')->get(['id', 'name']),
             'editor' => DocumentFolder::query()->where('owner_id', $folder->owner_id)->notTrashed()->orderBy('name')->get(['id', 'name']),
             default => collect(),
         };

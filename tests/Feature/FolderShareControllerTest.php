@@ -83,6 +83,25 @@ final class FolderShareControllerTest extends TestCase
                 ->where('folders.0.id', $this->folder->id));
     }
 
+    public function test_editor_menerima_data_untuk_membagikan_ulang_folder_langsung_di_halaman_dibagikan(): void
+    {
+        $rekan = User::factory()->create();
+        $this->folder->sharedUsers()->attach($this->penerima->id, ['role' => 'editor', 'granted_by' => $this->owner->id]);
+        $this->folder->sharedUsers()->attach($rekan->id, ['role' => 'viewer', 'granted_by' => $this->owner->id]);
+
+        $this->actingAs($this->penerima)
+            ->get(route('documents.shared'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Workspace/Shared')
+                ->where('folders.0.access_level', 'editor')
+                ->where('folders.0.sharing_restricted', false)
+                ->where('folders.0.user_entries', fn ($entries) => collect($entries)->contains(
+                    fn ($entry) => $entry['id'] === $rekan->id && $entry['role'] === 'viewer',
+                ))
+                ->where('unit_options', fn ($options) => count($options) > 0));
+    }
+
     public function test_penerima_share_bisa_membuka_folder_dan_melihat_dokumen_pemilik(): void
     {
         $dokumen = Document::factory()->create([
@@ -370,6 +389,18 @@ final class FolderShareControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->where('folder_options', fn ($opts) => collect($opts)->pluck('name')->contains('Folder pemilik lain')
                     && ! collect($opts)->pluck('name')->contains('Folder editor sendiri')));
+    }
+
+    public function test_dokumen_saya_editor_menawarkan_folder_yang_dibagikan_sebagai_tujuan_pemindahan(): void
+    {
+        $pemilik = User::factory()->create();
+        $editor = User::factory()->create();
+        $folder = DocumentFolder::factory()->for($pemilik, 'owner')->create(['name' => 'Folder tujuan editor']);
+        $folder->sharedUsers()->attach($editor->id, ['role' => 'editor', 'granted_by' => $pemilik->id]);
+
+        $this->actingAs($editor)->get(route('documents.mine'))
+            ->assertInertia(fn ($page) => $page
+                ->where('folder_options', fn ($options) => collect($options)->pluck('name')->contains('Folder tujuan editor')));
     }
 
     public function test_prop_access_level_owner(): void
